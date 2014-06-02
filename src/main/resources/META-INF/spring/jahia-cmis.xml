@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xmlns:osgi="http://www.eclipse.org/gemini/blueprint/schema/blueprint"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+            http://www.eclipse.org/gemini/blueprint/schema/blueprint http://www.eclipse.org/gemini/blueprint/schema/blueprint/gemini-blueprint.xsd">
+
+    <osgi:reference id="ExternalProviderInitializerService" interface="org.jahia.modules.external.ExternalProviderInitializerService"/>
+    <bean id="cmis_base" class="org.jahia.modules.external.cmis.CmisTypeMapping" abstract="true">
+        <property name="properties">
+            <list >
+                <bean p:cmisName="cmis:name" p:jcrName="j:filename" class="org.jahia.modules.external.cmis.CmisPropertyMapping" />
+                <bean p:cmisName="cmis:objectId" p:jcrName="cmis:objectId" class="org.jahia.modules.external.cmis.CmisPropertyMapping" />
+                <bean p:cmisName="cmis:objectTypeId" p:jcrName="cmis:objectTypeId" class="org.jahia.modules.external.cmis.CmisPropertyMapping" />
+                <bean p:cmisName="cmis:baseTypeId" p:jcrName="cmis:baseTypeId" class="org.jahia.modules.external.cmis.CmisPropertyMapping" />
+                <bean p:cmisName="cmis:createdBy" p:jcrName="jcr:createdBy" class="org.jahia.modules.external.cmis.CmisPropertyMapping" />
+                <bean p:cmisName="cmis:creationDate" p:jcrName="jcr:created" class="org.jahia.modules.external.cmis.CmisPropertyMapping" />
+                <bean p:cmisName="cmis:lastModifiedBy" p:jcrName="jcr:lastModifiedBy" class="org.jahia.modules.external.cmis.CmisPropertyMapping" />
+                <bean p:cmisName="cmis:lastModificationDate" p:jcrName="jcr:lastModified" class="org.jahia.modules.external.cmis.CmisPropertyMapping" />
+                <bean p:cmisName="cmis:description" p:jcrName="cmis:description" class="org.jahia.modules.external.cmis.CmisPropertyMapping" p:mode="rwc" />
+            </list>
+        </property>
+    </bean>
+
+    <bean name="CmisRepositoryProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+        <property name="ignoreResourceNotFound" value="true"/>
+        <property name="locations">
+            <list>
+                <value>classpath*:META-INF/spring/cmisDefault.properties</value>
+                <!--<value>/WEB-INF/etc/config/cmis.properties</value>-->
+            </list>
+        </property>
+        <property name="localOverride" value="true"/>
+        <property name="properties" ref="jahiaProperties"/>
+    </bean>
+
+    <bean id="CmisConfiguration" class="org.jahia.modules.external.cmis.CmisConfiguration" init-method="onStart">
+        <property name="repositoryProperties">
+            <ref bean="CmisRepositoryProperties"/>
+        </property>
+        <property name="typeMapping">
+            <list>
+                <bean class="org.jahia.modules.external.cmis.CmisTypeMapping" parent="cmis_base" id="cmis_document"
+                      p:jcrName="cmis:document"
+                      p:cmisName="cmis:document">
+                    <property name="properties">
+                        <list merge="true" >
+                            <bean p:cmisName="cmis:isImmutable" p:jcrName="cmis:isImmutable" class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
+                            <bean p:cmisName="cmis:isLatestVersion" p:jcrName="cmis:isLatestVersion" class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
+                            <bean p:cmisName="cmis:isMajorVersion" p:jcrName="cmis:isMajorVersion" class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
+                            <bean p:cmisName="cmis:isLatestMajorVersion" p:jcrName="cmis:isLatestMajorVersion" class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
+                            <bean p:cmisName="cmis:versionLabel" p:jcrName="cmis:versionLabel" class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
+                            <bean p:cmisName="cmis:versionSeriesId" p:jcrName="cmis:versionSeriesId" class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
+                            <bean p:cmisName="cmis:isVersionSeriesCheckedOut" p:jcrName="cmis:isVersionSeriesCheckedOut" class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
+                            <bean p:cmisName="cmis:versionSeriesCheckedOutBy" p:jcrName="cmis:versionSeriesCheckedOutBy" class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
+                            <bean p:cmisName="cmis:versionSeriesCheckedOutId" p:jcrName="cmis:versionSeriesCheckedOutId" class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
+                            <bean p:cmisName="cmis:checkinComment" p:jcrName="cmis:checkinComment" class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
+                            <bean p:cmisName="cmis:contentStreamLength" p:jcrName="cmis:contentStreamLength" class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
+                            <bean p:cmisName="cmis:contentStreamMimeType" p:jcrName="cmis:contentStreamMimeType" class="org.jahia.modules.external.cmis.CmisPropertyMapping" p:mode="rwc"/>
+                            <bean p:cmisName="cmis:contentStreamFileName" p:jcrName="cmis:contentStreamFileName" class="org.jahia.modules.external.cmis.CmisPropertyMapping" p:mode="rwc"/>
+                            <bean p:cmisName="cmis:contentStreamId" p:jcrName="cmis:contentStreamId" class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
+                            <bean p:cmisName="cmis:isPrivateWorkingCopy" p:jcrName="cmis:isPrivateWorkingCopy" class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="org.jahia.modules.external.cmis.CmisTypeMapping" parent="cmis_base" id="cmis_folder"
+                      p:jcrName="cmis:folder"
+                      p:cmisName="cmis:folder">
+                    <property name="properties">
+                        <list merge="true" >
+                            <bean p:cmisName="cmis:parentId" p:jcrName="cmis:parentId" class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
+                            <bean p:cmisName="cmis:allowedChildObjectTypeIds" p:jcrName="cmis:allowedChildObjectTypeIds" class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
+                            <bean p:cmisName="cmis:path" p:jcrName="cmis:path" class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
+                        </list>
+                    </property>
+                </bean>
+            </list>
+        </property>
+    </bean>
+    <bean id="CmisExternalMappedDatabaseProvider" class="org.jahia.modules.external.ExternalContentStoreProvider" parent="AbstractJCRStoreProvider">
+
+            <property name="key" value="ExternalCMISProvider"/>
+            <property name="mountPoint" value="/external-cmis-mapped"/>
+            <property name="externalProviderInitializerService" ref="ExternalProviderInitializerService"/>
+            <property name="dataSource">
+                <bean class="org.jahia.modules.external.cmis.CmisDataSource" p:conf-ref="CmisConfiguration"/>
+            </property>
+
+    </bean>
+
+</beans>

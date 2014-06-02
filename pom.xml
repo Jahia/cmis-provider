@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    This file is part of Jahia, next-generation open source CMS:
+    Jahia's next-generation, open source CMS stems from a widely acknowledged vision 
+    of enterprise application convergence - web, search, document, social and portal - 
+    unified by the simplicity of web content management. 
+
+    For more information, please visit http://www.jahia.com.
+
+    Copyright (C) 2002-2013 Jahia Solutions Group SA. All rights reserved.
+
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU General Public License
+    as published by the Free Software Foundation; either version 2
+    of the License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+    As a special exception to the terms and conditions of version 2.0 of
+    the GPL (or any later version), you may redistribute this Program in connection
+    with Free/Libre and Open Source Software ("FLOSS") applications as described
+    in Jahia's FLOSS exception. You should have received a copy of the text
+    describing the FLOSS exception, and it is also available here:
+    http://www.jahia.com/license
+
+    Commercial and Supported Versions of the program (dual licensing): 
+    alternatively, commercial and supported versions of the program may be used
+    in accordance with the terms and conditions contained in a separate 
+    written agreement between you and Jahia Solutions Group SA.
+    
+    If you are unsure which license is appropriate for your use, 
+    please contact the sales department at sales@jahia.com.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                      http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <artifactId>jahia-modules</artifactId>
+        <groupId>org.jahia.modules</groupId>
+        <version>7.0.1.0-SNAPSHOT</version>
+    </parent>
+    <groupId>org.jahia.modules</groupId>
+    <artifactId>cmis-external-provider</artifactId>
+    <name>Jahia CMIS external provider implementation</name>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>bundle</packaging>
+    <description>Provides an implementation of the CMIS external provider.</description>
+<!--    <repositories>
+        <repository>
+            <id>jahiaRepository</id>
+            <name>Jahia's Maven Repository</name>
+            <url>http://maven.jahia.org/maven2</url>
+        </repository>
+    </repositories>
+    <pluginRepositories>
+        <pluginRepository>
+            <id>jahiaRepository</id>
+            <name>Jahia's Maven Repository</name>
+            <url>http://maven.jahia.org/maven2</url>
+        </pluginRepository>
+    </pluginRepositories>-->
+    <dependencies>
+        <dependency>
+            <groupId>org.jahia.modules</groupId>
+            <artifactId>external-provider</artifactId>
+            <version>2.0.1-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+           <groupId>org.apache.chemistry.opencmis</groupId>
+           <artifactId>chemistry-opencmis-client-impl</artifactId>
+           <version>0.10.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.felix</groupId>
+                    <artifactId>org.osgi.core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.sun.org.apache.xml.internal</groupId>
+                    <artifactId>resolver</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>javax.xml.stream</groupId>
+                    <artifactId>stax-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <extensions>true</extensions>
+                <configuration>
+                    <instructions>
+                        <Jahia-Depends>assets,external-provider</Jahia-Depends>
+                        <Jahia-Module-Type>system</Jahia-Module-Type>
+                        <Export-Package>org.jahia.modules.external.cmis</Export-Package>
+                        <Embed-Dependency>*;scope=compile|runtime;inline=true</Embed-Dependency>
+                        <Import-Package>!com.sun.*,
+                            !javax.xml.messaging.*,
+                            !org.apache.cxf.*,
+                            javax.xml.stream.*,
+                            org.apache.http.*;resolution:=optional,
+                            org.jvnet.fastinfoset.*;resolution:=optional,
+                            org.relaxng.datatype.*;resolution:=optional,
+                            ${jahia.plugin.projectPackageImport},*</Import-Package>
+                        <Embed-Dependency>*;scope=compile|runtime</Embed-Dependency>
+                            <_removeheaders>
+                            ${jahia.modules.bundle.removeheaders},
+                        </_removeheaders>
+                    </instructions>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

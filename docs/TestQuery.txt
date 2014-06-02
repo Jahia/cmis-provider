@@ -1,0 +1,74 @@
+join not implemented because we return only one node path per row.
+lower, upper, length - not supported
+score - not supported too. It is very curios. JCR support score function in where clause and CMIS support score in column list.
+
+
+SELECT * FROM [cmis:document]
+
+SELECT * FROM [cmis:folder]
+
+SELECT * FROM [cmis:document]
+WHERE [cmis:objectTypeId] LIKE 'ComplexType'
+
+// Not mapped property - work as non existed
+SELECT * FROM [cmis:document]
+WHERE [cmis:secondaryObjectTypeIds] IS NULL
+
+
+// Mapped but not implemented in  in inmemmory repository - Null for all objects
+SELECT * FROM [cmis:document]
+WHERE [cmis:isLatestVersion] IS NULL
+
+
+// Never NULL must be empty result
+SELECT * FROM [cmis:document]
+WHERE [cmis:contentStreamLength] IS NULL
+
+// Never NULL
+SELECT * FROM [cmis:document]
+WHERE [cmis:contentStreamLength] IS NOT NULL
+
+
+//Number comparison
+SELECT * FROM [cmis:document]
+WHERE [cmis:contentStreamLength]>100 
+
+SELECT * FROM [cmis:document]
+WHERE [cmis:contentStreamLength]<>0 
+
+//Date comparison
+SELECT * FROM [cmis:document]
+WHERE [jcr:created] > CAST ('2014-02-06T14:14:03.000Z' AS DATE)
+
+//Complex comparison
+SELECT * FROM [cmis:document]
+WHERE [cmis:contentStreamLength]<>0
+and ([j:filename] like 'My_Document-1-%' or  [j:filename]='My_Document-2-2')
+
+//Fulltext search  ( Query browser add language check - so we don't see any results)
+SELECT * FROM [cmis:document]
+WHERE contains([cmis:document].*,'tempus mauris')
+
+//isSameNode  - work
+SELECT * FROM [cmis:document]
+WHERE isSameNode('/My_Folder-0-0/My_Document-1-2')
+
+//isSameNode - not work  (BUG external provider don't remove mount prefix for isSameNode)
+SELECT * FROM [cmis:document]
+WHERE isSameNode('/external-cmis-mapped/My_Folder-0-0/My_Document-1-2')
+
+//ISCHILDNODE
+SELECT * FROM [cmis:document]
+WHERE ISCHILDNODE('/external-cmis-mapped/My_Folder-0-0')
+
+//ISDESCENDANTNODE
+SELECT * FROM [cmis:document]
+WHERE ISDESCENDANTNODE('/external-cmis-mapped/My_Folder-0-0')
+
+// Ordering
+SELECT * FROM [cmis:document]
+Order by [j:filename] asc
+
+// Multyfield ordering - supported by module but there are look like a bug in in Apache chemistry - second field ignored.
+SELECT * FROM [cmis:document]
+Order by [j:filename] asc, [cmis:objectId] asc

@@ -1,0 +1,32 @@
+<jnt = 'http://www.jahia.org/jahia/nt/1.0'>
+<jmix = 'http://www.jahia.org/jahia/mix/1.0'>
+<cmis = 'http://www.jahia.org/jahia/cmis/1.0'>
+
+[cmis:base] mixin
+    - cmis:objectId  (string) protected
+    - cmis:objectTypeId  (string) protected
+    - cmis:baseTypeId  (string) protected
+    - cmis:description  (string)
+
+[cmis:folder] > jnt:folder, cmis:base
+    - cmis:parentId (string) protected
+    - cmis:allowedChildObjectTypeIds (string) protected
+    - cmis:path (string) protected
+
+[cmis:document] > jnt:file, cmis:base
+    - cmis:isImmutable (string) protected
+    - cmis:isLatestVersion (string) protected
+    - cmis:isMajorVersion (string) protected
+    - cmis:isLatestMajorVersion (string) protected
+    - cmis:versionLabel (string) protected
+    - cmis:versionSeriesId (string) protected
+    - cmis:isVersionSeriesCheckedOut (string) protected
+    - cmis:versionSeriesCheckedOutBy (string) protected
+    - cmis:versionSeriesCheckedOutId (string) protected
+    - cmis:checkinComment (string) protected
+    - cmis:contentStreamLength (long) protected
+    - cmis:contentStreamMimeType (string)
+    - cmis:contentStreamFileName (string)
+    - cmis:contentStreamId (string) protected
+    - cmis:isPrivateWorkingCopy (string) protected
+    
