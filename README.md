@@ -1,4 +1,4 @@
-# Jahia-CMIS module
+# Jahia-CMIS external provider module
 
 ## Overview
 
