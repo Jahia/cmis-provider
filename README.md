@@ -59,30 +59,6 @@ CmisConfiguration bean has 2 properties:
  By default, repositoryProperties are configured for usage of general jahia.properties
  - typeMapping - list of CmisTypeMapping beans. There are 2 base mappings: for cmis:document and cmis:folder.
 
-### Connection configuration
-Module looks for connection parameters in general Jahia config. All configuration properties are started with "org.apache.chemistry." prefix.
-(see https://chemistry.apache.org/java/examples/example-create-session.html for connection parameters details).
-
-#### Connection configuration example
-
-```
-org.apache.chemistry.opencmis.binding.spi.type=atompub
-
-org.apache.chemistry.opencmis.session.repository.id=A1
-org.apache.chemistry.opencmis.user=dummyuser
-org.apache.chemistry.opencmis.password=dummysecret
-org.apache.chemistry.opencmis.binding.atompub.url=http://localhost:18080/inmemory/atom11
-```
-
-Comments line by line:
- 1. Binding type  - AtomPub (Set by default) other possible values are: webservices, browser, custom
- 2. Repository id
- 3. Login
- 4. Password
- 5. Access URL
-This is minimal list of parameters required to get access.
-Depending on binding type, list of required parameters differ.
-
 ### Mapping configuration
 
 CMIS - JCR mapping is configurable with spring configuration files.
