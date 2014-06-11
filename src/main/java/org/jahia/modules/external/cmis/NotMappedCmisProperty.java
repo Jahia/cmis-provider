@@ -15,11 +15,11 @@ public class NotMappedCmisProperty extends RepositoryException {
     }
 
     public NotMappedCmisProperty(String name) {
-        this(name,null);
+        this(name, null);
     }
 
     public NotMappedCmisProperty(String name, Throwable rootCause) {
-        super("Property "+name+" not mapped", rootCause);
+        super("Property " + name + " not mapped", rootCause);
     }
 
     public NotMappedCmisProperty(Throwable rootCause) {

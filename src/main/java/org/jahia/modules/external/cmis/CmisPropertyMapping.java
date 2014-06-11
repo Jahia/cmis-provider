@@ -11,22 +11,23 @@ public class CmisPropertyMapping {
     /**
      * Property will readable
      */
-    public static final String MODE_READ="r";
+    public static final String MODE_READ = "r";
     /**
      * Property will updatable
      */
-    public static final String MODE_WRITE="w";
+    public static final String MODE_WRITE = "w";
     /**
      * Property will use on creation
      */
-    public static final String MODE_CREATE="c";
+    public static final String MODE_CREATE = "c";
     private String jcrName;
     private String cmisName;
     private String queryName;
     /**
      * Mode of property may combination of 'r' -Read; 'w' - Write (update); 'c' - Create
      */
-    String mode="r";
+    String mode = "r";
+
     public CmisPropertyMapping() {
     }
 
@@ -63,14 +64,14 @@ public class CmisPropertyMapping {
     }
 
     public boolean inMode(char _mode) {
-        return mode.indexOf(_mode)!=-1;
+        return mode.indexOf(_mode) != -1;
     }
 
     /**
      * @return name used in Queries, if not set used cmisName
      */
     public String getQueryName() {
-        return queryName==null?cmisName:queryName;
+        return queryName == null ? cmisName : queryName;
     }
 
     public void setQueryName(String queryName) {

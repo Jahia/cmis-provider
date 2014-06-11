@@ -11,24 +11,24 @@ import java.util.*;
  */
 public class CmisConfiguration {
     private List<CmisTypeMapping> typeMapping;
-    private Map<String,CmisTypeMapping> cmisTypes;
+    private Map<String, CmisTypeMapping> cmisTypes;
     private Set<String> supportedNodeTypes;
-    private Map<String,CmisTypeMapping> jcrTypes;
-    private String defaultDocumentTypeName="cmis:document";
-    private String defaultFolderTypeName="cmis:folder";
-//    private Properties repositoryProperties;
-    private HashMap<String,String> repositoryPropertiesMap;
+    private Map<String, CmisTypeMapping> jcrTypes;
+    private String defaultDocumentTypeName = "cmis:document";
+    private String defaultFolderTypeName = "cmis:folder";
+    //    private Properties repositoryProperties;
+    private HashMap<String, String> repositoryPropertiesMap;
 
     public void onStart() {
-        cmisTypes=new HashMap<String, CmisTypeMapping>();
-        jcrTypes=new HashMap<String, CmisTypeMapping>();
-        if (typeMapping!=null) {
-            Queue<CmisTypeMapping> list=new LinkedList<CmisTypeMapping>(typeMapping);
+        cmisTypes = new HashMap<String, CmisTypeMapping>();
+        jcrTypes = new HashMap<String, CmisTypeMapping>();
+        if (typeMapping != null) {
+            Queue<CmisTypeMapping> list = new LinkedList<CmisTypeMapping>(typeMapping);
             while (!list.isEmpty()) {
-                CmisTypeMapping type=list.remove();
-                cmisTypes.put(type.getCmisName(),type);
-                jcrTypes.put(type.getJcrName(),type);
-                if (type.getChildren()!=null) {
+                CmisTypeMapping type = list.remove();
+                cmisTypes.put(type.getCmisName(), type);
+                jcrTypes.put(type.getJcrName(), type);
+                if (type.getChildren() != null) {
                     list.addAll(type.getChildren());
                 }
             }
@@ -36,12 +36,14 @@ public class CmisConfiguration {
                 cmisTypeMapping.initProperties();
             }
         }
-        supportedNodeTypes=Collections.unmodifiableSet(new HashSet(cmisTypes.keySet()));
+        supportedNodeTypes = Collections.unmodifiableSet(new HashSet(jcrTypes.keySet()));
     }
+
     public void setTypeMapping(List<CmisTypeMapping> typeMapping) {
         this.typeMapping = typeMapping;
 
     }
+
     public List getTypeMapping() {
         return typeMapping;
     }
@@ -86,7 +88,7 @@ public class CmisConfiguration {
     }
 
     /**
-     * @return  set of JSR node types which mapped to CMIS types
+     * @return set of JSR node types which mapped to CMIS types
      */
     public Set<String> getSupportedNodeTypes() {
         return supportedNodeTypes;
@@ -95,6 +97,7 @@ public class CmisConfiguration {
     /**
      * Don't call for configuration purposes only.
      * Use getRepositoryPropertiesMap for getting properties
+     *
      * @return throw UnsupportedOperationException
      */
     public Properties getRepositoryProperties() {
@@ -106,7 +109,7 @@ public class CmisConfiguration {
      * Use getRepositoryPropertiesMap for getting properties
      */
     public void setRepositoryProperties(Properties repositoryProperties) {
-        repositoryPropertiesMap=new HashMap<String, String>();
+        repositoryPropertiesMap = new HashMap<String, String>();
         for (String name : repositoryProperties.stringPropertyNames()) {
             if (name.startsWith("org.apache.chemistry.")) {
                 repositoryPropertiesMap.put(name, repositoryProperties.getProperty(name));
@@ -115,7 +118,6 @@ public class CmisConfiguration {
     }
 
     /**
-     *
      * @return
      */
     public HashMap<String, String> getRepositoryPropertiesMap() {

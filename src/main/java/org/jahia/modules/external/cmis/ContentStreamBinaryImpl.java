@@ -1,11 +1,10 @@
 package org.jahia.modules.external.cmis;
 
+import org.apache.chemistry.opencmis.commons.impl.dataobjects.ContentStreamImpl;
+
 import javax.jcr.Binary;
 import javax.jcr.RepositoryException;
-
 import java.math.BigInteger;
-
-import org.apache.chemistry.opencmis.commons.impl.dataobjects.ContentStreamImpl;
 
 /**
  * Created by: Boris
@@ -15,13 +14,14 @@ import org.apache.chemistry.opencmis.commons.impl.dataobjects.ContentStreamImpl;
 public class ContentStreamBinaryImpl extends ContentStreamImpl {
     Binary binary;
 
-    public ContentStreamBinaryImpl(Binary binary,String fileName ,String mimeType ) throws RepositoryException {
+    public ContentStreamBinaryImpl(Binary binary, String fileName, String mimeType) throws RepositoryException {
         setLength(BigInteger.valueOf(binary.getSize()));
         setMimeType(mimeType);
         setFileName(fileName);
         setStream(binary.getStream());
         this.binary = binary;
     }
+
     public void disposeBinary() {
         binary.dispose();
     }

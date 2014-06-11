@@ -1,9 +1,6 @@
 package org.jahia.modules.external.cmis;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Configuration class to map CMIS <-> JCR types.
@@ -12,19 +9,21 @@ import java.util.Map;
  * Date: 1/29/14
  * Time: 10:51 PM
  */
-public class CmisTypeMapping implements Cloneable{
+public class CmisTypeMapping implements Cloneable {
     private String jcrName;
+    private List<String> jcrMixins;
     private String cmisName;
     private String queryName;
     private CmisTypeMapping parent;
     private List<CmisTypeMapping> children;
     private List<CmisPropertyMapping> properties;
-    private Map<String,CmisPropertyMapping> propertiesMapJCR;
-    private Map<String,CmisPropertyMapping> propertiesMapCMIS;
+    private Map<String, CmisPropertyMapping> propertiesMapJCR;
+    private Map<String, CmisPropertyMapping> propertiesMapCMIS;
 
     public CmisTypeMapping() {
 
     }
+
     public CmisTypeMapping(String jcrName, String cmisName) {
         this.jcrName = jcrName;
         this.cmisName = cmisName;
@@ -38,6 +37,14 @@ public class CmisTypeMapping implements Cloneable{
         this.jcrName = jcrName;
     }
 
+    public List<String> getJcrMixins() {
+        return jcrMixins;
+    }
+
+    public void setJcrMixins(String jcrName) {
+        this.jcrMixins = Arrays.asList(jcrName.split(" "));
+    }
+
     public String getCmisName() {
         return cmisName;
     }
@@ -48,6 +55,7 @@ public class CmisTypeMapping implements Cloneable{
 
     /**
      * Parent mapping. Used to configure tree of inheritance.
+     *
      * @return
      */
     public CmisTypeMapping getParent() {
@@ -63,6 +71,7 @@ public class CmisTypeMapping implements Cloneable{
      * Return children added directly by setChildren method only.
      * If children initialize inheritance using parent property this method will not return such children.
      * This field used for configuration purposes only.
+     *
      * @return List of configured children.
      */
     public List<CmisTypeMapping> getChildren() {
@@ -71,7 +80,7 @@ public class CmisTypeMapping implements Cloneable{
 
     public void setChildren(List<CmisTypeMapping> children) {
         this.children = children;
-        if (children!=null) {
+        if (children != null) {
             for (CmisTypeMapping child : children) {
                 child.setParent(this);
             }
@@ -95,21 +104,21 @@ public class CmisTypeMapping implements Cloneable{
     }
 
     protected void initProperties() {
-        HashMap<String,CmisPropertyMapping> mapJCR=new HashMap<String,CmisPropertyMapping>();
-        HashMap<String,CmisPropertyMapping> mapCMIS=new HashMap<String,CmisPropertyMapping>();
-        if (parent!=null) {
+        HashMap<String, CmisPropertyMapping> mapJCR = new HashMap<String, CmisPropertyMapping>();
+        HashMap<String, CmisPropertyMapping> mapCMIS = new HashMap<String, CmisPropertyMapping>();
+        if (parent != null) {
             mapJCR.putAll(parent.getPropertiesMapJCR());
             mapCMIS.putAll(parent.getPropertiesMapCMIS());
         }
-        if (properties!=null) {
+        if (properties != null) {
             for (CmisPropertyMapping property : properties) {
                 mapJCR.put(property.getJcrName(), property);
                 mapCMIS.put(property.getCmisName(), property);
             }
         }
-        propertiesMapCMIS=mapCMIS.size()==0? Collections.<String, CmisPropertyMapping>emptyMap() :Collections.unmodifiableMap(mapCMIS);
-        propertiesMapJCR= mapJCR.size()==0? Collections.<String, CmisPropertyMapping>emptyMap() :Collections.unmodifiableMap(mapJCR);
-        if (children!=null) {
+        propertiesMapCMIS = mapCMIS.size() == 0 ? Collections.<String, CmisPropertyMapping>emptyMap() : Collections.unmodifiableMap(mapCMIS);
+        propertiesMapJCR = mapJCR.size() == 0 ? Collections.<String, CmisPropertyMapping>emptyMap() : Collections.unmodifiableMap(mapJCR);
+        if (children != null) {
             for (CmisTypeMapping child : children) {
                 child.initProperties();
             }
@@ -120,7 +129,7 @@ public class CmisTypeMapping implements Cloneable{
     @Override
     protected CmisTypeMapping clone() {
         try {
-            return (CmisTypeMapping)super.clone();
+            return (CmisTypeMapping) super.clone();
         } catch (CloneNotSupportedException e) {  // impossible
             throw new IllegalStateException(e);
         }
@@ -128,6 +137,7 @@ public class CmisTypeMapping implements Cloneable{
 
     /**
      * Lookup property mapping by JCR name
+     *
      * @param propertyName
      * @return
      */
@@ -137,6 +147,7 @@ public class CmisTypeMapping implements Cloneable{
 
     /**
      * Lookup property mapping by CMIS local name
+     *
      * @param localName
      * @return
      */
@@ -147,10 +158,11 @@ public class CmisTypeMapping implements Cloneable{
     /**
      * Name of type used in CMIS queries.
      * If not set return cmisName
+     *
      * @return
      */
     public String getQueryName() {
-        return queryName==null?cmisName:queryName;
+        return queryName == null ? cmisName : queryName;
     }
 
     public void setQueryName(String queryName) {

@@ -1,19 +1,26 @@
 <jnt = 'http://www.jahia.org/jahia/nt/1.0'>
 <jmix = 'http://www.jahia.org/jahia/mix/1.0'>
 <cmis = 'http://www.jahia.org/jahia/cmis/1.0'>
+<cmismix = 'http://www.jahia.org/jahia/cmis/mix/1.0'>
 
-[cmis:base] mixin
+[cmis:cmisMountPoint] > jnt:mountPoint
+    - repositoryId (string)
+    - user (string)
+    - password (string,text[password])
+    - url (string)
+
+[cmismix:base] mixin
     - cmis:objectId  (string) protected
     - cmis:objectTypeId  (string) protected
     - cmis:baseTypeId  (string) protected
     - cmis:description  (string)
 
-[cmis:folder] > jnt:folder, cmis:base
+[cmismix:folder] > cmismix:base mixin
     - cmis:parentId (string) protected
     - cmis:allowedChildObjectTypeIds (string) protected
     - cmis:path (string) protected
 
-[cmis:document] > jnt:file, cmis:base
+[cmismix:document] > cmismix:base mixin
     - cmis:isImmutable (string) protected
     - cmis:isLatestVersion (string) protected
     - cmis:isMajorVersion (string) protected
