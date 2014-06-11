@@ -29,7 +29,6 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
         ExternalContentStoreProvider provider = (ExternalContentStoreProvider) SpringContextSingleton.getBean("ExternalStoreProviderPrototype");
         provider.setKey(mountPoint.getIdentifier());
         provider.setMountPoint(mountPoint.getPath());
-        provider.setLockSupport(true);
 
         CmisDataSource dataSource = new CmisDataSource();
         CmisConfiguration conf = (CmisConfiguration) applicationContext.getBean("CmisConfiguration");
