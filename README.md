@@ -168,20 +168,20 @@ For search testing JCR query tool can be used. JCR-SQL2 queries covering all imp
 2. Unpack chemistry-opencmis-server-inmemory-xxx.war into tomcat/webapp/inmemory folder. Repository config file is inmemory\WEB-INF\classes\repository.properties.
  Default configuration is ok.
 3. Deploy Jahia with Jahia CMIS module.
-4. Add next 4 lines to jahia.properties. Configure port, depending on your tomcat config.
+4. Start Jahia.
+5. Go to content manager, select Remote - Mount - CMIS provider
+6. Fill in the form with these entries. Configure port, depending on your tomcat config.
 ```
-org.apache.chemistry.opencmis.session.repository.id=A1
-org.apache.chemistry.opencmis.user=dummyuser
-org.apache.chemistry.opencmis.password=dummysecret
-org.apache.chemistry.opencmis.binding.atompub.url=http://localhost:18080/inmemory/atom11
+repository id=A1
+user=dummyuser
+password=dummysecret
+url=http://localhost:18080/inmemory/atom11
 ```
-5. Start Jahia.
 
-There will be CMIS repository mounted in /external-cmis-mapped.
+There will be CMIS repository mounted in /mounts
 
 ---
 
 ## TODO:
  - Renditions;
- - Mount point configuration from JCR.
 
