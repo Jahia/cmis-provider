@@ -4,6 +4,8 @@ import org.jahia.data.templates.JahiaTemplatesPackage;
 import org.jahia.exceptions.JahiaInitializationException;
 import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.registries.ServicesRegistry;
+import org.jahia.security.license.LicenseCheckException;
+import org.jahia.security.license.LicenseCheckerService;
 import org.jahia.services.SpringContextSingleton;
 import org.jahia.services.content.JCRNodeWrapper;
 import org.jahia.services.content.JCRSessionFactory;
@@ -11,12 +13,13 @@ import org.jahia.services.content.JCRStoreProvider;
 import org.jahia.services.content.ProviderFactory;
 import org.jahia.services.templates.JahiaModuleAware;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import javax.jcr.RepositoryException;
 
-public class CmisProviderFactory implements ProviderFactory, ApplicationContextAware {
+public class CmisProviderFactory implements ProviderFactory, ApplicationContextAware, InitializingBean {
     private ApplicationContext applicationContext;
 
     @Override
@@ -54,5 +57,12 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        if (!LicenseCheckerService.Stub.isAllowed("org.jahia.cmis")) {
+            throw new LicenseCheckException("No license found for CMIS connector");
+        }
     }
 }
