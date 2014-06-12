@@ -392,7 +392,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         Map<String, String[]> properties = src.getProperties();
         for (Map.Entry<String, String[]> property : properties.entrySet()) {
             CmisPropertyMapping propertyMapping = type.getPropertyByJCR(property.getKey());
-            if (propertyMapping.inMode(mode)) {
+            if (propertyMapping != null && propertyMapping.inMode(mode)) {
                 dest.put(propertyMapping.getCmisName(), property.getValue()[0]);
             }
         }
