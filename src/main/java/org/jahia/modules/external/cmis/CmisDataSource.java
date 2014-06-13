@@ -448,14 +448,16 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             Session session = getCmisSession();
             QueryResolver resolver = new QueryResolver(this, query);
             String sql = resolver.resolve();
+
+            // Not mapped or unsupported queries treated as empty.
+            if (sql == null) {
+                return Collections.emptyList();
+            }
+
             boolean isFolder = false;
             if (BaseTypeId.CMIS_FOLDER.equals(session.getTypeDefinition(resolver.cmisType.getCmisName()).getBaseTypeId())) {
                 isFolder = true;
                 sql = sql.replace("cmis:objectId", "cmis:path");
-            }
-            // Not mapped or unsupported queries treated as empty.
-            if (sql == null) {
-                return Collections.emptyList();
             }
             if (log.isDebugEnabled()) {
                 log.debug("CMIS query " + sql);
