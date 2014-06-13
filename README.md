@@ -1,4 +1,4 @@
-# Jahia-CMIS external provider module
+# Portal factory - CMIS provider module
 
 ## Overview
 

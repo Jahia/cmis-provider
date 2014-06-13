@@ -1,4 +1,4 @@
-Jahia-cmis module contains external provider to mount external repositories using CMIS protocol.
+Portal factory - CMIS provider module contains external provider to mount external repositories using CMIS protocol.
 
 1. Supported features
 	1. Supported 2 base cmis types - document and folder with custom types inherited from this.
