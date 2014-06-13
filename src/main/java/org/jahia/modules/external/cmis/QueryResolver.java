@@ -47,6 +47,11 @@ public class QueryResolver {
         }
         Selector selector = (Selector) source;
         String nodeTypeName = selector.getNodeTypeName();
+
+        // Supports queries on hierarchyNode as file queries
+        if (nodeTypeName.equals("nt:hierarchyNode")) {
+            nodeTypeName = "jnt:file";
+        }
         cmisType = conf.getTypeByJCR(nodeTypeName);
         if (cmisType == null) {
             log.debug("Unmapped types not supported in CMIS queries");
@@ -57,7 +62,7 @@ public class QueryResolver {
 //            buff.append(" as ").append(selector.getSelectorName());
         if (query.getConstraint() != null) {
             buff.append(" WHERE ");
-            addConstarint(buff, query.getConstraint());
+            addConstraint(buff, query.getConstraint());
         }
         if (query.getOrderings() != null) {
             boolean isFirst = true;
@@ -65,7 +70,7 @@ public class QueryResolver {
             for (Ordering ordering : query.getOrderings()) {
                 tmpBuf.setLength(0);
                 try {
-                    addOpperand(tmpBuf, ordering.getOperand());
+                    addOperand(tmpBuf, ordering.getOperand());
                     if (isFirst) {
                         buff.append(" ORDER BY ");
                         isFirst = false;
@@ -79,6 +84,9 @@ public class QueryResolver {
                     } else if (QueryObjectModelConstants.JCR_ORDER_DESCENDING.equals(order)) {
                         buff.append(' ').append("DESC");
                     }
+                    if (tmpBuf.toString().equals(" myscore ")) {
+                        buff.insert(buff.indexOf(" FROM"), ", SCORE() as myscore ");
+                    }
                 } catch (NotMappedCmisProperty ignore) { //ignore ordering by not mapped properties
                 }
             }
@@ -87,32 +95,32 @@ public class QueryResolver {
     }
 
 
-    private void addConstarint(StringBuffer buff, Constraint constraint) throws RepositoryException {
+    private void addConstraint(StringBuffer buff, Constraint constraint) throws RepositoryException {
         if (constraint instanceof Or) {
             Or c = (Or) constraint;
             buff.append(" (");
-            addConstarint(buff, c.getConstraint1());
+            addConstraint(buff, c.getConstraint1());
             buff.append(" OR ");
-            addConstarint(buff, c.getConstraint2());
+            addConstraint(buff, c.getConstraint2());
             buff.append(") ");
         } else if (constraint instanceof And) {
             And c = (And) constraint;
             buff.append(" (");
-            addConstarint(buff, c.getConstraint1());
+            addConstraint(buff, c.getConstraint1());
             buff.append(" AND ");
-            addConstarint(buff, c.getConstraint2());
+            addConstraint(buff, c.getConstraint2());
             buff.append(") ");
         } else if (constraint instanceof Comparison) {
             Comparison c = (Comparison) constraint;
             buff.append(" (");
             try {
                 int pos = buff.length();
-                addOpperand(buff, c.getOperand1());
+                addOperand(buff, c.getOperand1());
                 String op1 = buff.substring(pos);
                 buff.setLength(pos);
 
                 pos = buff.length();
-                addOpperand(buff, c.getOperand2());
+                addOperand(buff, c.getOperand2());
                 String op2 = buff.substring(pos);
                 buff.setLength(pos);
 
@@ -141,7 +149,7 @@ public class QueryResolver {
         } else if (constraint instanceof Not) {
             Not c = (Not) constraint;
             buff.append(" NOT(");
-            addConstarint(buff, c.getConstraint());
+            addConstraint(buff, c.getConstraint());
             buff.append(") ");
         } else if (constraint instanceof ChildNode) {
             try {
@@ -164,12 +172,12 @@ public class QueryResolver {
         } else if (constraint instanceof FullTextSearch) {
             FullTextSearch c = (FullTextSearch) constraint;
             buff.append(" contains(");
-            addOpperand(buff, c.getFullTextSearchExpression());
+            addOperand(buff, c.getFullTextSearchExpression());
             buff.append(") ");
         }
     }
 
-    private void addOpperand(StringBuffer buff, DynamicOperand operand) throws RepositoryException {
+    private void addOperand(StringBuffer buff, DynamicOperand operand) throws RepositoryException {
         if (operand instanceof LowerCase) {
             throw new UnsupportedRepositoryOperationException("Unsupported operand type LowerCase");
         } else if (operand instanceof UpperCase) {
@@ -187,11 +195,11 @@ public class QueryResolver {
                 throw new NotMappedCmisProperty(o.getPropertyName());
             buff.append(propertyByJCR.getQueryName());
         } else if (operand instanceof FullTextSearchScore) {
-            buff.append(" score() ");
+            buff.append(" myscore ");
         }
     }
 
-    private void addOpperand(StringBuffer buff, StaticOperand operand) throws RepositoryException {
+    private void addOperand(StringBuffer buff, StaticOperand operand) throws RepositoryException {
         if (operand instanceof Literal) {
             Value val = ((Literal) operand).getLiteralValue();
             switch (val.getType()) {
