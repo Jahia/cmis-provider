@@ -67,6 +67,17 @@
         <developerConnection>scm:git:git@github.com:Jahia/cmis-external-provider.git</developerConnection>
     </scm>
 
+    <distributionManagement>
+      <repository>
+        <id>jahia-enterprise-releases</id>
+        <url>https://devtools.jahia.com/nexus/content/repositories/jahia-enterprise-releases</url>
+      </repository>
+      <snapshotRepository>
+        <id>jahia-enterprise-snapshots</id>
+        <url>https://devtools.jahia.com/nexus/content/repositories/jahia-enterprise-snapshots</url>
+      </snapshotRepository>
+    </distributionManagement>
+
     <repositories>
         <repository>
             <id>jahia-public</id>
