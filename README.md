@@ -145,7 +145,7 @@ For search testing JCR query tool can be used. JCR-SQL2 queries covering all imp
  Default configuration is ok.
 3. Deploy Jahia with Jahia CMIS module.
 4. Start Jahia.
-5. Go to content manager, select Remote - Mount - CMIS provider
+5. Go to Document manager, select Remote - Mount - CMIS provider
 6. Fill in the form with these entries. Configure port, depending on your tomcat config.
 ```
 repository id=A1
