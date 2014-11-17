@@ -51,7 +51,6 @@
         <groupId>org.jahia.modules</groupId>
         <version>7.0.0.1</version>
     </parent>
-    <groupId>org.jahia.modules</groupId>
     <artifactId>cmis-provider</artifactId>
     <name>Portal factory - CMIS provider</name>
     <version>1.0.1-SNAPSHOT</version>
