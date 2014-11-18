@@ -188,8 +188,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         String[] now = formatDate(new GregorianCalendar());
         properties.put(Constants.JCR_CREATED, now);
         properties.put(Constants.JCR_LASTMODIFIED, now);
-        ExternalData externalData = new ExternalData("-1", "/", typeMapping.getJcrName(), properties);
-        return externalData;
+        return new ExternalData("-1", "/", typeMapping.getJcrName(), properties);
     }
 
     private ExternalData getObject(CmisObject object, String path) {
@@ -224,7 +223,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     /**
      * Look for correspondent mapping for CmisObject
      *
-     * @param object
+     * @param object the CmisObject we want to retrieve a mapping for
      * @return mapping
      */
     private CmisTypeMapping getTypeMapping(CmisObject object) {
@@ -266,9 +265,8 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
     @Override
     public boolean itemExists(String path) {
-        CmisObject objectByPath = null;
         try {
-            objectByPath = getCmisSession().getObjectByPath(path);
+            getCmisSession().getObjectByPath(path);
             return true;
         } catch (CmisObjectNotFoundException e) {
             return false;
@@ -287,8 +285,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             // create session
             return factory.createSession(getConf().getRepositoryPropertiesMap());
         } catch (CmisBaseException e) {
-            CantConnectCmis cantConnectCmis = new CantConnectCmis(e);
-            throw cantConnectCmis;
+            throw new CantConnectCmis(e);
         }
     }
 
@@ -297,6 +294,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         try {
             getCmisSession().clear();
         } catch (CantConnectCmis cantConnectCmis) {
+            // nothing to do
         }
     }
 
