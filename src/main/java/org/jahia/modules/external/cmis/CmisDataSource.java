@@ -102,7 +102,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
     @Override
     public List<String> getChildren(String path) throws RepositoryException {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         try {
             if (!path.endsWith(JCR_CONTENT_SUFFIX)) {
                 CmisObject object = getCmisSession().getObjectByPath(path);
@@ -167,7 +167,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         if (jcrContentPath == null) {
             jcrContentPath = doc.getPaths().get(0) + JCR_CONTENT_SUFFIX;
         }
-        Map<String, String[]> properties = new HashMap<String, String[]>(1);
+        Map<String, String[]> properties = new HashMap<>(1);
         properties.put(Constants.JCR_MIMETYPE, new String[]{doc.getContentStreamMimeType()});
         ExternalData externalData = new ExternalData(doc.getId() + JCR_CONTENT_SUFFIX, jcrContentPath, Constants.NT_RESOURCE, properties);
 
@@ -177,14 +177,14 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     }
 
     private void prepareJCR_DATA(Document doc, ExternalData externalData) {
-        Map<String, Binary[]> binaryProperties = new HashMap<String, Binary[]>(1);
+        Map<String, Binary[]> binaryProperties = new HashMap<>(1);
         binaryProperties.put(Constants.JCR_DATA, new Binary[]{new CmisBinaryImpl(doc)});
         externalData.setBinaryProperties(binaryProperties);
     }
 
     private ExternalData createDummyMointPointData() {
         CmisTypeMapping typeMapping = getConf().getDefaultFolderType();
-        Map<String, String[]> properties = new HashMap<String, String[]>();
+        Map<String, String[]> properties = new HashMap<>();
         String[] now = formatDate(new GregorianCalendar());
         properties.put(Constants.JCR_CREATED, now);
         properties.put(Constants.JCR_LASTMODIFIED, now);
@@ -194,7 +194,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
     private ExternalData getObject(CmisObject object, String path) {
         CmisTypeMapping typeMapping = getTypeMapping(object);
-        Map<String, String[]> properties = new HashMap<String, String[]>();
+        Map<String, String[]> properties = new HashMap<>();
         if (object instanceof Document) {
             Document doc = (Document) object;
             if (path == null)
@@ -320,7 +320,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 file = file.move(getCmisSession().getObjectByPath(oldFolder), getCmisSession().getObjectByPath(newFolder));
             }
             if (!oldName.equals(newName)) {
-                Map<String, String> properties = new HashMap<String, String>();
+                Map<String, String> properties = new HashMap<>();
                 properties.put(PropertyIds.NAME, newName);
                 file.updateProperties(properties, true);
             }
@@ -365,7 +365,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 cmisType = conf.getDefaultFolderType();
             }
             String name = path.substring(path.lastIndexOf('/') + 1);
-            Map<String, Object> properties = new HashMap<String, Object>();
+            Map<String, Object> properties = new HashMap<>();
             try {
                 CmisObject folder = getCmisSession().getObjectByPath(path);
                 if (data.isNew())
@@ -393,7 +393,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 cmisType = conf.getDefaultDocumentType();
             }
             String name = path.substring(path.lastIndexOf('/') + 1);
-            Map<String, Object> properties = new HashMap<String, Object>();
+            Map<String, Object> properties = new HashMap<>();
             Document doc;
             try {
                 doc = (Document) getCmisSession().getObjectByPath(path);
@@ -511,7 +511,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 results = results.getPage((int) query.getLimit());
             if (query.getOffset() != 0)
                 results = results.skipTo(query.getOffset());
-            ArrayList<String> res = new ArrayList<String>();
+            ArrayList<String> res = new ArrayList<>();
             for (QueryResult hit : results) {
                 String path;
                 if (isFolder) {
