@@ -80,7 +80,6 @@ import java.util.*;
  */
 public class CmisDataSource implements ExternalDataSource, ExternalDataSource.Initializable, ExternalDataSource.Writable, ExternalDataSource.Searchable {
     private static final String DEFAULT_MIMETYPE = "binary/octet-stream";
-    ;
     private static final List<String> JCR_CONTENT_LIST = Arrays.asList(Constants.JCR_CONTENT);
     private static final String JCR_CONTENT_SUFFIX = "/" + Constants.JCR_CONTENT;
     private boolean firstConnectFailure = true;
