@@ -136,6 +136,35 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     }
 
     @Override
+    public List<ExternalData> getChildrenNodes(String path) throws RepositoryException {
+        List<ExternalData> list = Collections.emptyList();
+        try {
+            if (!path.endsWith(JCR_CONTENT_SUFFIX)) {
+                CmisObject object = getCmisSession().getObjectByPath(path);
+                if (object instanceof Document) {
+                    list = new ArrayList<>(1);
+                    list.add(getObjectContent((Document) object, null));
+                } else if (object instanceof Folder) {
+                    Folder folder = (Folder) object;
+                    OperationContext operationContext = getCmisSession().createOperationContext();
+                    operationContext.setMaxItemsPerPage(Integer.MAX_VALUE);
+
+                    ItemIterable<CmisObject> children = folder.getChildren(operationContext);
+                    list = new ArrayList<>((int) children.getTotalNumItems());
+                    for (CmisObject child : children) {
+                        list.add(getObject(child, folder.getPath() + "/" + child.getName()));
+                    }
+                }
+            }
+            return list;
+        } catch (CmisObjectNotFoundException e) {
+            throw new PathNotFoundException("Can't find cmis folder " + path, e);
+        } catch (CantConnectCmis e) {
+            return list;
+        }
+    }
+
+    @Override
     public ExternalData getItemByIdentifier(String identifier) throws ItemNotFoundException {
         try {
             if (identifier.endsWith(JCR_CONTENT_SUFFIX)) {
@@ -563,34 +592,5 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 throw ex;
             }
         return cmisSession;
-    }
-
-    @Override
-    public List<ExternalData> getChildrenNodes(String path) throws RepositoryException {
-        List<ExternalData> list = Collections.emptyList();
-        try {
-            if (!path.endsWith(JCR_CONTENT_SUFFIX)) {
-                CmisObject object = getCmisSession().getObjectByPath(path);
-                if (object instanceof Document) {
-                    list = new ArrayList<>(1);
-                    list.add(getObjectContent((Document) object, null));
-                } else if (object instanceof Folder) {
-                    Folder folder = (Folder) object;
-                    OperationContext operationContext = getCmisSession().createOperationContext();
-                    operationContext.setMaxItemsPerPage(Integer.MAX_VALUE);
-
-                    ItemIterable<CmisObject> children = folder.getChildren(operationContext);
-                    list = new ArrayList<>((int) children.getTotalNumItems());
-                    for (CmisObject child : children) {
-                        list.add(getObject(child, folder.getPath() + "/" + child.getName()));
-                    }
-                }
-            }
-            return list;
-        } catch (CmisObjectNotFoundException e) {
-            throw new PathNotFoundException("Can't find cmis folder " + path, e);
-        } catch (CantConnectCmis e) {
-            return list;
-        }
     }
 }
