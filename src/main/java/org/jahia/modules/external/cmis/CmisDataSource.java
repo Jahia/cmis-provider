@@ -142,8 +142,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             if (!path.endsWith(JCR_CONTENT_SUFFIX)) {
                 CmisObject object = getCmisSession().getObjectByPath(path);
                 if (object instanceof Document) {
-                    list = new ArrayList<>(1);
-                    list.add(getObjectContent((Document) object, null));
+                    return Collections.singletonList(getObjectContent((Document) object, null));
                 } else if (object instanceof Folder) {
                     Folder folder = (Folder) object;
                     OperationContext operationContext = getCmisSession().createOperationContext();
