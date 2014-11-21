@@ -152,6 +152,9 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                     list = new ArrayList<>((int) children.getTotalNumItems());
                     for (CmisObject child : children) {
                         list.add(getObject(child, folder.getPath() + "/" + child.getName()));
+                        if (child instanceof Document) {
+                            list.add(getObjectContent((Document) child, folder.getPath() + "/" + child.getName() + JCR_CONTENT_SUFFIX));
+                        }
                     }
                 }
             }
