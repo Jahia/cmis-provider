@@ -36,4 +36,8 @@
     - cmis:contentStreamFileName (string)
     - cmis:contentStreamId (string) protected
     - cmis:isPrivateWorkingCopy (string) protected
-    
+
+
+[cmis:cmisMountPointFactoryPage] >  jnt:content, jmix:siteComponent, mix:title, jmix:studioOnly, jmix:mountPointFactory
+
+[cmis:cmisPointFactoryForm] >  jnt:content, jmix:siteComponent, mix:title, jmix:studioOnly

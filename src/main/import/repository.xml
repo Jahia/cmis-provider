@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<content xmlns:j="http://www.jahia.org/jahia/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+    <modules jcr:primaryType="jnt:modules">
+        <cmis-provider j:dependencies="assets default external-provider"
+                     j:modulePriority="0"
+                     j:moduleType="system"
+                     j:title="Portal factory - CMIS provider"
+                     jcr:primaryType="jnt:module">
+                
+                <portlets jcr:primaryType="jnt:portletFolder"/>
+                <files jcr:primaryType="jnt:folder"/>
+                <contents jcr:primaryType="jnt:contentFolder">
+                    <cmis-factory j:mountPointType="cmis:cmisMountPoint"
+                          j:templateName="cmis-factory"
+                          jcr:primaryType="cmis:cmisMountPointFactoryPage">
+                        <j:translation_en jcr:language="en"
+                                 jcr:primaryType="jnt:translation"
+                                 jcr:title="cmis factory"/>
+                    </cmis-factory>
+                </contents>
+                <templates jcr:primaryType="jnt:templatesFolder">
+                    <files jcr:primaryType="jnt:folder"/>
+                    <contents jcr:primaryType="jnt:contentFolder"/>
+                    <base j:hiddenTemplate="false"
+                  j:view="serverSettings"
+                  jcr:primaryType="jnt:template">
+                        <j:translation_en jcr:language="en"
+                                 jcr:primaryType="jnt:translation"
+                                 jcr:title="base"/>
+                        <cmis-factory j:applyOn="cmis:cmisMountPointFactoryPage"
+                             j:defaultTemplate="false"
+                             j:hiddenTemplate="false"
+                             jcr:primaryType="jnt:contentTemplate">
+                            <j:translation_en jcr:language="en"
+                                    jcr:primaryType="jnt:translation"
+                                    jcr:title="cmis factory"/>
+                            <pagecontent jcr:primaryType="jnt:contentList">
+                                <cmis-factory-form jcr:primaryType="cmis:cmisPointFactoryForm">
+                                    <j:translation_en jcr:language="en"
+                                          jcr:primaryType="jnt:translation"
+                                          jcr:title="cmis factory form"/>
+                                </cmis-factory-form>
+                            </pagecontent>
+                        </cmis-factory>
+                    </base>
+                </templates>
+                
+            </cmis-provider>
+    </modules>
+</content>
