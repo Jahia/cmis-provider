@@ -44,7 +44,8 @@
 
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <artifactId>jahia-modules</artifactId>
@@ -63,15 +64,21 @@
         <developerConnection>scm:git:git@github.com:Jahia/cmis-provider.git</developerConnection>
     </scm>
 
+    <properties>
+        <jahia-depends>assets,external-provider</jahia-depends>
+        <jahia-module-type>system</jahia-module-type>
+        <export-package>org.jahia.modules.external.cmis</export-package>
+    </properties>
+
     <distributionManagement>
-      <repository>
-        <id>jahia-enterprise-releases</id>
-        <url>https://devtools.jahia.com/nexus/content/repositories/jahia-enterprise-releases</url>
-      </repository>
-      <snapshotRepository>
-        <id>jahia-enterprise-snapshots</id>
-        <url>https://devtools.jahia.com/nexus/content/repositories/jahia-enterprise-snapshots</url>
-      </snapshotRepository>
+        <repository>
+            <id>jahia-enterprise-releases</id>
+            <url>https://devtools.jahia.com/nexus/content/repositories/jahia-enterprise-releases</url>
+        </repository>
+        <snapshotRepository>
+            <id>jahia-enterprise-snapshots</id>
+            <url>https://devtools.jahia.com/nexus/content/repositories/jahia-enterprise-snapshots</url>
+        </snapshotRepository>
     </distributionManagement>
 
     <repositories>
@@ -97,8 +104,8 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-           <groupId>org.apache.chemistry.opencmis</groupId>
-           <artifactId>chemistry-opencmis-client-impl</artifactId>
+            <groupId>org.apache.chemistry.opencmis</groupId>
+            <artifactId>chemistry-opencmis-client-impl</artifactId>
             <version>0.12.0</version>
             <exclusions>
                 <exclusion>
@@ -120,33 +127,5 @@
             </exclusions>
         </dependency>
     </dependencies>
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <extensions>true</extensions>
-                <configuration>
-                    <instructions>
-                        <Jahia-Depends>assets,external-provider</Jahia-Depends>
-                        <Jahia-Module-Type>system</Jahia-Module-Type>
-                        <Export-Package>org.jahia.modules.external.cmis</Export-Package>
-                        <Embed-Dependency>*;scope=compile|runtime;inline=true</Embed-Dependency>
-                        <Import-Package>!com.sun.*,
-                            !javax.xml.messaging.*,
-                            !org.apache.cxf.*,
-                            javax.xml.stream.*,
-                            org.apache.http.*;resolution:=optional,
-                            org.jvnet.fastinfoset.*;resolution:=optional,
-                            org.relaxng.datatype.*;resolution:=optional,
-                            ${jahia.plugin.projectPackageImport},*</Import-Package>
-                        <Embed-Dependency>*;scope=compile|runtime</Embed-Dependency>
-                            <_removeheaders>
-                            ${jahia.modules.bundle.removeheaders},
-                        </_removeheaders>
-                    </instructions>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+
 </project>
