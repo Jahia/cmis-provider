@@ -68,6 +68,7 @@ import org.apache.chemistry.opencmis.commons.enums.BaseTypeId;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisBaseException;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisObjectNotFoundException;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ContentStreamImpl;
+import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.util.ISO8601;
 import org.jahia.api.Constants;
 import org.jahia.modules.external.ExternalData;
@@ -142,7 +143,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             if (!path.endsWith(JCR_CONTENT_SUFFIX)) {
                 CmisObject object = getCmisSession().getObjectByPath(path);
                 if (object instanceof Document) {
-                    return Collections.singletonList(getObjectContent((Document) object, null));
+                    return Collections.singletonList(getObjectContent((Document) object, path));
                 } else if (object instanceof Folder) {
                     Folder folder = (Folder) object;
                     OperationContext operationContext = getCmisSession().createOperationContext();
@@ -208,11 +209,15 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         }
         Map<String, String[]> properties = new HashMap<>(1);
         properties.put(Constants.JCR_MIMETYPE, new String[]{doc.getContentStreamMimeType()});
-        ExternalData externalData = new ExternalData(doc.getId() + JCR_CONTENT_SUFFIX, jcrContentPath, Constants.NT_RESOURCE, properties);
+        ExternalData externalData = new ExternalData(stripVersionFromId(doc.getId()) + JCR_CONTENT_SUFFIX, jcrContentPath, Constants.NT_RESOURCE, properties);
 
         prepareJCR_DATA(doc, externalData);
 
         return externalData;
+    }
+
+    private String stripVersionFromId(String id) {
+        return id.contains(";") ? StringUtils.substringBeforeLast(id, ";") : id;
     }
 
     private void prepareJCR_DATA(Document doc, ExternalData externalData) {
@@ -245,7 +250,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         properties.put(Constants.JCR_CREATED, formatDate(object.getCreationDate()));
         properties.put(Constants.JCR_LASTMODIFIED, formatDate(object.getLastModificationDate()));
         mapProperties(properties, object, typeMapping, 'r');
-        ExternalData externalData = new ExternalData(object.getId(), path, typeMapping.getJcrName(), properties);
+        ExternalData externalData = new ExternalData(stripVersionFromId(object.getId()), path, typeMapping.getJcrName(), properties);
         externalData.setMixin(typeMapping.getJcrMixins());
         if (object instanceof Document) {
             Document doc = (Document) object;
@@ -422,7 +427,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 properties.put(PropertyIds.NAME, name);
                 mapProperties(properties, data, cmisType, 'c');
                 Folder newFolder = parentFolder.createFolder(properties);
-                data.setId(newFolder.getId());
+                data.setId(stripVersionFromId(newFolder.getId()));
             }
         } else if (nodeType.isNodeType("jnt:file")) {
             CmisTypeMapping cmisType = conf.getTypeByJCR(jcrTypeName);
@@ -458,7 +463,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 ContentStream contentStream = new ContentStreamImpl(name, BigInteger.valueOf(0),
                         mimeType, stream);
                 Document newDocument = parentFolder.createDocument(properties, contentStream, null);
-                data.setId(newDocument.getId());
+                data.setId(stripVersionFromId(newDocument.getId()));
             }
         } else if (nodeType.isNodeType("nt:resource")) {
             //ignore
