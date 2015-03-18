@@ -151,9 +151,9 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                     ItemIterable<CmisObject> children = folder.getChildren(operationContext);
                     list = new ArrayList<>((int) children.getTotalNumItems());
                     for (CmisObject child : children) {
-                        list.add(getObject(child, folder.getPath() + "/" + child.getName()));
+                        list.add(getObject(child, (!folder.getPath().equals("/") ? folder.getPath() + "/" : "/") + child.getName()));
                         if (child instanceof Document) {
-                            list.add(getObjectContent((Document) child, folder.getPath() + "/" + child.getName() + JCR_CONTENT_SUFFIX));
+                            list.add(getObjectContent((Document) child, (!folder.getPath().equals("/") ? folder.getPath() + "/" : "/") + child.getName() + JCR_CONTENT_SUFFIX));
                         }
                     }
                 }
@@ -462,8 +462,6 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             }
         } else if (nodeType.isNodeType("nt:resource")) {
             //ignore
-        } else {
-            throw new RepositoryException("CMIS provider does not support " + jcrTypeName);
         }
     }
 
