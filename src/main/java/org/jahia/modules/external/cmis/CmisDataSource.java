@@ -62,6 +62,7 @@ import javax.jcr.RepositoryException;
 
 import org.apache.chemistry.opencmis.client.api.*;
 import org.apache.chemistry.opencmis.client.runtime.SessionFactoryImpl;
+import org.apache.chemistry.opencmis.client.util.FileUtils;
 import org.apache.chemistry.opencmis.commons.PropertyIds;
 import org.apache.chemistry.opencmis.commons.data.ContentStream;
 import org.apache.chemistry.opencmis.commons.enums.BaseTypeId;
@@ -381,8 +382,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     @Override
     public void removeItemByPath(String path) throws RepositoryException {
         try {
-            CmisObject object = getCmisSession().getObjectByPath(path);
-            object.delete();
+            FileUtils.delete(path, getCmisSession());
         } catch (CmisObjectNotFoundException e) {
             throw new PathNotFoundException("Path not found " + path);
         } catch (Exception e) {
