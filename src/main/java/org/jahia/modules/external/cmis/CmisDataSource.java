@@ -143,7 +143,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             if (!path.endsWith(JCR_CONTENT_SUFFIX)) {
                 CmisObject object = getCmisSession().getObjectByPath(path);
                 if (object instanceof Document) {
-                    return Collections.singletonList(getObjectContent((Document) object, path));
+                    return Collections.singletonList(getObjectContent((Document) object, path + JCR_CONTENT_SUFFIX));
                 } else if (object instanceof Folder) {
                     Folder folder = (Folder) object;
                     OperationContext operationContext = getCmisSession().createOperationContext();
@@ -170,13 +170,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     @Override
     public ExternalData getItemByIdentifier(String identifier) throws ItemNotFoundException {
         try {
-            if (identifier.endsWith(JCR_CONTENT_SUFFIX)) {
-                CmisObject object = getCmisSession().getObject(getCmisSession().createObjectId(removeContentSufix(identifier)));
-                return getObjectContent((Document) object, null);
-            } else {
-                CmisObject object = getCmisSession().getObject(getCmisSession().createObjectId(identifier));
-                return getObject(object, null);
-            }
+            return getItemByPath(identifier);
         } catch (Exception e) {
             throw new ItemNotFoundException("Can't find object by id " + identifier, e);
         }
@@ -204,26 +198,16 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     }
 
     private ExternalData getObjectContent(Document doc, String jcrContentPath) throws PathNotFoundException {
-        if (jcrContentPath == null) {
-            jcrContentPath = doc.getPaths().get(0) + JCR_CONTENT_SUFFIX;
-        }
+        doc = doc.getObjectOfLatestVersion(false);
         Map<String, String[]> properties = new HashMap<>(1);
         properties.put(Constants.JCR_MIMETYPE, new String[]{doc.getContentStreamMimeType()});
-        ExternalData externalData = new ExternalData(stripVersionFromId(doc.getId()) + JCR_CONTENT_SUFFIX, jcrContentPath, Constants.NT_RESOURCE, properties);
+        ExternalData externalData = new ExternalData(jcrContentPath, jcrContentPath, Constants.JAHIANT_RESOURCE, properties);
 
-        prepareJCR_DATA(doc, externalData);
-
-        return externalData;
-    }
-
-    private String stripVersionFromId(String id) {
-        return id.contains(";") ? StringUtils.substringBeforeLast(id, ";") : id;
-    }
-
-    private void prepareJCR_DATA(Document doc, ExternalData externalData) {
         Map<String, Binary[]> binaryProperties = new HashMap<>(1);
         binaryProperties.put(Constants.JCR_DATA, new Binary[]{new CmisBinaryImpl(doc)});
         externalData.setBinaryProperties(binaryProperties);
+
+        return externalData;
     }
 
     private ExternalData createDummyMointPointData() {
@@ -235,27 +219,17 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         return new ExternalData("-1", "/", typeMapping.getJcrName(), properties);
     }
 
-    private ExternalData getObject(CmisObject object, String path) {
+    private ExternalData getObject(CmisObject object, String path) throws CantConnectCmis {
+        if(object instanceof Document){
+            object = ((Document) object).getObjectOfLatestVersion(false);
+        }
         CmisTypeMapping typeMapping = getTypeMapping(object);
         Map<String, String[]> properties = new HashMap<>();
-        if (object instanceof Document) {
-            Document doc = (Document) object;
-            if (path == null)
-                path = doc.getPaths().get(0);
-        } else if (object instanceof Folder) {
-            Folder folder = (Folder) object;
-            if (path == null)
-                path = folder.getPath();
-        }
         properties.put(Constants.JCR_CREATED, formatDate(object.getCreationDate()));
         properties.put(Constants.JCR_LASTMODIFIED, formatDate(object.getLastModificationDate()));
         mapProperties(properties, object, typeMapping, 'r');
-        ExternalData externalData = new ExternalData(stripVersionFromId(object.getId()), path, typeMapping.getJcrName(), properties);
+        ExternalData externalData = new ExternalData(path, path, typeMapping.getJcrName(), properties);
         externalData.setMixin(typeMapping.getJcrMixins());
-        if (object instanceof Document) {
-            Document doc = (Document) object;
-            prepareJCR_DATA(doc, externalData);
-        }
         return externalData;
     }
 
@@ -426,8 +400,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 properties.put(PropertyIds.OBJECT_TYPE_ID, cmisType.getCmisName());
                 properties.put(PropertyIds.NAME, name);
                 mapProperties(properties, data, cmisType, 'c');
-                Folder newFolder = parentFolder.createFolder(properties);
-                data.setId(stripVersionFromId(newFolder.getId()));
+                parentFolder.createFolder(properties);
             }
         } else if (nodeType.isNodeType("jnt:file")) {
             CmisTypeMapping cmisType = conf.getTypeByJCR(jcrTypeName);
@@ -438,7 +411,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             Map<String, Object> properties = new HashMap<>();
             Document doc;
             try {
-                doc = (Document) getCmisSession().getObjectByPath(path);
+                doc = ((Document) getCmisSession().getObjectByPath(path)).getObjectOfLatestVersion(false);
                 if (data.isNew())
                     throw new RepositoryException("Сan't create node '" + path + "' already exists.");
                 mapProperties(properties, data, cmisType, 'w');
@@ -462,8 +435,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 InputStream stream = new ByteArrayInputStream(new byte[0]);
                 ContentStream contentStream = new ContentStreamImpl(name, BigInteger.valueOf(0),
                         mimeType, stream);
-                Document newDocument = parentFolder.createDocument(properties, contentStream, null);
-                data.setId(stripVersionFromId(newDocument.getId()));
+                parentFolder.createDocument(properties, contentStream, null);
             }
         } else if (nodeType.isNodeType("nt:resource")) {
             //ignore
