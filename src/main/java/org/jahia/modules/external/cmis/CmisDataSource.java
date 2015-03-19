@@ -170,7 +170,13 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     @Override
     public ExternalData getItemByIdentifier(String identifier) throws ItemNotFoundException {
         try {
-            return getItemByPath(identifier);
+            if (identifier.endsWith(JCR_CONTENT_SUFFIX)) {
+                CmisObject object = getCmisSession().getObject(getCmisSession().createObjectId(removeContentSufix(identifier)));
+                return getObjectContent((Document) object, null);
+            } else {
+                CmisObject object = getCmisSession().getObject(getCmisSession().createObjectId(identifier));
+                return getObject(object, null);
+            }
         } catch (Exception e) {
             throw new ItemNotFoundException("Can't find object by id " + identifier, e);
         }
@@ -199,15 +205,26 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
     private ExternalData getObjectContent(Document doc, String jcrContentPath) throws PathNotFoundException {
         doc = doc.getObjectOfLatestVersion(false);
+        if (jcrContentPath == null) {
+            if(doc.getPaths().isEmpty()){
+                throw new PathNotFoundException("No path found for CMIS document: " + doc.getId());
+            } else {
+                jcrContentPath = doc.getPaths().get(0) + JCR_CONTENT_SUFFIX;
+            }
+        }
         Map<String, String[]> properties = new HashMap<>(1);
         properties.put(Constants.JCR_MIMETYPE, new String[]{doc.getContentStreamMimeType()});
-        ExternalData externalData = new ExternalData(jcrContentPath, jcrContentPath, Constants.JAHIANT_RESOURCE, properties);
+        ExternalData externalData = new ExternalData(stripVersionFromId(doc.getId()) + JCR_CONTENT_SUFFIX, jcrContentPath, Constants.NT_RESOURCE, properties);
 
         Map<String, Binary[]> binaryProperties = new HashMap<>(1);
         binaryProperties.put(Constants.JCR_DATA, new Binary[]{new CmisBinaryImpl(doc)});
         externalData.setBinaryProperties(binaryProperties);
 
         return externalData;
+    }
+
+    private String stripVersionFromId(String id) {
+        return id.contains(";") ? StringUtils.substringBeforeLast(id, ";") : id;
     }
 
     private ExternalData createDummyMointPointData() {
@@ -219,16 +236,27 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         return new ExternalData("-1", "/", typeMapping.getJcrName(), properties);
     }
 
-    private ExternalData getObject(CmisObject object, String path) throws CantConnectCmis {
-        if(object instanceof Document){
-            object = ((Document) object).getObjectOfLatestVersion(false);
-        }
+    private ExternalData getObject(CmisObject object, String path) throws PathNotFoundException {
         CmisTypeMapping typeMapping = getTypeMapping(object);
         Map<String, String[]> properties = new HashMap<>();
+        if (object instanceof Document) {
+            Document doc = ((Document) object).getObjectOfLatestVersion(false);
+            if (path == null) {
+                if(doc.getPaths().isEmpty()){
+                    throw new PathNotFoundException("No path found for CMIS document: " + doc.getId());
+                } else {
+                    path = doc.getPaths().get(0);
+                }
+            }
+        } else if (object instanceof Folder) {
+            Folder folder = (Folder) object;
+            if (path == null)
+                path = folder.getPath();
+        }
         properties.put(Constants.JCR_CREATED, formatDate(object.getCreationDate()));
         properties.put(Constants.JCR_LASTMODIFIED, formatDate(object.getLastModificationDate()));
         mapProperties(properties, object, typeMapping, 'r');
-        ExternalData externalData = new ExternalData(path, path, typeMapping.getJcrName(), properties);
+        ExternalData externalData = new ExternalData(stripVersionFromId(object.getId()), path, typeMapping.getJcrName(), properties);
         externalData.setMixin(typeMapping.getJcrMixins());
         return externalData;
     }
@@ -400,7 +428,9 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 properties.put(PropertyIds.OBJECT_TYPE_ID, cmisType.getCmisName());
                 properties.put(PropertyIds.NAME, name);
                 mapProperties(properties, data, cmisType, 'c');
-                parentFolder.createFolder(properties);
+                Folder newFolder = parentFolder.createFolder(properties);
+                // change externalData id since it's generate by a parent call and can be inconsistent with CMIS provider ids, we can override it
+                data.setId(stripVersionFromId(newFolder.getId()));
             }
         } else if (nodeType.isNodeType("jnt:file")) {
             CmisTypeMapping cmisType = conf.getTypeByJCR(jcrTypeName);
@@ -435,7 +465,9 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 InputStream stream = new ByteArrayInputStream(new byte[0]);
                 ContentStream contentStream = new ContentStreamImpl(name, BigInteger.valueOf(0),
                         mimeType, stream);
-                parentFolder.createDocument(properties, contentStream, null);
+                Document newDocument = parentFolder.createDocument(properties, contentStream, null);
+                // change externalData id since it's generate by a parent call and can be inconsistent with CMIS provider ids, we can override it
+                data.setId(stripVersionFromId(newDocument.getId()));
             }
         } else if (nodeType.isNodeType("nt:resource")) {
             //ignore
