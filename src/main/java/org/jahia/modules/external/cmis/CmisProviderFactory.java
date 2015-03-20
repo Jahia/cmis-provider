@@ -43,10 +43,8 @@
  */
 package org.jahia.modules.external.cmis;
 
-import org.jahia.data.templates.JahiaTemplatesPackage;
 import org.jahia.exceptions.JahiaInitializationException;
 import org.jahia.modules.external.ExternalContentStoreProvider;
-import org.jahia.registries.ServicesRegistry;
 import org.jahia.security.license.LicenseCheckException;
 import org.jahia.security.license.LicenseCheckerService;
 import org.jahia.services.SpringContextSingleton;
@@ -54,13 +52,13 @@ import org.jahia.services.content.JCRNodeWrapper;
 import org.jahia.services.content.JCRSessionFactory;
 import org.jahia.services.content.JCRStoreProvider;
 import org.jahia.services.content.ProviderFactory;
-import org.jahia.services.templates.JahiaModuleAware;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import javax.jcr.RepositoryException;
+import java.util.Arrays;
 
 public class CmisProviderFactory implements ProviderFactory, ApplicationContextAware, InitializingBean {
     private ApplicationContext applicationContext;
@@ -87,6 +85,8 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
         dataSource.start();
 
         provider.setDataSource(dataSource);
+        provider.setExtendableTypes(Arrays.asList("jnt:file", "jnt:folder"));
+        provider.setOverridableItems(Arrays.asList("jmix:description.*", "jmix:i18n.*"));
         provider.setDynamicallyMounted(true);
         provider.setSessionFactory(JCRSessionFactory.getInstance());
         try {
