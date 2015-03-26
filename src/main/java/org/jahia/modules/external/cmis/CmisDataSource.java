@@ -201,8 +201,15 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     private ExternalData getObject(CmisObject object, String path) throws PathNotFoundException {
         CmisTypeMapping typeMapping = getTypeMapping(object);
         Map<String, String[]> properties = new HashMap<String, String[]>();
+        String additionalMixin = null;
         if (object instanceof Document) {
             Document doc = ((Document) object).getObjectOfLatestVersion(false);
+
+            // set image mixin if mymetype match
+            if (doc.getContentStreamMimeType() != null && doc.getContentStreamMimeType().matches("image/(.*)")){
+                additionalMixin = Constants.JAHIAMIX_IMAGE  ;
+            }
+
             if (path == null) {
                 if(doc.getPaths().isEmpty()){
                     throw new PathNotFoundException("No path found for CMIS document: " + doc.getId());
@@ -219,7 +226,11 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         properties.put(Constants.JCR_LASTMODIFIED, formatDate(object.getLastModificationDate()));
         mapProperties(properties, object, typeMapping, 'r');
         ExternalData externalData = new ExternalData(stripVersionFromId(object.getId()), path, typeMapping.getJcrName(), properties);
-        externalData.setMixin(typeMapping.getJcrMixins());
+        Set<String> mixins = new HashSet<String>(typeMapping.getJcrMixins());
+        if(additionalMixin != null) {
+            mixins.add(additionalMixin);
+        }
+        externalData.setMixin(new ArrayList<String>(mixins));
         return externalData;
     }
 
