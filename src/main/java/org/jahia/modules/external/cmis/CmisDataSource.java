@@ -79,7 +79,7 @@ import org.slf4j.LoggerFactory;
  * Date: 1/20/14
  * Time: 7:35 PM
  */
-public class CmisDataSource implements ExternalDataSource, ExternalDataSource.Initializable, ExternalDataSource.Writable, ExternalDataSource.Searchable, ExternalDataSource.CanLoadChildrenInBatch {
+public class CmisDataSource implements ExternalDataSource, ExternalDataSource.Initializable, ExternalDataSource.Writable, ExternalDataSource.Searchable, ExternalDataSource.CanLoadChildrenInBatch, ExternalDataSource.CanCheckAvailability {
     private static final String DEFAULT_MIMETYPE = "binary/octet-stream";
     private static final List<String> JCR_CONTENT_LIST = Arrays.asList(Constants.JCR_CONTENT);
     private static final String JCR_CONTENT_SUFFIX = "/" + Constants.JCR_CONTENT;
@@ -603,5 +603,15 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 throw ex;
             }
         return cmisSession;
+    }
+
+    @Override
+    public boolean isAvailable() throws RepositoryException {
+        try {
+            createSession();
+        } catch (CantConnectCmis e) {
+            return false;
+        }
+        return true;
     }
 }

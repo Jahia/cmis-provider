@@ -47,14 +47,19 @@ import org.jahia.modules.external.admin.mount.AbstractMountPointFactoryHandler;
 import org.jahia.services.content.JCRCallback;
 import org.jahia.services.content.JCRSessionWrapper;
 import org.jahia.services.content.JCRTemplate;
+import org.jahia.utils.i18n.Messages;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.binding.message.MessageBuilder;
+import org.springframework.binding.message.MessageContext;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.webflow.execution.RequestContext;
 
 import javax.jcr.RepositoryException;
+import java.util.Locale;
 
 /**
  * Created by kevan on 25/11/14.
@@ -62,6 +67,7 @@ import javax.jcr.RepositoryException;
 public class CMISMountPointFactoryHandler extends AbstractMountPointFactoryHandler<CMISMountPointFactory>{
     private static final long serialVersionUID = -1825547537625217141L;
     private static final Logger logger = LoggerFactory.getLogger(CMISMountPointFactoryHandler.class);
+    private static final String BUNDLE = "resources.cmis-provider";
 
     private CMISMountPointFactory cmisMountPointFactory;
 
@@ -95,11 +101,20 @@ public class CMISMountPointFactoryHandler extends AbstractMountPointFactoryHandl
         return result.toString();
     }
 
-    public Boolean save() {
+    public Boolean save(MessageContext messageContext) {
+        Locale locale = LocaleContextHolder.getLocale();
         try {
-            return super.save(cmisMountPointFactory);
+            boolean available = super.save(cmisMountPointFactory);
+            if(available) {
+                return true;
+            } else {
+                MessageBuilder messageBuilder = new MessageBuilder().warning().defaultText(Messages.get(BUNDLE, "serverSettings.cmisMountPointFactory.save.unavailable", locale));
+                messageContext.addMessage(messageBuilder.build());
+            }
         } catch (RepositoryException e) {
             logger.error("Error saving mount point " + cmisMountPointFactory.getName(), e);
+            MessageBuilder messageBuilder = new MessageBuilder().error().defaultText(Messages.get(BUNDLE, "serverSettings.cmisMountPointFactory.save.error", locale));
+            messageContext.addMessage(messageBuilder.build());
         }
         return false;
     }
