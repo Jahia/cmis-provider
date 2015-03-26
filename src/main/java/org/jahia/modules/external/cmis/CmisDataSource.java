@@ -43,24 +43,18 @@
  */
 package org.jahia.modules.external.cmis;
 
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import javax.jcr.Binary;
-import javax.jcr.ItemNotFoundException;
-import javax.jcr.PathNotFoundException;
-import javax.jcr.RepositoryException;
+import java.util.*;
+import javax.imageio.ImageIO;
+import javax.jcr.*;
 
 import org.apache.chemistry.opencmis.client.api.*;
+import org.apache.chemistry.opencmis.client.api.Property;
+import org.apache.chemistry.opencmis.client.api.Session;
 import org.apache.chemistry.opencmis.client.runtime.SessionFactoryImpl;
 import org.apache.chemistry.opencmis.client.util.FileUtils;
 import org.apache.chemistry.opencmis.commons.PropertyIds;
@@ -69,6 +63,7 @@ import org.apache.chemistry.opencmis.commons.enums.BaseTypeId;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisBaseException;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisObjectNotFoundException;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ContentStreamImpl;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.util.ISO8601;
 import org.jahia.api.Constants;
@@ -76,8 +71,11 @@ import org.jahia.modules.external.ExternalData;
 import org.jahia.modules.external.ExternalDataSource;
 import org.jahia.modules.external.ExternalQuery;
 import org.jahia.services.content.JCRContentUtils;
+import org.jahia.services.content.JCRNodeWrapper;
 import org.jahia.services.content.nodetypes.ExtendedNodeType;
 import org.jahia.services.content.nodetypes.NodeTypeRegistry;
+import org.jahia.services.image.BufferImage;
+import org.jahia.services.image.Image;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -240,8 +238,15 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     private ExternalData getObject(CmisObject object, String path) throws PathNotFoundException {
         CmisTypeMapping typeMapping = getTypeMapping(object);
         Map<String, String[]> properties = new HashMap<>();
+        String additionalMixin = null;
         if (object instanceof Document) {
             Document doc = ((Document) object).getObjectOfLatestVersion(false);
+
+            // set image mixin if mymetype match
+            if (doc.getContentStreamMimeType() != null && doc.getContentStreamMimeType().matches("image/(.*)")){
+                additionalMixin = Constants.JAHIAMIX_IMAGE  ;
+            }
+
             if (path == null) {
                 if(doc.getPaths().isEmpty()){
                     throw new PathNotFoundException("No path found for CMIS document: " + doc.getId());
@@ -258,7 +263,11 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         properties.put(Constants.JCR_LASTMODIFIED, formatDate(object.getLastModificationDate()));
         mapProperties(properties, object, typeMapping, 'r');
         ExternalData externalData = new ExternalData(stripVersionFromId(object.getId()), path, typeMapping.getJcrName(), properties);
-        externalData.setMixin(typeMapping.getJcrMixins());
+        Set<String> mixins = new HashSet<>(typeMapping.getJcrMixins());
+        if(additionalMixin != null) {
+            mixins.add(additionalMixin);
+        }
+        externalData.setMixin(new ArrayList<String>(mixins));
         return externalData;
     }
 
