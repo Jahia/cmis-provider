@@ -83,10 +83,9 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
         dataSource.setConf(conf);
 
         dataSource.start();
-
         provider.setDataSource(dataSource);
-        provider.setExtendableTypes(Arrays.asList("jnt:file", "jnt:folder"));
         provider.setOverridableItems(Arrays.asList("jmix:description.*", "jmix:i18n.*"));
+        provider.setNonExtendableMixins(Arrays.asList("cmismix:base", "cmismix:folder", "cmismix:document", "jmix:image"));
         provider.setDynamicallyMounted(true);
         provider.setSessionFactory(JCRSessionFactory.getInstance());
         try {
