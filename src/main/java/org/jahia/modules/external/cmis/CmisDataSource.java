@@ -204,6 +204,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         String additionalMixin = null;
         if (object instanceof Document) {
             Document doc = ((Document) object).getObjectOfLatestVersion(false);
+            object = doc;
 
             // set image mixin if mymetype match
             if (doc.getContentStreamMimeType() != null && doc.getContentStreamMimeType().matches("image/(.*)")){
@@ -417,8 +418,9 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 if (data.isNew())
                     throw new RepositoryException("Сan't create node '" + path + "' already exists.");
                 mapProperties(properties, data, cmisType, 'w');
-                if (!properties.isEmpty())
-                    doc.updateProperties(properties, true);
+                if (!properties.isEmpty()) {
+                    doc.updateProperties(properties);
+                }
             } catch (CmisObjectNotFoundException e) { // Not found - create
                 if (!data.isNew())
                     throw new PathNotFoundException("Path not found " + path + " Can't update node.");
