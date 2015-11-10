@@ -68,7 +68,9 @@ public class QueryResolver {
     */
     private static final Logger log = LoggerFactory.getLogger(CmisDataSource.class);
 
-    private final String FALSE = "(cmis:name='')";  // USED as False in sql
+    private final StringBuffer TRUE = new StringBuffer("true");
+    private final StringBuffer FALSE = new StringBuffer("false");
+
     CmisDataSource dataSource;
     ExternalQuery query;
     CmisConfiguration conf;
@@ -104,8 +106,13 @@ public class QueryResolver {
 //        if (selector.getSelectorName()!=null && !selector.getSelectorName().isEmpty())
 //            buff.append(" as ").append(selector.getSelectorName());
         if (query.getConstraint() != null) {
-            buff.append(" WHERE ");
-            addConstraint(buff, query.getConstraint());
+            StringBuffer buffer = addConstraint(query.getConstraint());
+            if (buffer == FALSE) {
+                return null;
+            } else if (buffer != TRUE) {
+                buff.append(" WHERE ");
+                buff.append(buffer);
+            }
         }
         if (query.getOrderings() != null) {
             boolean isFirst = true;
@@ -138,20 +145,43 @@ public class QueryResolver {
     }
 
 
-    private void addConstraint(StringBuffer buff, Constraint constraint) throws RepositoryException {
+    private StringBuffer addConstraint(Constraint constraint) throws RepositoryException {
+        StringBuffer buff = new StringBuffer();
         if (constraint instanceof Or) {
             Or c = (Or) constraint;
+            StringBuffer constraint1 = addConstraint(c.getConstraint1());
+            StringBuffer constraint2 = addConstraint(c.getConstraint2());
+            if (constraint1 == TRUE || constraint2 == TRUE) {
+                return TRUE;
+            }
+            if (constraint1 == FALSE) {
+                return constraint2;
+            }
+            if (constraint2 == FALSE) {
+                return constraint1;
+            }
             buff.append(" (");
-            addConstraint(buff, c.getConstraint1());
+            buff.append(constraint1);
             buff.append(" OR ");
-            addConstraint(buff, c.getConstraint2());
+            buff.append(constraint2);
             buff.append(") ");
         } else if (constraint instanceof And) {
             And c = (And) constraint;
+            StringBuffer constraint1 = addConstraint(c.getConstraint1());
+            StringBuffer constraint2 = addConstraint(c.getConstraint2());
+            if (constraint1 == FALSE || constraint2 == FALSE) {
+                return FALSE;
+            }
+            if (constraint1 == TRUE) {
+                return constraint2;
+            }
+            if (constraint2 == TRUE) {
+                return constraint1;
+            }
             buff.append(" (");
-            addConstraint(buff, c.getConstraint1());
+            buff.append(constraint1);
             buff.append(" AND ");
-            addConstraint(buff, c.getConstraint2());
+            buff.append(constraint2);
             buff.append(") ");
         } else if (constraint instanceof Comparison) {
             Comparison c = (Comparison) constraint;
@@ -170,14 +200,14 @@ public class QueryResolver {
                 Operator operator = Operator.getOperatorByName(c.getOperator());
                 buff.append(operator.formatSql(op1, op2));
             } catch (NotMappedCmisProperty e) {
-                buff.append(FALSE);  // FALSE anyway
+                return FALSE;
             }
             buff.append(") ");
         } else if (constraint instanceof PropertyExistence) {
             PropertyExistence c = (PropertyExistence) constraint;
             CmisPropertyMapping propertyMapping = cmisType.getPropertyByJCR(c.getPropertyName());
             if (propertyMapping == null)
-                buff.append(FALSE);  // FALSE anyway
+                return FALSE;
             else
                 buff.append(" (").append(propertyMapping.getQueryName()).append(" IS NOT NULL) ");
         } else if (constraint instanceof SameNode) {
@@ -187,12 +217,19 @@ public class QueryResolver {
                 CmisObject object = dataSource.getCmisSession().getObjectByPath(path);
                 buff.append(" (cmis:objectId='").append(object.getId()).append("') ");
             } catch (CmisObjectNotFoundException e) {
-                buff.append(FALSE);  // FALSE anyway
+                return FALSE;
             }
         } else if (constraint instanceof Not) {
             Not c = (Not) constraint;
+            StringBuffer constraint1 = addConstraint(c.getConstraint());
+            if (constraint1 == FALSE) {
+                return TRUE;
+            }
+            if (constraint1 == TRUE) {
+                return FALSE;
+            }
             buff.append(" NOT(");
-            addConstraint(buff, c.getConstraint());
+            buff.append(constraint1);
             buff.append(") ");
         } else if (constraint instanceof ChildNode) {
             try {
@@ -201,7 +238,7 @@ public class QueryResolver {
                 CmisObject object = dataSource.getCmisSession().getObjectByPath(parentPath);
                 buff.append(" IN_FOLDER('").append(object.getId()).append("') ");
             } catch (CmisObjectNotFoundException e) {
-                buff.append(FALSE);  // FALSE anyway
+                return FALSE;
             }
         } else if (constraint instanceof DescendantNode) {
             try {
@@ -210,7 +247,7 @@ public class QueryResolver {
                 CmisObject object = dataSource.getCmisSession().getObjectByPath(ancestorPath);
                 buff.append(" IN_TREE('").append(object.getId()).append("') ");
             } catch (CmisObjectNotFoundException e) {
-                buff.append(FALSE);  // FALSE anyway
+                return FALSE;
             }
         } else if (constraint instanceof FullTextSearch) {
             FullTextSearch c = (FullTextSearch) constraint;
@@ -218,6 +255,7 @@ public class QueryResolver {
             addOperand(buff, c.getFullTextSearchExpression());
             buff.append(") ");
         }
+        return buff;
     }
 
     private void addOperand(StringBuffer buff, DynamicOperand operand) throws RepositoryException {
