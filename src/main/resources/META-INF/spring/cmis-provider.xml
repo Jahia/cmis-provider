@@ -123,4 +123,6 @@
 
     <bean id="cmisProviderFactory" class="org.jahia.modules.external.cmis.CmisProviderFactory"/>
 
+    <bean id="alfrescoCmisProviderFactory" class="org.jahia.modules.external.cmis.AlfrescoCmisProviderFactory"/>
+
 </beans>

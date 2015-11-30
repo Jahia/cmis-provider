@@ -9,6 +9,13 @@
     - password (string)
     - url (string)
 
+[jnt:alfrescoCmisMountPoint] > jnt:mountPoint
+ - j:url (string) nofulltext
+ - j:rootUsername (string) nofulltext
+ - j:rootPassword (string) nofulltext
+ - j:repositoryId (string) nofulltext
+
+
 [cmismix:base] mixin
     - cmis:objectId  (string) protected
     - cmis:objectTypeId  (string) protected

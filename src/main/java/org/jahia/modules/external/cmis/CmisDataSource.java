@@ -55,7 +55,9 @@ import org.apache.chemistry.opencmis.client.api.Session;
 import org.apache.chemistry.opencmis.client.runtime.SessionFactoryImpl;
 import org.apache.chemistry.opencmis.client.util.FileUtils;
 import org.apache.chemistry.opencmis.commons.PropertyIds;
+import org.apache.chemistry.opencmis.commons.data.AllowableActions;
 import org.apache.chemistry.opencmis.commons.data.ContentStream;
+import org.apache.chemistry.opencmis.commons.enums.Action;
 import org.apache.chemistry.opencmis.commons.enums.BaseTypeId;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisBaseException;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisObjectNotFoundException;
@@ -72,6 +74,11 @@ import org.jahia.services.content.nodetypes.NodeTypeRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static javax.jcr.security.Privilege.*;
+import static javax.jcr.security.Privilege.JCR_REMOVE_CHILD_NODES;
+import static org.jahia.api.Constants.EDIT_WORKSPACE;
+import static org.jahia.api.Constants.LIVE_WORKSPACE;
+
 /**
  * ExternalDataSource implementation for CMIS
  * full support for write and search
@@ -79,7 +86,7 @@ import org.slf4j.LoggerFactory;
  * Date: 1/20/14
  * Time: 7:35 PM
  */
-public class CmisDataSource implements ExternalDataSource, ExternalDataSource.Initializable, ExternalDataSource.Writable, ExternalDataSource.Searchable, ExternalDataSource.CanLoadChildrenInBatch, ExternalDataSource.CanCheckAvailability {
+public class CmisDataSource implements ExternalDataSource, ExternalDataSource.Initializable, ExternalDataSource.Writable, ExternalDataSource.Searchable, ExternalDataSource.CanLoadChildrenInBatch, ExternalDataSource.CanCheckAvailability, ExternalDataSource.AccessControllable {
     private static final String DEFAULT_MIMETYPE = "binary/octet-stream";
     private static final List<String> JCR_CONTENT_LIST = Arrays.asList(Constants.JCR_CONTENT);
     private static final String JCR_CONTENT_SUFFIX = "/" + Constants.JCR_CONTENT;
@@ -616,4 +623,39 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         }
         return true;
     }
+
+    @Override
+    public String[] getPrivilegesNames(String username, String path) {
+        Set<String> privileges = new HashSet<>();
+
+        try {
+            AllowableActions allowable = getCmisSession().getObjectByPath(path).getAllowableActions();
+            for (Action action : allowable.getAllowableActions()) {
+                switch (action) {
+                    case CAN_GET_FOLDER_TREE:
+                    case CAN_GET_PROPERTIES:
+                        privileges.add(JCR_READ + "_" + EDIT_WORKSPACE);
+                        privileges.add(JCR_READ + "_" + LIVE_WORKSPACE);
+                        break;
+                    case CAN_UPDATE_PROPERTIES:
+                    case CAN_SET_CONTENT_STREAM:
+                    case CAN_CREATE_FOLDER:
+                    case CAN_CREATE_DOCUMENT:
+                    case CAN_ADD_OBJECT_TO_FOLDER:
+                        privileges.add(JCR_WRITE + "_" + EDIT_WORKSPACE);
+                        privileges.add(JCR_WRITE + "_" + LIVE_WORKSPACE);
+                        break;
+                    case CAN_DELETE_TREE:
+                        privileges.add(JCR_REMOVE_CHILD_NODES + "_" + EDIT_WORKSPACE);
+                        privileges.add(JCR_REMOVE_CHILD_NODES + "_" + LIVE_WORKSPACE);
+                        break;
+                }
+            }
+        } catch (CantConnectCmis cantConnectCmis) {
+            log.error(cantConnectCmis.getMessage(), cantConnectCmis);
+        }
+        return privileges.toArray(new String[privileges.size()]);
+    }
+
+
 }
