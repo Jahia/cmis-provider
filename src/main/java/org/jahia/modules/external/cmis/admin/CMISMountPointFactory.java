@@ -27,6 +27,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 import org.jahia.modules.external.admin.mount.AbstractMountPointFactory;
 import org.jahia.modules.external.admin.mount.validator.LocalJCRFolder;
 import org.jahia.services.content.JCRNodeWrapper;
+import org.jahia.services.content.decorator.JCRMountPointNode;
 
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
@@ -68,11 +69,13 @@ public class CMISMountPointFactory extends AbstractMountPointFactory{
     }
 
     @Override
-    public void setProperties(JCRNodeWrapper mountNode) throws RepositoryException {
+    public void setProperties(JCRNodeWrapper node) throws RepositoryException {
+        JCRMountPointNode mountNode = (JCRMountPointNode) node;
         mountNode.setProperty(REPOSITORY_ID, repositoryId);
         mountNode.setProperty(USER, user);
         mountNode.setProperty(PASSWORD, password);
         mountNode.setProperty(URL, url);
+        mountNode.setProtectedPropertyNames(new String[]{PASSWORD});
     }
 
     @Override

@@ -6,7 +6,7 @@
 [cmis:cmisMountPoint] > jnt:mountPoint
     - repositoryId (string)
     - user (string)
-    - password (string)
+    - password (string) hidden
     - url (string)
 
 [cmismix:base] mixin
