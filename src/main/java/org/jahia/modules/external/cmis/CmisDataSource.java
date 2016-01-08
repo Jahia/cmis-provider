@@ -32,6 +32,7 @@ import javax.jcr.*;
 import org.apache.chemistry.opencmis.client.api.*;
 import org.apache.chemistry.opencmis.client.api.Property;
 import org.apache.chemistry.opencmis.client.api.Session;
+import org.apache.chemistry.opencmis.client.bindings.spi.atompub.ObjectServiceImpl;
 import org.apache.chemistry.opencmis.client.runtime.SessionFactoryImpl;
 import org.apache.chemistry.opencmis.client.util.FileUtils;
 import org.apache.chemistry.opencmis.commons.PropertyIds;
@@ -53,13 +54,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * ExternalDataSource implementation for CMIS
- * full support for write and search
- * Created by: Boris
- * Date: 1/20/14
- * Time: 7:35 PM
+ * ExternalDataSource implementation for CMIS full support for write and search Created by: Boris Date: 1/20/14 Time: 7:35 PM
  */
 public class CmisDataSource implements ExternalDataSource, ExternalDataSource.Initializable, ExternalDataSource.Writable, ExternalDataSource.Searchable, ExternalDataSource.CanLoadChildrenInBatch, ExternalDataSource.CanCheckAvailability {
+
     private static final String DEFAULT_MIMETYPE = "binary/octet-stream";
     private static final List<String> JCR_CONTENT_LIST = Arrays.asList(Constants.JCR_CONTENT);
     private static final String JCR_CONTENT_SUFFIX = "/" + Constants.JCR_CONTENT;
@@ -67,7 +65,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
     /*
     * The logger instance for this class
-    */
+     */
     private static final Logger log = LoggerFactory.getLogger(CmisDataSource.class);
 
     /**
@@ -79,7 +77,6 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
      * Configuration
      */
     CmisConfiguration conf;
-
 
     @Override
     public List<String> getChildren(String path) throws RepositoryException {
@@ -167,8 +164,9 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         } catch (PathNotFoundException e) {
             throw e;
         } catch (CantConnectCmis e) {  // Workaround if Repository is not accessible
-            if ("/".equals(path))
+            if ("/".equals(path)) {
                 return createDummyMointPointData();
+            }
             throw new PathNotFoundException("Can't find object by path " + path, e);
         } catch (Exception e) {
             throw new PathNotFoundException("Can't find object by path " + path, e);
@@ -178,7 +176,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     private ExternalData getObjectContent(Document doc, String jcrContentPath) throws PathNotFoundException {
         doc = doc.getObjectOfLatestVersion(false);
         if (jcrContentPath == null) {
-            if(doc.getPaths().isEmpty()){
+            if (doc.getPaths().isEmpty()) {
                 throw new PathNotFoundException("No path found for CMIS document: " + doc.getId());
             } else {
                 jcrContentPath = doc.getPaths().get(0) + JCR_CONTENT_SUFFIX;
@@ -217,12 +215,12 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             object = doc;
 
             // set image mixin if mymetype match
-            if (doc.getContentStreamMimeType() != null && doc.getContentStreamMimeType().matches("image/(.*)")){
-                additionalMixin = Constants.JAHIAMIX_IMAGE  ;
+            if (doc.getContentStreamMimeType() != null && doc.getContentStreamMimeType().matches("image/(.*)")) {
+                additionalMixin = Constants.JAHIAMIX_IMAGE;
             }
 
             if (path == null) {
-                if(doc.getPaths().isEmpty()){
+                if (doc.getPaths().isEmpty()) {
                     throw new PathNotFoundException("No path found for CMIS document: " + doc.getId());
                 } else {
                     path = doc.getPaths().get(0);
@@ -230,21 +228,21 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             }
         } else if (object instanceof Folder) {
             Folder folder = (Folder) object;
-            if (path == null)
+            if (path == null) {
                 path = folder.getPath();
+            }
         }
         properties.put(Constants.JCR_CREATED, formatDate(object.getCreationDate()));
         properties.put(Constants.JCR_LASTMODIFIED, formatDate(object.getLastModificationDate()));
         mapProperties(properties, object, typeMapping, 'r');
         ExternalData externalData = new ExternalData(stripVersionFromId(object.getId()), path, typeMapping.getJcrName(), properties);
         Set<String> mixins = new HashSet<>(typeMapping.getJcrMixins());
-        if(additionalMixin != null) {
+        if (additionalMixin != null) {
             mixins.add(additionalMixin);
         }
         externalData.setMixin(new ArrayList<String>(mixins));
         return externalData;
     }
-
 
     private String[] formatDate(GregorianCalendar date) {
         return new String[]{ISO8601.format(date)};
@@ -264,10 +262,11 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         }
         while (type != null) {
             CmisTypeMapping typeMapping = conf.getTypeByCMIS(type.getQueryName());
-            if (typeMapping != null)
+            if (typeMapping != null) {
                 return typeMapping;
-            else
+            } else {
                 type = type.getParentType();
+            }
         }
         if (BaseTypeId.CMIS_DOCUMENT == baseTypeId) {
             return conf.getDefaultDocumentType();
@@ -338,20 +337,24 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             FileableCmisObject file = (FileableCmisObject) object;
             String oldName = oldPath.substring(oldPath.lastIndexOf('/') + 1);
             String oldFolder = oldPath.substring(0, oldPath.lastIndexOf('/'));
-            if (oldFolder.length() == 0)
+            if (oldFolder.length() == 0) {
                 oldFolder = "/";
+            }
             String newName = newPath.substring(newPath.lastIndexOf('/') + 1);
             String newFolder = newPath.substring(0, newPath.lastIndexOf('/'));
-            if (newFolder.length() == 0)
+            if (newFolder.length() == 0) {
                 newFolder = "/";
-            if (!oldFolder.equals(newFolder)) {
-                file = file.move(getCmisSession().getObjectByPath(oldFolder), getCmisSession().getObjectByPath(newFolder));
             }
+
             if (!oldName.equals(newName)) {
                 Map<String, String> properties = new HashMap<>();
                 properties.put(PropertyIds.NAME, newName);
                 file.updateProperties(properties, false);
             }
+            if (!oldFolder.equals(newFolder)) {
+                file = file.move(getCmisSession().getObjectByPath(oldFolder), getCmisSession().getObjectByPath(newFolder));
+            }
+
         } catch (Exception e) {
             throw new RepositoryException(e);
         }
@@ -395,14 +398,17 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             Map<String, Object> properties = new HashMap<>();
             try {
                 CmisObject folder = getCmisSession().getObjectByPath(path);
-                if (data.isNew())
+                if (data.isNew()) {
                     throw new RepositoryException("Сan't create node '" + path + "' already exists.");
+                }
                 mapProperties(properties, data, cmisType, 'w');
-                if (!properties.isEmpty())
+                if (!properties.isEmpty()) {
                     folder.updateProperties(properties, true);
+                }
             } catch (CmisObjectNotFoundException e) { // Not found - create
-                if (!data.isNew())
+                if (!data.isNew()) {
                     throw new PathNotFoundException("Path not found " + path + " Can't update node.");
+                }
                 path = path.substring(0, path.lastIndexOf('/'));
                 if (path.length() == 0) {
                     path = "/";
@@ -425,15 +431,17 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             Document doc;
             try {
                 doc = ((Document) getCmisSession().getObjectByPath(path)).getObjectOfLatestVersion(false);
-                if (data.isNew())
+                if (data.isNew()) {
                     throw new RepositoryException("Сan't create node '" + path + "' already exists.");
+                }
                 mapProperties(properties, data, cmisType, 'w');
                 if (!properties.isEmpty()) {
                     doc.updateProperties(properties);
                 }
             } catch (CmisObjectNotFoundException e) { // Not found - create
-                if (!data.isNew())
+                if (!data.isNew()) {
                     throw new PathNotFoundException("Path not found " + path + " Can't update node.");
+                }
                 path = path.substring(0, path.lastIndexOf('/'));
                 if (path.length() == 0) {
                     path = "/";
@@ -476,8 +484,9 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             if (propertyMapping != null && propertyMapping.inMode(mode)) {
                 String[] val;
                 List<?> values = property.getValues();
-                if (values.isEmpty())
+                if (values.isEmpty()) {
                     continue;
+                }
                 val = new String[values.size()];
                 for (int i = 0; i < val.length; i++) {
                     Object srcValue = values.get(i);
@@ -496,17 +505,20 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     }
 
     private ContentStreamBinaryImpl getContentStream(ExternalData data, String mimeType) throws RepositoryException {
-        if (data.getBinaryProperties() == null)
+        if (data.getBinaryProperties() == null) {
             return null;
+        }
         String path = data.getPath();
-        if (path.endsWith(JCR_CONTENT_SUFFIX))
+        if (path.endsWith(JCR_CONTENT_SUFFIX)) {
             path = path.substring(0, path.lastIndexOf('/'));
+        }
         String name = path.substring(path.lastIndexOf('/') + 1);
         final Binary[] binaries = data.getBinaryProperties().get(Constants.JCR_DATA);
         if (binaries != null && binaries.length > 0) {
             Binary binary = binaries[0];
-            if (mimeType == null)
+            if (mimeType == null) {
                 mimeType = JCRContentUtils.getMimeType(name, DEFAULT_MIMETYPE);
+            }
             return new ContentStreamBinaryImpl(binary, name, mimeType);
         }
         return null;
@@ -535,10 +547,12 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             OperationContext operationContext = session.createOperationContext();
             operationContext.setIncludePathSegments(true);
             ItemIterable<QueryResult> results = session.query(sql, false, operationContext);
-            if (query.getLimit() > 0 && query.getLimit() < Integer.MAX_VALUE)
+            if (query.getLimit() > 0 && query.getLimit() < Integer.MAX_VALUE) {
                 results = results.getPage((int) query.getLimit());
-            if (query.getOffset() != 0)
+            }
+            if (query.getOffset() != 0) {
                 results = results.skipTo(query.getOffset());
+            }
             ArrayList<String> res = new ArrayList<>();
             for (QueryResult hit : results) {
                 String path;
@@ -558,11 +572,9 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         }
     }
 
-
     private String removeContentSufix(String identifier) {
         return identifier.substring(0, identifier.length() - JCR_CONTENT_SUFFIX.length());
     }
-
 
     public CmisConfiguration getConf() {
         return conf;
@@ -573,7 +585,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     }
 
     public synchronized Session getCmisSession() throws CantConnectCmis {
-        if (cmisSession == null)
+        if (cmisSession == null) {
             try {
                 cmisSession = createSession();
                 firstConnectFailure = true;
@@ -584,6 +596,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 }
                 throw ex;
             }
+        }
         return cmisSession;
     }
 
