@@ -350,7 +350,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             if (!oldName.equals(newName)) {
                 Map<String, String> properties = new HashMap<>();
                 properties.put(PropertyIds.NAME, newName);
-                file.updateProperties(properties, true);
+                file.updateProperties(properties, false);
             }
         } catch (Exception e) {
             throw new RepositoryException(e);
