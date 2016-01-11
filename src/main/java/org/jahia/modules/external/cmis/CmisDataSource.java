@@ -32,7 +32,6 @@ import javax.jcr.*;
 import org.apache.chemistry.opencmis.client.api.*;
 import org.apache.chemistry.opencmis.client.api.Property;
 import org.apache.chemistry.opencmis.client.api.Session;
-import org.apache.chemistry.opencmis.client.bindings.spi.atompub.ObjectServiceImpl;
 import org.apache.chemistry.opencmis.client.runtime.SessionFactoryImpl;
 import org.apache.chemistry.opencmis.client.util.FileUtils;
 import org.apache.chemistry.opencmis.commons.PropertyIds;
@@ -585,7 +584,8 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 res.add(path);
             }
             return res;
-        } catch (RepositoryException e) {
+        } catch (RepositoryException|CmisObjectNotFoundException e) {
+            // CmisObjectNotFoundException in case of the cmis server doesn't support query
             log.warn("Can't execute query to cmis ", e);
             return Collections.emptyList();
         }
