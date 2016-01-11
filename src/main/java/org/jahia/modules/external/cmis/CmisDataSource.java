@@ -334,7 +334,14 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             throw new RepositoryException("Can't move " + oldPath + "to " + newPath);
         }
         try {
-            FileableCmisObject file = (FileableCmisObject) object;
+            FileableCmisObject file;
+            if(object instanceof Document) {
+                // here we get the latest version of the object to avoid version mismatch
+                file = ((Document) object).getObjectOfLatestVersion(false);
+            } else {
+                file = (FileableCmisObject) object;
+            }
+
             String oldName = oldPath.substring(oldPath.lastIndexOf('/') + 1);
             String oldFolder = oldPath.substring(0, oldPath.lastIndexOf('/'));
             if (oldFolder.length() == 0) {
@@ -346,13 +353,25 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 newFolder = "/";
             }
 
-            if (!oldName.equals(newName)) {
-                Map<String, String> properties = new HashMap<>();
-                properties.put(PropertyIds.NAME, newName);
-                file.updateProperties(properties, false);
-            }
-            if (!oldFolder.equals(newFolder)) {
+            boolean sameName = oldName.equals(newName);
+            // in case of a node renaming, the folder is the same, no need to move the node then, just rename it
+            if(oldFolder.equals(newFolder)) {
+                // should be always the case, same name move is not possible when cut/paste in same folder, but test anyway to be sure
+                if(!sameName) {
+                    file.rename(newName);
+                }
+            } else {
+                if(!sameName) {
+                    // generate temporary name to avoid name conflict with other sibling files.
+                    file = (FileableCmisObject) file.rename(UUID.randomUUID().toString());
+                }
+
                 file = file.move(getCmisSession().getObjectByPath(oldFolder), getCmisSession().getObjectByPath(newFolder));
+
+                if(!sameName) {
+                    // perform the renaming now
+                    file.rename(newName);
+                }
             }
 
         } catch (Exception e) {
