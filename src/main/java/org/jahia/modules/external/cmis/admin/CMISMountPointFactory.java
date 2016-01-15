@@ -43,6 +43,8 @@ public class CMISMountPointFactory extends AbstractMountPointFactory{
     protected static final String URL = "url";
 
     @NotEmpty
+    private String type;
+    @NotEmpty
     private String name;
     @LocalJCRFolder
     private String localPath;
@@ -131,5 +133,13 @@ public class CMISMountPointFactory extends AbstractMountPointFactory{
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 }
