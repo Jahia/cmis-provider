@@ -20,10 +20,15 @@ angular.module('cmisMount', ['folderPicker'])
         }));
 
         $scope.$watch('cmisType', function(newVal, oldVal) {
+            // save old value in case of switch between type
             if(newVal == "alfresco") {
-                $scope.repositoryId = "-";
-            } else {
-                $scope.repositoryId = "";
+                if(oldVal == "cmis") {
+                    $scope.cmisRepoId = angular.copy($scope.repositoryId);
+                }
+                $scope.repositoryId = "-default-";
+            }
+            if(newVal == "cmis" && oldVal == "alfresco") {
+                $scope.repositoryId = $scope.cmisRepoId;
             }
         })
     });

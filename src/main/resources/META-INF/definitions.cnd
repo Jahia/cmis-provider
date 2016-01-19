@@ -8,6 +8,8 @@
     - user (string)
     - password (string) hidden
     - url (string)
+    - urlAlfresco (string)
+    - type (string)
 
 [cmismix:base] mixin
     - cmis:objectId  (string) protected

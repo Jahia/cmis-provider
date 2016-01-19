@@ -40,7 +40,13 @@ public class CMISMountPointFactory extends AbstractMountPointFactory{
     protected static final String REPOSITORY_ID = "repositoryId";
     protected static final String USER = "user";
     protected static final String PASSWORD = "password";
-    protected static final String URL = "url";
+    protected static final String _URL = "url";
+    protected static final String _URL_ALFRESCO = "urlAlfresco";
+    protected static final String TYPE = "type";
+    protected static final String TYPE_ALFRESCO = "alfresco";
+    protected static final String TYPE_CMIS = "cmis";
+    protected static final String URL_ALFRESCO_CMIS_ENDPOINT_PREFIX = "/api/-default-/public/cmis/versions/1.1/atom";
+    protected static final String REPOSITORY_ID_ALFRESCO = "-default-";
 
     @NotEmpty
     private String type;
@@ -73,11 +79,23 @@ public class CMISMountPointFactory extends AbstractMountPointFactory{
     @Override
     public void setProperties(JCRNodeWrapper node) throws RepositoryException {
         JCRMountPointNode mountNode = (JCRMountPointNode) node;
-        mountNode.setProperty(REPOSITORY_ID, repositoryId);
         mountNode.setProperty(USER, user);
         mountNode.setProperty(PASSWORD, password);
-        mountNode.setProperty(URL, url);
-        mountNode.setProtectedPropertyNames(new String[]{PASSWORD});
+        if (TYPE_ALFRESCO.equals(type)) {
+            mountNode.setProperty(REPOSITORY_ID, REPOSITORY_ID_ALFRESCO);
+            mountNode.setProperty(TYPE, TYPE_ALFRESCO);
+            mountNode.setProperty(_URL, url + URL_ALFRESCO_CMIS_ENDPOINT_PREFIX);
+            mountNode.setProperty(_URL_ALFRESCO, url);
+            mountNode.setProtectedPropertyNames(new String[]{PASSWORD, REPOSITORY_ID, _URL});
+        } else {
+            mountNode.setProperty(REPOSITORY_ID, repositoryId);
+            mountNode.setProperty(TYPE, TYPE_CMIS);
+            mountNode.setProperty(_URL, url);
+            mountNode.setProtectedPropertyNames(new String[]{PASSWORD, _URL_ALFRESCO});
+            if (mountNode.hasProperty(_URL_ALFRESCO)) {
+                mountNode.getProperty(_URL_ALFRESCO).remove();
+            }
+        }
     }
 
     @Override
@@ -92,7 +110,8 @@ public class CMISMountPointFactory extends AbstractMountPointFactory{
         this.repositoryId = nodeWrapper.getPropertyAsString(REPOSITORY_ID);
         this.user = nodeWrapper.getPropertyAsString(USER);
         this.password = nodeWrapper.getPropertyAsString(PASSWORD);
-        this.url = nodeWrapper.getPropertyAsString(URL);
+        this.type = nodeWrapper.hasProperty(TYPE) && TYPE_ALFRESCO.equals(nodeWrapper.getPropertyAsString(TYPE)) ? TYPE_ALFRESCO : TYPE_CMIS;
+        this.url = TYPE_ALFRESCO.equals(this.type) ? nodeWrapper.getPropertyAsString(_URL_ALFRESCO) : nodeWrapper.getPropertyAsString(_URL);
     }
 
     public void setName(String name) {

@@ -22,6 +22,12 @@
 <template:addResources type="javascript" resources="cmis_mount/app.js"/>
 <template:addResources type="css" resources="admin/app/folderPicker.css"/>
 
+
+<script type="text/javascript">
+    $(document).ready(function(){
+        $('.admin_tooltip').tooltip()
+    });
+</script>
 <div class="folderPickerApp" ng-app="cmisMount">
     <h2><fmt:message key="cmisFactory"/></h2>
     <%@ include file="errors.jspf" %>
@@ -34,16 +40,16 @@
             <fieldset title="type">
                 <div class="container-fluid">
                     <div class="row-fluid">
-                        <form:label path="type">Cmis provider type <span style="color: red">*</span></form:label>
+                        <form:label path="type"><fmt:message key="cmisFactory.type"/> <span style="color: red">*</span></form:label>
                         <select id="type" name="type" ng-model="cmisType">
-                            <option value="">- select type -</option>
-                            <option value="cmis">CMIS server</option>
-                            <option value="alfresco">Alfresco + SSO</option>
-                        </select>
+                            <option value=""><fmt:message key="cmisFactory.type.empty"/></option>
+                            <option value="cmis"><fmt:message key="cmisFactory.type.cmis"/></option>
+                            <option value="alfresco"><fmt:message key="cmisFactory.type.alfresco"/></option>
+                        </select>&nbsp;<span class="admin_tooltip" data-placement="right" title="<fmt:message key="cmisFactory.type.tooltip"/>"><i class="icon-info-sign"></i></span>
                     </div>
                 </div>
             </fieldset>
-            <fieldset title="local" ng-show="cmisType">
+            <fieldset title="local" ng-if="cmisType">
                 <div class="container-fluid">
                     <div class="row-fluid">
                         <form:label path="name"><fmt:message key="label.name"/> <span style="color: red">*</span></form:label>
@@ -62,7 +68,8 @@
                         <form:password path="password" showPassword="true"/>
                     </div>
                     <div class="row-fluid">
-                        <form:label path="url"><fmt:message key="cmisFactory.url"/> <span style="color: red">*</span></form:label>
+                        <form:label ng-show="cmisType == 'cmis'" path="url"><fmt:message key="cmisFactory.url"/> <span style="color: red">*</span></form:label>
+                        <form:label ng-show="cmisType == 'alfresco'" path="url"><fmt:message key="cmisFactory.urlAlfresco"/> <span style="color: red">*</span></form:label>
                         <form:input path="url"/>
                     </div>
                     <div class="row-fluid">
