@@ -29,7 +29,7 @@ import static org.jahia.api.Constants.LIVE_WORKSPACE;
  *
  * @author toto
  */
-public class AlfrescoCmisDataSource extends CmisDataSource implements ExternalDataSource.Initializable, ExternalDataSource.AccessControllable{
+public class AlfrescoCmisDataSource extends CmisDataSource implements ExternalDataSource.Initializable {
     private static final Logger log = LoggerFactory.getLogger(AlfrescoCmisDataSource.class);
 
     private Client client;
@@ -85,38 +85,5 @@ public class AlfrescoCmisDataSource extends CmisDataSource implements ExternalDa
             session.getSessionVariables().put("cmisSession", cmisSession);
         }
         return cmisSession;
-    }
-
-    @Override
-    public String[] getPrivilegesNames(String username, String path) {
-        Set<String> privileges = new HashSet<>();
-
-        try {
-            AllowableActions allowable = getCmisSession().getObjectByPath(path).getAllowableActions();
-            for (Action action : allowable.getAllowableActions()) {
-                switch (action) {
-                    case CAN_GET_FOLDER_TREE:
-                    case CAN_GET_PROPERTIES:
-                        privileges.add(JCR_READ + "_" + EDIT_WORKSPACE);
-                        privileges.add(JCR_READ + "_" + LIVE_WORKSPACE);
-                        break;
-                    case CAN_UPDATE_PROPERTIES:
-                    case CAN_SET_CONTENT_STREAM:
-                    case CAN_CREATE_FOLDER:
-                    case CAN_CREATE_DOCUMENT:
-                    case CAN_ADD_OBJECT_TO_FOLDER:
-                        privileges.add(JCR_WRITE + "_" + EDIT_WORKSPACE);
-                        privileges.add(JCR_WRITE + "_" + LIVE_WORKSPACE);
-                        break;
-                    case CAN_DELETE_TREE:
-                        privileges.add(JCR_REMOVE_CHILD_NODES + "_" + EDIT_WORKSPACE);
-                        privileges.add(JCR_REMOVE_CHILD_NODES + "_" + LIVE_WORKSPACE);
-                        break;
-                }
-            }
-        } catch (CantConnectCmis cantConnectCmis) {
-            log.error(cantConnectCmis.getMessage(), cantConnectCmis);
-        }
-        return privileges.toArray(new String[privileges.size()]);
     }
 }
