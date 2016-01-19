@@ -54,15 +54,21 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
         provider.setKey(mountPoint.getIdentifier());
         provider.setMountPoint(mountPoint.getPath());
 
-        CmisDataSource dataSource = new CmisDataSource();
         CmisConfiguration conf = (CmisConfiguration) applicationContext.getBean("CmisConfiguration");
+        CmisDataSource dataSource;
+        if("alfresco".equals(mountPoint.getProperty("type").getString())) {
+            dataSource = new AlfrescoCmisDataSource();
+            conf.getRepositoryPropertiesMap().put("alfresco.url", mountPoint.getProperty("urlAlfresco").getString());
+        } else {
+            dataSource = new CmisDataSource();
+        }
         conf.getRepositoryPropertiesMap().put("org.apache.chemistry.opencmis.binding.atompub.url", mountPoint.getProperty("url").getString());
         conf.getRepositoryPropertiesMap().put("org.apache.chemistry.opencmis.session.repository.id", mountPoint.getProperty("repositoryId").getString());
         conf.getRepositoryPropertiesMap().put("org.apache.chemistry.opencmis.user", mountPoint.getProperty("user").getString());
         conf.getRepositoryPropertiesMap().put("org.apache.chemistry.opencmis.password", mountPoint.getProperty("password").getString());
         dataSource.setConf(conf);
-
         dataSource.start();
+
         provider.setDataSource(dataSource);
         provider.setOverridableItems(Arrays.asList("jmix:description.*", "jmix:i18n.*"));
         provider.setNonExtendableMixins(Arrays.asList("cmismix:base", "cmismix:folder", "cmismix:document", "jmix:image"));
