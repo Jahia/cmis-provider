@@ -134,7 +134,7 @@ public class CmisConfiguration {
     public void setRepositoryProperties(Properties repositoryProperties) {
         repositoryPropertiesMap = new HashMap<String, String>();
         for (String name : repositoryProperties.stringPropertyNames()) {
-            if (name.startsWith("org.apache.chemistry.")) {
+            if (name.startsWith("org.apache.chemistry.") || name.startsWith("org.jahia.cmis.")) {
                 repositoryPropertiesMap.put(name, repositoryProperties.getProperty(name));
             }
         }
