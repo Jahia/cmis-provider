@@ -56,7 +56,7 @@ public class AlfrescoCmisDataSource extends CmisDataSource implements ExternalDa
 
     private static final String CONF_SESSION_CACHE_CONCURRENCY_LEVEL = "org.jahia.cmis.alfresco.session.cache.concurrencyLevel";
     private static final String CONF_SESSION_CACHE_MAXIMUM_SIZE = "org.jahia.cmis.alfresco.session.cache.maximumSize";
-    private static final String CONF_SESSION_CACHE_EXPIRE_AFTER_ACCESS = "org.jahia.cmis.alfresco.session.cache.concurrencyLevel";
+    private static final String CONF_SESSION_CACHE_EXPIRE_AFTER_ACCESS = "org.jahia.cmis.alfresco.session.cache.expireAfterAccess";
 
     private Client client;
     private Cache<String, Session> sessionCache;
