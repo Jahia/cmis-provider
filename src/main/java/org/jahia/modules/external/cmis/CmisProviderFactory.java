@@ -23,6 +23,7 @@
  */
 package org.jahia.modules.external.cmis;
 
+import org.apache.chemistry.opencmis.commons.SessionParameter;
 import org.jahia.exceptions.JahiaInitializationException;
 import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.security.license.LicenseCheckException;
@@ -62,10 +63,10 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
         } else {
             dataSource = new CmisDataSource();
         }
-        conf.getRepositoryPropertiesMap().put("org.apache.chemistry.opencmis.binding.atompub.url", mountPoint.getProperty("url").getString());
-        conf.getRepositoryPropertiesMap().put("org.apache.chemistry.opencmis.session.repository.id", mountPoint.getProperty("repositoryId").getString());
-        conf.getRepositoryPropertiesMap().put("org.apache.chemistry.opencmis.user", mountPoint.getProperty("user").getString());
-        conf.getRepositoryPropertiesMap().put("org.apache.chemistry.opencmis.password", mountPoint.getProperty("password").getString());
+        conf.getRepositoryPropertiesMap().put(SessionParameter.ATOMPUB_URL, mountPoint.getProperty("url").getString());
+        conf.getRepositoryPropertiesMap().put(SessionParameter.REPOSITORY_ID, mountPoint.getProperty("repositoryId").getString());
+        conf.getRepositoryPropertiesMap().put(SessionParameter.USER, mountPoint.getProperty("user").getString());
+        conf.getRepositoryPropertiesMap().put(SessionParameter.PASSWORD, mountPoint.getProperty("password").getString());
         dataSource.setConf(conf);
         dataSource.start();
 
