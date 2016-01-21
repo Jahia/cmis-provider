@@ -27,6 +27,8 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import org.apache.chemistry.opencmis.client.api.Session;
 import org.apache.chemistry.opencmis.client.runtime.SessionFactoryImpl;
+import org.apache.chemistry.opencmis.commons.SessionParameter;
+import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.modules.external.ExternalDataSource;
 import org.jahia.services.content.JCRSessionFactory;
@@ -52,6 +54,10 @@ import java.util.concurrent.TimeUnit;
 public class AlfrescoCmisDataSource extends CmisDataSource implements ExternalDataSource.Initializable {
     private static final Logger log = LoggerFactory.getLogger(AlfrescoCmisDataSource.class);
 
+    private static final String CONF_SESSION_CACHE_CONCURRENCY_LEVEL = "org.jahia.cmis.alfresco.session.cache.concurrencyLevel";
+    private static final String CONF_SESSION_CACHE_MAXIMUM_SIZE = "org.jahia.cmis.alfresco.session.cache.maximumSize";
+    private static final String CONF_SESSION_CACHE_EXPIRE_AFTER_ACCESS = "org.jahia.cmis.alfresco.session.cache.concurrencyLevel";
+
     private Client client;
     private Cache<String, Session> sessionCache;
 
@@ -61,13 +67,21 @@ public class AlfrescoCmisDataSource extends CmisDataSource implements ExternalDa
     @Override
     public void start() {
         super.start();
-        client = ClientBuilder.newBuilder().build();
+        HashMap<String, String> repositoryPropertiesMap = getConf().getRepositoryPropertiesMap();
+        client = ClientBuilder.newBuilder()
+                .register(HttpAuthenticationFeature
+                        .basicBuilder()
+                        .nonPreemptive()
+                        .credentials(repositoryPropertiesMap.get(SessionParameter.USER),
+                                repositoryPropertiesMap.get(SessionParameter.PASSWORD))
+                        .build())
+                .build();
 
         // cache config
         sessionCache = CacheBuilder.newBuilder()
-                .concurrencyLevel(Integer.parseInt(getConf().getRepositoryPropertiesMap().get("org.jahia.cmis.alfresco.session.cache.concurrencyLevel")))
-                .maximumSize(Integer.parseInt(getConf().getRepositoryPropertiesMap().get("org.jahia.cmis.alfresco.session.cache.maximumSize")))
-                .expireAfterAccess(Integer.parseInt(getConf().getRepositoryPropertiesMap().get("org.jahia.cmis.alfresco.session.cache.expireAfterAccess")), TimeUnit.MINUTES)
+                .concurrencyLevel(Integer.parseInt(repositoryPropertiesMap.get(CONF_SESSION_CACHE_CONCURRENCY_LEVEL)))
+                .maximumSize(Integer.parseInt(repositoryPropertiesMap.get(CONF_SESSION_CACHE_MAXIMUM_SIZE)))
+                .expireAfterAccess(Integer.parseInt(repositoryPropertiesMap.get(CONF_SESSION_CACHE_EXPIRE_AFTER_ACCESS)), TimeUnit.MINUTES)
                 .build();
     }
 
@@ -85,31 +99,29 @@ public class AlfrescoCmisDataSource extends CmisDataSource implements ExternalDa
 
     public Session getCmisSession() throws CantConnectCmis {
         try {
-            return sessionCache.get(ExternalContentStoreProvider.getCurrentSession().getUserID(), new Callable<Session>() {
+            final String userId = ExternalContentStoreProvider.getCurrentSession().getUserID();
+            return sessionCache.get(userId, new Callable<Session>() {
                 @Override
                 public Session call() throws Exception {
                     HashMap<String, String> repositoryPropertiesMap = getConf().getRepositoryPropertiesMap();
-                    String username = repositoryPropertiesMap.get("org.apache.chemistry.opencmis.user");
-                    String password = repositoryPropertiesMap.get("org.apache.chemistry.opencmis.password");
-                    String url = repositoryPropertiesMap.get("alfresco.url");
                     SessionFactoryImpl factory = SessionFactoryImpl.newInstance();
                     // create session
-                    HashMap<String, String> propertiesMap = new HashMap<>(repositoryPropertiesMap);
 
-                    if (!ExternalContentStoreProvider.getCurrentSession().getUserID().startsWith(" system ") &&
-                            !ExternalContentStoreProvider.getCurrentSession().getUserID().equals("root")) {
-                        WebTarget target = client.target(url).
+                    HashMap<String, String> propertiesMap = new HashMap<>(repositoryPropertiesMap);
+                    if (!userId.startsWith(" system ") &&
+                            !userId.equals("root")) {
+
+                        WebTarget target = client.target(repositoryPropertiesMap.get("alfresco.url")).
                                 path("service/impersonateLogin").
-                                queryParam("u", username).
-                                queryParam("pw", password).
                                 queryParam("format", "json").
                                 queryParam("username", JCRSessionFactory.getInstance().getCurrentUser().getName());
 
                         String response = target.request().accept(MediaType.APPLICATION_JSON).get(String.class);
                         JSONObject obj = new JSONObject(response);
                         String ticket = obj.getJSONObject("data").getString("ticket");
-                        propertiesMap.put("org.apache.chemistry.opencmis.user", "ROLE_TICKET");
-                        propertiesMap.put("org.apache.chemistry.opencmis.password", ticket);
+
+                        propertiesMap.put(SessionParameter.USER, "ROLE_TICKET");
+                        propertiesMap.put(SessionParameter.PASSWORD, ticket);
                     }
 
                     return factory.createSession(propertiesMap);
