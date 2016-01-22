@@ -32,6 +32,7 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.modules.external.ExternalDataSource;
 import org.jahia.services.content.JCRSessionFactory;
+import org.jahia.services.usermanager.JahiaUser;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,8 +100,9 @@ public class AlfrescoCmisDataSource extends CmisDataSource implements ExternalDa
 
     public Session getCmisSession() throws CantConnectCmis {
         try {
-            final String userId = ExternalContentStoreProvider.getCurrentSession().getUserID();
-            return sessionCache.get(userId, new Callable<Session>() {
+            JahiaUser aliasedUser = JCRSessionFactory.getInstance().getCurrentAliasedUser();
+            final String user = aliasedUser != null ? aliasedUser.getName() : ExternalContentStoreProvider.getCurrentSession().getUserID();
+            return sessionCache.get(user, new Callable<Session>() {
                 @Override
                 public Session call() throws Exception {
                     HashMap<String, String> repositoryPropertiesMap = getConf().getRepositoryPropertiesMap();
@@ -108,13 +110,13 @@ public class AlfrescoCmisDataSource extends CmisDataSource implements ExternalDa
                     // create session
 
                     HashMap<String, String> propertiesMap = new HashMap<>(repositoryPropertiesMap);
-                    if (!userId.startsWith(" system ") &&
-                            !userId.equals("root")) {
+                    if (!user.startsWith(" system ") &&
+                            !user.equals("root")) {
 
                         WebTarget target = client.target(repositoryPropertiesMap.get("alfresco.url")).
                                 path("service/impersonateLogin").
                                 queryParam("format", "json").
-                                queryParam("username", JCRSessionFactory.getInstance().getCurrentUser().getName());
+                                queryParam("username", user);
 
                         String response = target.request().accept(MediaType.APPLICATION_JSON).get(String.class);
                         JSONObject obj = new JSONObject(response);
