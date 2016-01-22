@@ -24,6 +24,7 @@
 package org.jahia.modules.external.cmis;
 
 import org.apache.chemistry.opencmis.commons.SessionParameter;
+import org.apache.chemistry.opencmis.commons.enums.BindingType;
 import org.jahia.exceptions.JahiaInitializationException;
 import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.security.license.LicenseCheckException;
@@ -42,6 +43,10 @@ import javax.jcr.RepositoryException;
 import java.util.Arrays;
 
 public class CmisProviderFactory implements ProviderFactory, ApplicationContextAware, InitializingBean {
+
+    private static final String ALFRESCO_ENDPOINT_BROWSER = "/api/-default-/public/cmis/versions/1.1/browser";
+    private static final String ALFRESCO_ENDPOINT_ATOM = "/api/-default-/public/cmis/versions/1.1/atom";
+
     private ApplicationContext applicationContext;
 
     @Override
@@ -59,11 +64,20 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
         CmisDataSource dataSource;
         if("alfresco".equals(mountPoint.getProperty("type").getString())) {
             dataSource = new AlfrescoCmisDataSource();
-            conf.getRepositoryPropertiesMap().put("alfresco.url", mountPoint.getProperty("urlAlfresco").getString());
+            conf.getRepositoryPropertiesMap().put("alfresco.url", mountPoint.getProperty("url").getString());
+            if(BindingType.BROWSER.value().equals(conf.getRepositoryPropertiesMap().get(SessionParameter.BINDING_TYPE))) {
+                conf.getRepositoryPropertiesMap().put(SessionParameter.BROWSER_URL, mountPoint.getProperty("url").getString() + ALFRESCO_ENDPOINT_BROWSER);
+            } else {
+                conf.getRepositoryPropertiesMap().put(SessionParameter.ATOMPUB_URL, mountPoint.getProperty("url").getString() + ALFRESCO_ENDPOINT_ATOM);
+            }
         } else {
             dataSource = new CmisDataSource();
+            if(BindingType.BROWSER.value().equals(conf.getRepositoryPropertiesMap().get(SessionParameter.BINDING_TYPE))) {
+                conf.getRepositoryPropertiesMap().put(SessionParameter.BROWSER_URL, mountPoint.getProperty("url").getString());
+            } else {
+                conf.getRepositoryPropertiesMap().put(SessionParameter.ATOMPUB_URL, mountPoint.getProperty("url").getString());
+            }
         }
-        conf.getRepositoryPropertiesMap().put(SessionParameter.ATOMPUB_URL, mountPoint.getProperty("url").getString());
         conf.getRepositoryPropertiesMap().put(SessionParameter.REPOSITORY_ID, mountPoint.getProperty("repositoryId").getString());
         conf.getRepositoryPropertiesMap().put(SessionParameter.USER, mountPoint.getProperty("user").getString());
         conf.getRepositoryPropertiesMap().put(SessionParameter.PASSWORD, mountPoint.getProperty("password").getString());
