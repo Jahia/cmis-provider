@@ -1,0 +1,33 @@
+execution took 4549 ms
+execution took 4017 ms
+execution took 3778 ms
+execution took 3680 ms
+execution took 3643 ms
+execution took 3839 ms
+execution took 3835 ms
+execution took 3801 ms
+execution took 3849 ms
+execution took 3736 ms
+execution took 4041 ms
+execution took 3690 ms
+execution took 3911 ms
+execution took 3768 ms
+execution took 3801 ms
+execution took 3806 ms
+execution took 3732 ms
+execution took 3906 ms
+execution took 3751 ms
+execution took 3811 ms
+execution took 3806 ms
+execution took 3773 ms
+execution took 3818 ms
+execution took 3748 ms
+execution took 3805 ms
+execution took 3776 ms
+execution took 3809 ms
+execution took 3785 ms
+execution took 3778 ms
+execution took 3847 ms
+average 3829.633333333333 ms
+max 4549 ms
+min 3643 ms
