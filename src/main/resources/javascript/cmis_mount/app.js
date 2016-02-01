@@ -25,6 +25,7 @@ angular.module('cmisMount', ['folderPicker'])
                 if(oldVal == "cmis") {
                     $scope.cmisRepoId = angular.copy($scope.repositoryId);
                 }
+                // keep as default value, will be overrided by the mount point factory
                 $scope.repositoryId = "-default-";
             }
             if(newVal == "cmis" && oldVal == "alfresco") {

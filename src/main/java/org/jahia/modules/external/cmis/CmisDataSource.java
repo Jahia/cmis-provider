@@ -23,15 +23,7 @@
  */
 package org.jahia.modules.external.cmis;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.math.BigInteger;
-import java.util.*;
-import javax.jcr.*;
-
 import org.apache.chemistry.opencmis.client.api.*;
-import org.apache.chemistry.opencmis.client.api.Property;
-import org.apache.chemistry.opencmis.client.api.Session;
 import org.apache.chemistry.opencmis.client.runtime.SessionFactoryImpl;
 import org.apache.chemistry.opencmis.client.util.FileUtils;
 import org.apache.chemistry.opencmis.commons.PropertyIds;
@@ -54,9 +46,16 @@ import org.jahia.services.content.nodetypes.NodeTypeRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static javax.jcr.security.Privilege.JCR_READ;
-import static javax.jcr.security.Privilege.JCR_REMOVE_CHILD_NODES;
-import static javax.jcr.security.Privilege.JCR_WRITE;
+import javax.jcr.Binary;
+import javax.jcr.ItemNotFoundException;
+import javax.jcr.PathNotFoundException;
+import javax.jcr.RepositoryException;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.math.BigInteger;
+import java.util.*;
+
+import static javax.jcr.security.Privilege.*;
 import static org.jahia.api.Constants.EDIT_WORKSPACE;
 import static org.jahia.api.Constants.LIVE_WORKSPACE;
 
@@ -668,6 +667,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             }
         } catch (CantConnectCmis cantConnectCmis) {
             log.error(cantConnectCmis.getMessage(), cantConnectCmis);
+            throw new RuntimeException(cantConnectCmis);
         }
         return privileges.toArray(new String[privileges.size()]);
     }
