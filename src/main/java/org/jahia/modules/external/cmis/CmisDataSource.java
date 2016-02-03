@@ -3,30 +3,35 @@
  * =                            JAHIA'S ENTERPRISE DISTRIBUTION                             =
  * ==========================================================================================
  *
- *                                  http://www.jahia.com
+ * http://www.jahia.com
  *
  * JAHIA'S ENTERPRISE DISTRIBUTIONS LICENSING - IMPORTANT INFORMATION
  * ==========================================================================================
  *
- *     Copyright (C) 2002-2016 Jahia Solutions Group. All rights reserved.
+ * Copyright (C) 2002-2016 Jahia Solutions Group. All rights reserved.
  *
- *     This file is part of a Jahia's Enterprise Distribution.
+ * This file is part of a Jahia's Enterprise Distribution.
  *
- *     Jahia's Enterprise Distributions must be used in accordance with the terms
- *     contained in the Jahia Solutions Group Terms & Conditions as well as
- *     the Jahia Sustainable Enterprise License (JSEL).
+ * Jahia's Enterprise Distributions must be used in accordance with the terms
+ * contained in the Jahia Solutions Group Terms & Conditions as well as
+ * the Jahia Sustainable Enterprise License (JSEL).
  *
- *     For questions regarding licensing, support, production usage...
- *     please contact our team at sales@jahia.com or go to http://www.jahia.com/license.
+ * For questions regarding licensing, support, production usage...
+ * please contact our team at sales@jahia.com or go to http://www.jahia.com/license.
  *
  * ==========================================================================================
  */
 package org.jahia.modules.external.cmis;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.RemovalListener;
+import com.google.common.cache.RemovalNotification;
 import org.apache.chemistry.opencmis.client.api.*;
 import org.apache.chemistry.opencmis.client.runtime.SessionFactoryImpl;
 import org.apache.chemistry.opencmis.client.util.FileUtils;
 import org.apache.chemistry.opencmis.commons.PropertyIds;
+import org.apache.chemistry.opencmis.commons.SessionParameter;
 import org.apache.chemistry.opencmis.commons.data.AllowableActions;
 import org.apache.chemistry.opencmis.commons.data.ContentStream;
 import org.apache.chemistry.opencmis.commons.enums.Action;
@@ -54,6 +59,9 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import static javax.jcr.security.Privilege.*;
 import static org.jahia.api.Constants.EDIT_WORKSPACE;
@@ -66,20 +74,33 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         ExternalDataSource.Searchable, ExternalDataSource.CanLoadChildrenInBatch, ExternalDataSource.CanCheckAvailability,
         ExternalDataSource.AccessControllable {
 
+    private static final String CONF_SESSION_CACHE_CONCURRENCY_LEVEL = "org.jahia.cmis.session.cache.concurrencyLevel";
+    private static final String CONF_SESSION_CACHE_MAXIMUM_SIZE = "org.jahia.cmis.session.cache.maximumSize";
+    private static final String CONF_SESSION_CACHE_EXPIRE_AFTER_ACCESS = "org.jahia.cmis.session.cache.expireAfterAccess";
+
     private static final String DEFAULT_MIMETYPE = "binary/octet-stream";
-    private static final List<String> JCR_CONTENT_LIST = Arrays.asList(Constants.JCR_CONTENT);
+    private static final List<String> JCR_CONTENT_LIST = Collections.singletonList(Constants.JCR_CONTENT);
     private static final String JCR_CONTENT_SUFFIX = "/" + Constants.JCR_CONTENT;
+
     private boolean firstConnectFailure = true;
+    protected Cache<String, Session> activeConnections;
+    private boolean recordingConnectionsStats;
+
+    private final RemovalListener<String, Session> removalListener = new RemovalListener<String, Session>() {
+        @Override
+        public void onRemoval(RemovalNotification<String, Session> removal) {
+            if (removal.getValue() != null) {
+                removal.getValue().clear();
+            }
+        }
+    };
+
+    private CacheBuilder<String, Session> cacheBuilder;
 
     /*
     * The logger instance for this class
      */
     private static final Logger log = LoggerFactory.getLogger(CmisDataSource.class);
-
-    /**
-     * Shared CMIS session.
-     */
-    private Session cmisSession;
 
     /**
      * Configuration
@@ -314,25 +335,18 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
     @Override
     public void start() {
-    }
-
-    private Session createSession() throws CantConnectCmis {
-        try {
-            SessionFactory factory = SessionFactoryImpl.newInstance();
-            // create session
-            return factory.createSession(getConf().getRepositoryPropertiesMap());
-        } catch (CmisBaseException e) {
-            throw new CantConnectCmis(e);
-        }
+        // cache config
+        HashMap<String, String> repositoryPropertiesMap = getConf().getRepositoryPropertiesMap();
+        cacheBuilder = CacheBuilder.newBuilder().removalListener(removalListener)
+                .concurrencyLevel(Integer.parseInt(repositoryPropertiesMap.get(CONF_SESSION_CACHE_CONCURRENCY_LEVEL)))
+                .maximumSize(Integer.parseInt(repositoryPropertiesMap.get(CONF_SESSION_CACHE_MAXIMUM_SIZE)))
+                .expireAfterAccess(Integer.parseInt(repositoryPropertiesMap.get(CONF_SESSION_CACHE_EXPIRE_AFTER_ACCESS)), TimeUnit.MINUTES);
+        buildActiveConnections();
     }
 
     @Override
     public void stop() {
-        try {
-            getCmisSession().clear();
-        } catch (CantConnectCmis cantConnectCmis) {
-            // nothing to do
-        }
+        activeConnections.invalidateAll();
     }
 
     @Override
@@ -343,7 +357,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         }
         try {
             FileableCmisObject file;
-            if(object instanceof Document) {
+            if (object instanceof Document) {
                 // here we get the latest version of the object to avoid version mismatch
                 file = ((Document) object).getObjectOfLatestVersion(false);
             } else {
@@ -363,20 +377,20 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
             boolean sameName = oldName.equals(newName);
             // in case of a node renaming, the folder is the same, no need to move the node then, just rename it
-            if(oldFolder.equals(newFolder)) {
+            if (oldFolder.equals(newFolder)) {
                 // should be always the case, same name move is not possible when cut/paste in same folder, but test anyway to be sure
-                if(!sameName) {
+                if (!sameName) {
                     file.rename(newName);
                 }
             } else {
-                if(!sameName) {
+                if (!sameName) {
                     // generate temporary name to avoid name conflict with other sibling files.
                     file = (FileableCmisObject) file.rename(UUID.randomUUID().toString());
                 }
 
                 file = file.move(getCmisSession().getObjectByPath(oldFolder), getCmisSession().getObjectByPath(newFolder));
 
-                if(!sameName) {
+                if (!sameName) {
                     // perform the renaming now
                     file.rename(newName);
                 }
@@ -551,6 +565,11 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         return null;
     }
 
+    private void buildActiveConnections() {
+        activeConnections = recordingConnectionsStats ? cacheBuilder.recordStats().build() : cacheBuilder.build();
+    }
+
+
     @Override
     public List<String> search(ExternalQuery query) throws RepositoryException {
         try {
@@ -593,7 +612,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 res.add(path);
             }
             return res;
-        } catch (RepositoryException|CmisObjectNotFoundException e) {
+        } catch (RepositoryException | CmisObjectNotFoundException e) {
             // CmisObjectNotFoundException in case of the cmis server doesn't support query
             log.warn("Can't execute query to cmis ", e);
             return Collections.emptyList();
@@ -613,25 +632,31 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     }
 
     public synchronized Session getCmisSession() throws CantConnectCmis {
-        if (cmisSession == null) {
-            try {
-                cmisSession = createSession();
-                firstConnectFailure = true;
-            } catch (CantConnectCmis ex) {
-                if (firstConnectFailure) {
-                    log.error("Can't establish cmis connection", ex);
-                    firstConnectFailure = false;
+        try {
+            // get or create session
+            final HashMap<String, String> repositoryPropertiesMap = getConf().getRepositoryPropertiesMap();
+            Session cmisSession = activeConnections.get(repositoryPropertiesMap.get(SessionParameter.USER), new Callable<Session>() {
+                @Override
+                public Session call() throws Exception {
+                    SessionFactory factory = SessionFactoryImpl.newInstance();
+                    return factory.createSession(repositoryPropertiesMap);
                 }
-                throw ex;
+            });
+            firstConnectFailure = true;
+            return cmisSession;
+        } catch (CmisBaseException | ExecutionException e) {
+            if (firstConnectFailure) {
+                log.error("Can't establish cmis connection", e);
+                firstConnectFailure = false;
             }
+            throw new CantConnectCmis(e);
         }
-        return cmisSession;
     }
 
     @Override
     public boolean isAvailable() throws RepositoryException {
         try {
-            createSession();
+            getCmisSession();
         } catch (CantConnectCmis e) {
             return false;
         }
@@ -670,5 +695,22 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             throw new RuntimeException(cantConnectCmis);
         }
         return privileges.toArray(new String[privileges.size()]);
+    }
+
+    public Cache<String, Session> getActiveConnections() {
+        return activeConnections;
+    }
+
+    public void setRecordingConnectionsStats(boolean recordingConnectionsStats) {
+        if ((recordingConnectionsStats && isRecordingConnectionsStats()) || (!recordingConnectionsStats && !isRecordingConnectionsStats())) {
+            return;
+        }
+        activeConnections.cleanUp();
+        this.recordingConnectionsStats = recordingConnectionsStats;
+        buildActiveConnections();
+    }
+
+    public boolean isRecordingConnectionsStats() {
+        return recordingConnectionsStats;
     }
 }

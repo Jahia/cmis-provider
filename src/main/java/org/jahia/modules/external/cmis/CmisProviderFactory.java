@@ -3,21 +3,21 @@
  * =                            JAHIA'S ENTERPRISE DISTRIBUTION                             =
  * ==========================================================================================
  *
- *                                  http://www.jahia.com
+ * http://www.jahia.com
  *
  * JAHIA'S ENTERPRISE DISTRIBUTIONS LICENSING - IMPORTANT INFORMATION
  * ==========================================================================================
  *
- *     Copyright (C) 2002-2016 Jahia Solutions Group. All rights reserved.
+ * Copyright (C) 2002-2016 Jahia Solutions Group. All rights reserved.
  *
- *     This file is part of a Jahia's Enterprise Distribution.
+ * This file is part of a Jahia's Enterprise Distribution.
  *
- *     Jahia's Enterprise Distributions must be used in accordance with the terms
- *     contained in the Jahia Solutions Group Terms & Conditions as well as
- *     the Jahia Sustainable Enterprise License (JSEL).
+ * Jahia's Enterprise Distributions must be used in accordance with the terms
+ * contained in the Jahia Solutions Group Terms & Conditions as well as
+ * the Jahia Sustainable Enterprise License (JSEL).
  *
- *     For questions regarding licensing, support, production usage...
- *     please contact our team at sales@jahia.com or go to http://www.jahia.com/license.
+ * For questions regarding licensing, support, production usage...
+ * please contact our team at sales@jahia.com or go to http://www.jahia.com/license.
  *
  * ==========================================================================================
  */
@@ -49,6 +49,10 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
 
     private ApplicationContext applicationContext;
 
+    public static final String TYPE = "type";
+    public static final String TYPE_ALFRESCO = "alfresco";
+
+
     @Override
     public String getNodeTypeName() {
         return "cmis:cmisMountPoint";
@@ -59,24 +63,23 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
         ExternalContentStoreProvider provider = (ExternalContentStoreProvider) SpringContextSingleton.getBean("ExternalStoreProviderPrototype");
         provider.setKey(mountPoint.getIdentifier());
         provider.setMountPoint(mountPoint.getPath());
-
-        CmisConfiguration conf = (CmisConfiguration) applicationContext.getBean("CmisConfiguration");
         CmisDataSource dataSource;
-        if("alfresco".equals(mountPoint.getProperty("type").getString())) {
+        CmisConfiguration conf = (CmisConfiguration) applicationContext.getBean("CmisConfiguration");
+        String cmisUrl = mountPoint.getProperty("url").getString();
+
+        if (TYPE_ALFRESCO.equals(mountPoint.getProperty(TYPE).getString())) {
             dataSource = new AlfrescoCmisDataSource();
-            conf.getRepositoryPropertiesMap().put("alfresco.url", mountPoint.getProperty("url").getString());
-            if(BindingType.BROWSER.value().equals(conf.getRepositoryPropertiesMap().get(SessionParameter.BINDING_TYPE))) {
-                conf.getRepositoryPropertiesMap().put(SessionParameter.BROWSER_URL, mountPoint.getProperty("url").getString() + ALFRESCO_ENDPOINT_BROWSER);
+            conf.getRepositoryPropertiesMap().put("alfresco.url", cmisUrl);
+            if (BindingType.BROWSER.value().equals(conf.getRepositoryPropertiesMap().get(SessionParameter.BINDING_TYPE))) {
+                conf.getRepositoryPropertiesMap().put(SessionParameter.BROWSER_URL, cmisUrl + ALFRESCO_ENDPOINT_BROWSER);
             } else {
-                conf.getRepositoryPropertiesMap().put(SessionParameter.ATOMPUB_URL, mountPoint.getProperty("url").getString() + ALFRESCO_ENDPOINT_ATOM);
+                conf.getRepositoryPropertiesMap().put(SessionParameter.ATOMPUB_URL, cmisUrl + ALFRESCO_ENDPOINT_ATOM);
             }
         } else {
+            // legacy support
             dataSource = new CmisDataSource();
-            if(BindingType.BROWSER.value().equals(conf.getRepositoryPropertiesMap().get(SessionParameter.BINDING_TYPE))) {
-                conf.getRepositoryPropertiesMap().put(SessionParameter.BROWSER_URL, mountPoint.getProperty("url").getString());
-            } else {
-                conf.getRepositoryPropertiesMap().put(SessionParameter.ATOMPUB_URL, mountPoint.getProperty("url").getString());
-            }
+            conf.getRepositoryPropertiesMap().put(SessionParameter.BINDING_TYPE, BindingType.ATOMPUB.value());
+            conf.getRepositoryPropertiesMap().put(SessionParameter.ATOMPUB_URL, cmisUrl);
         }
         conf.getRepositoryPropertiesMap().put(SessionParameter.REPOSITORY_ID, mountPoint.getProperty("repositoryId").getString());
         conf.getRepositoryPropertiesMap().put(SessionParameter.USER, mountPoint.getProperty("user").getString());

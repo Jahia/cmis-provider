@@ -32,6 +32,7 @@ import org.apache.commons.lang.StringUtils;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.jahia.modules.external.admin.mount.AbstractMountPointFactory;
 import org.jahia.modules.external.admin.mount.validator.LocalJCRFolder;
+import org.jahia.modules.external.cmis.CmisProviderFactory;
 import org.jahia.services.content.JCRNodeWrapper;
 import org.jahia.services.content.decorator.JCRMountPointNode;
 
@@ -47,8 +48,6 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
     protected static final String USER = "user";
     protected static final String PASSWORD = "password";
     protected static final String URL = "url";
-    protected static final String TYPE = "type";
-    protected static final String TYPE_ALFRESCO = "alfresco";
     protected static final String TYPE_CMIS = "cmis";
     protected static final String CMIS_SERVICE_ENDPOINT = "/service/cmis";
     private static final long serialVersionUID = 2927976149191746013L;
@@ -94,7 +93,7 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
         mountNode.setProperty(USER, user);
         mountNode.setProperty(PASSWORD, password);
         mountNode.setProperty(URL, url);
-        if (TYPE_ALFRESCO.equals(type)) {
+        if (CmisProviderFactory.TYPE_ALFRESCO.equals(type)) {
 
             // get repository id from the server
             HttpClient httpclient = new HttpClient();
@@ -113,11 +112,11 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
             }
 
             mountNode.setProperty(REPOSITORY_ID, alfrescoRepositoryId);
-            mountNode.setProperty(TYPE, TYPE_ALFRESCO);
+            mountNode.setProperty(CmisProviderFactory.TYPE, CmisProviderFactory.TYPE_ALFRESCO);
             mountNode.setProtectedPropertyNames(new String[]{PASSWORD, REPOSITORY_ID});
         } else {
             mountNode.setProperty(REPOSITORY_ID, repositoryId);
-            mountNode.setProperty(TYPE, TYPE_CMIS);
+            mountNode.setProperty(CmisProviderFactory.TYPE, TYPE_CMIS);
             mountNode.setProtectedPropertyNames(new String[]{PASSWORD});
         }
     }
@@ -134,7 +133,7 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
         this.repositoryId = nodeWrapper.getPropertyAsString(REPOSITORY_ID);
         this.user = nodeWrapper.getPropertyAsString(USER);
         this.password = nodeWrapper.getPropertyAsString(PASSWORD);
-        this.type = nodeWrapper.hasProperty(TYPE) && TYPE_ALFRESCO.equals(nodeWrapper.getPropertyAsString(TYPE)) ? TYPE_ALFRESCO : TYPE_CMIS;
+        this.type = nodeWrapper.hasProperty(CmisProviderFactory.TYPE) && CmisProviderFactory.TYPE_ALFRESCO.equals(nodeWrapper.getPropertyAsString(CmisProviderFactory.TYPE)) ? CmisProviderFactory.TYPE_ALFRESCO : TYPE_CMIS;
         this.url = nodeWrapper.getPropertyAsString(URL);
     }
 
