@@ -46,8 +46,8 @@
     <bean name="CmisRepositoryProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
         <property name="ignoreResourceNotFound" value="true"/>
         <property name="locations">
-            <list>
-                <value>classpath*:META-INF/spring/cmisDefault.properties</value>
+            <list value-type="java.lang.String">
+                <value>osgibundle:META-INF/spring/cmisDefault.properties</value>
                 <!--<value>/WEB-INF/etc/config/cmis.properties</value>-->
             </list>
         </property>

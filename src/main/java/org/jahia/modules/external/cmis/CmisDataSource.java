@@ -337,11 +337,26 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     public void start() {
         // cache config
         HashMap<String, String> repositoryPropertiesMap = getConf().getRepositoryPropertiesMap();
+
+        int concurrencyLevel = parseInt(repositoryPropertiesMap, CONF_SESSION_CACHE_CONCURRENCY_LEVEL);
+        int size = parseInt(repositoryPropertiesMap, CONF_SESSION_CACHE_MAXIMUM_SIZE);
+        int duration = parseInt(repositoryPropertiesMap, CONF_SESSION_CACHE_EXPIRE_AFTER_ACCESS);
+
         cacheBuilder = CacheBuilder.newBuilder().removalListener(removalListener)
-                .concurrencyLevel(Integer.parseInt(repositoryPropertiesMap.get(CONF_SESSION_CACHE_CONCURRENCY_LEVEL)))
-                .maximumSize(Integer.parseInt(repositoryPropertiesMap.get(CONF_SESSION_CACHE_MAXIMUM_SIZE)))
-                .expireAfterAccess(Integer.parseInt(repositoryPropertiesMap.get(CONF_SESSION_CACHE_EXPIRE_AFTER_ACCESS)), TimeUnit.MINUTES);
+                .concurrencyLevel(concurrencyLevel)
+                .maximumSize(size)
+                .expireAfterAccess(duration, TimeUnit.MINUTES);
         buildActiveConnections();
+    }
+
+    private int parseInt(HashMap<String, String> repositoryPropertiesMap, String propertyName) {
+        int value;
+        try {
+            value = Integer.parseInt(repositoryPropertiesMap.get(propertyName));
+        } catch (NumberFormatException e) {
+            throw new NumberFormatException(String.format("Parsing property %s failed. Unable to parse \"%s\" as int", propertyName, repositoryPropertiesMap.get(propertyName)));
+        }
+        return value;
     }
 
     @Override
