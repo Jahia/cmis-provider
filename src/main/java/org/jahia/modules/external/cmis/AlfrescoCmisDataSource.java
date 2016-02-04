@@ -62,14 +62,9 @@ public class AlfrescoCmisDataSource extends CmisDataSource implements ExternalDa
         super.start();
         HashMap<String, String> repositoryPropertiesMap = getConf().getRepositoryPropertiesMap();
         client = ClientBuilder.newBuilder()
-                .register(HttpAuthenticationFeature
-                        .basicBuilder()
-                        .nonPreemptive()
-                        .credentials(repositoryPropertiesMap.get(SessionParameter.USER),
-                                repositoryPropertiesMap.get(SessionParameter.PASSWORD))
-                        .build())
+                .register(HttpAuthenticationFeature.basic(repositoryPropertiesMap.get(SessionParameter.USER),
+                                repositoryPropertiesMap.get(SessionParameter.PASSWORD)))
                 .build();
-
     }
 
     @Override
