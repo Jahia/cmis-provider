@@ -73,6 +73,7 @@ public class AlfrescoCmisDataSource extends CmisDataSource implements ExternalDa
         client.close();
     }
 
+    @Override
     public Session getCmisSession() throws CantConnectCmis {
         try {
             JahiaUser aliasedUser = JCRSessionFactory.getInstance().getCurrentAliasedUser();

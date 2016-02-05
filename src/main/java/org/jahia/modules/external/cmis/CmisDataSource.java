@@ -646,6 +646,11 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         this.conf = conf;
     }
 
+    /**
+     * create or get from the connection pool a CMIS Session, a CMIS Session is created by user
+     * @return Session
+     * @throws CantConnectCmis
+     */
     public synchronized Session getCmisSession() throws CantConnectCmis {
         try {
             // get or create session
@@ -716,15 +721,24 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         return activeConnections;
     }
 
+    /**
+     * enable / disable the recording of statistics on the connections pool
+     * swithching state reset the pool
+     * @param recordingConnectionsStats
+     */
     public void setRecordingConnectionsStats(boolean recordingConnectionsStats) {
         if ((recordingConnectionsStats && isRecordingConnectionsStats()) || (!recordingConnectionsStats && !isRecordingConnectionsStats())) {
             return;
         }
-        activeConnections.cleanUp();
+        activeConnections.invalidateAll();
         this.recordingConnectionsStats = recordingConnectionsStats;
         buildActiveConnections();
     }
 
+    /**
+     * get the statistics recording status
+     * @return
+     */
     public boolean isRecordingConnectionsStats() {
         return recordingConnectionsStats;
     }
