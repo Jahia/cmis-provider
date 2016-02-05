@@ -31,7 +31,6 @@ import org.jahia.modules.external.cmis.CmisProviderFactory;
 import org.jahia.services.content.JCRNodeWrapper;
 import org.jahia.services.content.decorator.JCRMountPointNode;
 import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
@@ -41,8 +40,6 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import java.io.IOException;
 import java.io.InputStream;
 
 /**
@@ -114,7 +111,7 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
                 Document domDoc = domBuilder.parse(target.request().accept(MediaType.TEXT_XML).get(InputStream.class));
 
                 alfrescoRepositoryId = domDoc.getElementsByTagName("cmis:repositoryId").item(0).getTextContent();
-            } catch (SAXException | ParserConfigurationException | IOException e) {
+            } catch (Exception e) {
                 throw new RepositoryException("Unable to get repository id from " + url + CMIS_SERVICE_ENDPOINT, e);
             } finally {
                 client.close();
