@@ -46,12 +46,14 @@ import java.io.InputStream;
  * @author kevan
  */
 public class CMISMountPointFactory extends AbstractMountPointFactory {
-    protected static final String REPOSITORY_ID = "repositoryId";
-    protected static final String USER = "user";
-    protected static final String PASSWORD = "password";
-    protected static final String URL = "url";
-    protected static final String TYPE_CMIS = "cmis";
-    protected static final String CMIS_SERVICE_ENDPOINT = "service/cmis";
+    public static final String REPOSITORY_ID = "repositoryId";
+    public static final String USER = "user";
+    public static final String PASSWORD = "password";
+    public static final String URL = "url";
+    public static final String SLOW_CONNECTION="slowConnection";
+    public static final String TYPE_CMIS = "cmis";
+    public static final String CMIS_SERVICE_ENDPOINT = "service/cmis";
+
     private static final long serialVersionUID = 2927976149191746013L;
     @NotEmpty
     private String type;
@@ -65,6 +67,7 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
     private String password;
     @NotEmpty
     private String url;
+    private boolean slowConnection = false;
 
     @Override
     public String getName() {
@@ -95,6 +98,7 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
         mountNode.setProperty(USER, user);
         mountNode.setProperty(PASSWORD, password);
         mountNode.setProperty(URL, url);
+        mountNode.setProperty(SLOW_CONNECTION, slowConnection);
         if (CmisProviderFactory.TYPE_ALFRESCO.equals(type)) {
 
             // get repository id from the server
@@ -141,6 +145,7 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
         this.password = nodeWrapper.getPropertyAsString(PASSWORD);
         this.type = nodeWrapper.hasProperty(CmisProviderFactory.TYPE) && CmisProviderFactory.TYPE_ALFRESCO.equals(nodeWrapper.getPropertyAsString(CmisProviderFactory.TYPE)) ? CmisProviderFactory.TYPE_ALFRESCO : TYPE_CMIS;
         this.url = nodeWrapper.getPropertyAsString(URL);
+        this.slowConnection = nodeWrapper.getProperty(SLOW_CONNECTION).getBoolean();
     }
 
     public String getRepositoryId() {
@@ -183,4 +188,11 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
         this.type = type;
     }
 
+    public boolean isSlowConnection() {
+        return slowConnection;
+    }
+
+    public void setSlowConnection(boolean slowConnection) {
+        this.slowConnection = slowConnection;
+    }
 }

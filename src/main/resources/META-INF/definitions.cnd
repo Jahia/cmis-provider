@@ -8,6 +8,7 @@
     - user (string)
     - password (string) hidden
     - url (string)
+    - slowConnection (boolean)
     - type (string)
 
 [cmismix:base] mixin

@@ -73,6 +73,10 @@
                         <form:input path="url"/>
                     </div>
                     <div class="row-fluid">
+
+                        <form:label path="slowConnection"><form:checkbox path="slowConnection"/>&nbsp;<fmt:message key="cmisFactory.slowConnection"/></form:label>
+                    </div>
+                    <div class="row-fluid">
                         <jsp:include page="/modules/external-provider/angular/folderPicker.jsp"/>
                     </div>
                 </div>

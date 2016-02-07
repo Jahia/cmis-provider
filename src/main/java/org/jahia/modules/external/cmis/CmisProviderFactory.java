@@ -27,6 +27,7 @@ import org.apache.chemistry.opencmis.commons.SessionParameter;
 import org.apache.chemistry.opencmis.commons.enums.BindingType;
 import org.jahia.exceptions.JahiaInitializationException;
 import org.jahia.modules.external.ExternalContentStoreProvider;
+import org.jahia.modules.external.cmis.admin.CMISMountPointFactory;
 import org.jahia.security.license.LicenseCheckException;
 import org.jahia.security.license.LicenseCheckerService;
 import org.jahia.services.SpringContextSingleton;
@@ -81,12 +82,12 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
             conf.getRepositoryPropertiesMap().put(SessionParameter.BINDING_TYPE, BindingType.ATOMPUB.value());
             conf.getRepositoryPropertiesMap().put(SessionParameter.ATOMPUB_URL, cmisUrl);
         }
-        conf.getRepositoryPropertiesMap().put(SessionParameter.REPOSITORY_ID, mountPoint.getProperty("repositoryId").getString());
-        conf.getRepositoryPropertiesMap().put(SessionParameter.USER, mountPoint.getProperty("user").getString());
-        conf.getRepositoryPropertiesMap().put(SessionParameter.PASSWORD, mountPoint.getProperty("password").getString());
+        conf.getRepositoryPropertiesMap().put(SessionParameter.REPOSITORY_ID, mountPoint.getProperty(CMISMountPointFactory.REPOSITORY_ID).getString());
+        conf.getRepositoryPropertiesMap().put(SessionParameter.USER, mountPoint.getProperty(CMISMountPointFactory.USER).getString());
+        conf.getRepositoryPropertiesMap().put(SessionParameter.PASSWORD, mountPoint.getProperty(CMISMountPointFactory.PASSWORD).getString());
         dataSource.setConf(conf);
         dataSource.start();
-
+        provider.setSlowConnection(mountPoint.getProperty(CMISMountPointFactory.SLOW_CONNECTION).getBoolean());
         provider.setDataSource(dataSource);
         provider.setOverridableItems(Arrays.asList("jmix:description.*", "jmix:i18n.*"));
         provider.setNonExtendableMixins(Arrays.asList("cmismix:base", "cmismix:folder", "cmismix:document", "jmix:image"));
