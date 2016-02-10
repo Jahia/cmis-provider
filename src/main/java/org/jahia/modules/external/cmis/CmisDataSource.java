@@ -458,7 +458,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                     return null;
                 }
             });
-        }  catch (CmisUnauthorizedException e) {
+        } catch (CmisUnauthorizedException e) {
             throw new AccessDeniedException(e);
         } catch (CmisObjectNotFoundException e) {
             throw new PathNotFoundException("Path not found " + path);
@@ -496,7 +496,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 if (!properties.isEmpty()) {
                     folder.updateProperties(properties, true);
                 }
-            }  catch (CmisUnauthorizedException e) {
+            } catch (CmisUnauthorizedException e) {
                 throw new AccessDeniedException(e);
             } catch (CmisObjectNotFoundException e) { // Not found - create
                 if (!data.isNew()) {
@@ -533,7 +533,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 }
             } catch (CmisUnauthorizedException e) {
                 throw new AccessDeniedException(e);
-            }  catch (CmisObjectNotFoundException e) { // Not found - create
+            } catch (CmisObjectNotFoundException e) { // Not found - create
                 if (!data.isNew()) {
                     throw new PathNotFoundException("Path not found " + path + " Can't update node.");
                 }
@@ -626,55 +626,55 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
     @Override
     public List<String> search(final ExternalQuery query) throws RepositoryException {
-            return executeWithCMISSession(new ExecuteCallback<List<String>>() {
-                @Override
-                public List<String> execute(Session session) {
-                    try {
-                        QueryResolver resolver = new QueryResolver(CmisDataSource.this, query);
-                        String sql = resolver.resolve();
+        return executeWithCMISSession(new ExecuteCallback<List<String>>() {
+            @Override
+            public List<String> execute(Session session) {
+                try {
+                    QueryResolver resolver = new QueryResolver(CmisDataSource.this, query);
+                    String sql = resolver.resolve();
 
-                        // Not mapped or unsupported queries treated as empty.
-                        if (sql == null) {
-                            return Collections.emptyList();
-                        }
-
-                        boolean isFolder = false;
-                        if (BaseTypeId.CMIS_FOLDER.equals(session.getTypeDefinition(resolver.cmisType.getCmisName()).getBaseTypeId())) {
-                            isFolder = true;
-                            sql = sql.replace("cmis:objectId", "cmis:path");
-                        }
-                        if (log.isDebugEnabled()) {
-                            log.debug("CMIS query " + sql);
-                        }
-                        OperationContext operationContext = session.createOperationContext();
-                        operationContext.setIncludePathSegments(true);
-                        ItemIterable<QueryResult> results = session.query(sql, false, operationContext);
-                        if (query.getLimit() > 0 && query.getLimit() < Integer.MAX_VALUE) {
-                            results = results.getPage((int) query.getLimit());
-                        }
-                        if (query.getOffset() != 0) {
-                            results = results.skipTo(query.getOffset());
-                        }
-                        ArrayList<String> res = new ArrayList<>();
-                        for (QueryResult hit : results) {
-                            String path;
-                            if (isFolder) {
-                                path = hit.getPropertyValueByQueryName("id").toString();
-                            } else {
-                                String id = hit.getPropertyValueByQueryName("id").toString();
-                                CmisObject object = session.getObject(id);
-                                path = ((FileableCmisObject) object).getPaths().get(0);
-                            }
-                            res.add(path);
-                        }
-                        return res;
-                    } catch (RepositoryException | CmisObjectNotFoundException e) {
-                        // CmisObjectNotFoundException in case of the cmis server doesn't support query
-                        log.warn("Can't execute query to cmis ", e);
+                    // Not mapped or unsupported queries treated as empty.
+                    if (sql == null) {
                         return Collections.emptyList();
                     }
+
+                    boolean isFolder = false;
+                    if (BaseTypeId.CMIS_FOLDER.equals(session.getTypeDefinition(resolver.cmisType.getCmisName()).getBaseTypeId())) {
+                        isFolder = true;
+                        sql = sql.replace("cmis:objectId", "cmis:path");
+                    }
+                    if (log.isDebugEnabled()) {
+                        log.debug("CMIS query " + sql);
+                    }
+                    OperationContext operationContext = session.createOperationContext();
+                    operationContext.setIncludePathSegments(true);
+                    ItemIterable<QueryResult> results = session.query(sql, false, operationContext);
+                    if (query.getLimit() > 0 && query.getLimit() < Integer.MAX_VALUE) {
+                        results = results.getPage((int) query.getLimit());
+                    }
+                    if (query.getOffset() != 0) {
+                        results = results.skipTo(query.getOffset());
+                    }
+                    ArrayList<String> res = new ArrayList<>();
+                    for (QueryResult hit : results) {
+                        String path;
+                        if (isFolder) {
+                            path = hit.getPropertyValueByQueryName("id").toString();
+                        } else {
+                            String id = hit.getPropertyValueByQueryName("id").toString();
+                            CmisObject object = session.getObject(id);
+                            path = ((FileableCmisObject) object).getPaths().get(0);
+                        }
+                        res.add(path);
+                    }
+                    return res;
+                } catch (RepositoryException | CmisObjectNotFoundException e) {
+                    // CmisObjectNotFoundException in case of the cmis server doesn't support query
+                    log.warn("Can't execute query to cmis ", e);
+                    return Collections.emptyList();
                 }
-            });
+            }
+        });
     }
 
     private String removeContentSufix(String identifier) {
@@ -691,6 +691,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
     /**
      * create or get from the connection pool a CMIS Session, a CMIS Session is created by user
+     *
      * @return Session
      * @throws CantConnectCmis
      */
@@ -719,8 +720,9 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     /**
      * Execute the callback again with a new session if it fails due to authorization issue
      * todo : improve to prevent this call when a user really cannot have access to the resource
+     *
      * @param callback contains the code to execute
-     * @param <X> is the return Object type of the callback
+     * @param <X>      is the return Object type of the callback
      * @return
      * @throws RepositoryException
      */
@@ -796,6 +798,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     /**
      * enable / disable the recording of statistics on the connections pool
      * swithching state reset the pool
+     *
      * @param recordingConnectionsStats
      */
     public void setRecordingConnectionsStats(boolean recordingConnectionsStats) {
@@ -809,6 +812,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
     /**
      * get the statistics recording status
+     *
      * @return
      */
     public boolean isRecordingConnectionsStats() {
