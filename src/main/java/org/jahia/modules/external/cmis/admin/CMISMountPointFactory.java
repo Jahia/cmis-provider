@@ -52,7 +52,7 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
     public static final String URL = "url";
     public static final String SLOW_CONNECTION="slowConnection";
     public static final String TYPE_CMIS = "cmis";
-    public static final String CMIS_SERVICE_ENDPOINT = "service/cmis";
+    public static final String CMIS_SERVICE_ENDPOINT = "/api/-default-/public/cmis/versions/1.1/atom";
 
     private static final long serialVersionUID = 2927976149191746013L;
     @NotEmpty
