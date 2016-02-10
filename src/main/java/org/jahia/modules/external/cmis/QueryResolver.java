@@ -194,7 +194,7 @@ public class QueryResolver {
             try {
                 SameNode c = (SameNode) constraint;
                 String path = c.getPath();
-                CmisObject object = dataSource.getCmisSession().getObjectByPath(path);
+                CmisObject object = dataSource.getObjectByPath(path);
                 buff.append(" (cmis:objectId='").append(object.getId()).append("') ");
             } catch (CmisObjectNotFoundException e) {
                 return FALSE;
@@ -215,7 +215,7 @@ public class QueryResolver {
             try {
                 ChildNode c = (ChildNode) constraint;
                 String parentPath = c.getParentPath();
-                CmisObject object = dataSource.getCmisSession().getObjectByPath(parentPath);
+                CmisObject object = dataSource.getObjectByPath(parentPath);
                 buff.append(" IN_FOLDER('").append(object.getId()).append("') ");
             } catch (CmisObjectNotFoundException e) {
                 return FALSE;
@@ -224,7 +224,7 @@ public class QueryResolver {
             try {
                 DescendantNode c = (DescendantNode) constraint;
                 String ancestorPath = c.getAncestorPath();
-                CmisObject object = dataSource.getCmisSession().getObjectByPath(ancestorPath);
+                CmisObject object = dataSource.getObjectByPath(ancestorPath);
                 buff.append(" IN_TREE('").append(object.getId()).append("') ");
             } catch (CmisObjectNotFoundException e) {
                 return FALSE;

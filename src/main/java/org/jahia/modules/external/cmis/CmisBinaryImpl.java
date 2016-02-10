@@ -52,17 +52,21 @@ public class CmisBinaryImpl implements Binary {
 
     @Override
     public InputStream getStream() throws RepositoryException {
-        if (doc == null)
+        if (listOfStreamsForClose == null) {
+            listOfStreamsForClose = new ArrayList<InputStream>();
+        }
+        InputStream stream = null;
+        if (doc == null) {
             throw new IllegalStateException();
+        }
         try {
-            if (listOfStreamsForClose == null) {
-                listOfStreamsForClose = new ArrayList<InputStream>();
-            }
-            InputStream stream = doc.getContentStream().getStream();
-            listOfStreamsForClose.add(stream);
-            return stream;
+            return stream = doc.getContentStream().getStream();
         } catch (Exception e) {
             throw new RepositoryException(e);
+        } finally {
+            if (stream != null) {
+                listOfStreamsForClose.add(stream);
+            }
         }
     }
 
