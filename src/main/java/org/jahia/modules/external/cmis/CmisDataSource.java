@@ -716,6 +716,14 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         }
     }
 
+    /**
+     * Execute the callback again with a new session if it fails due to authorization issue
+     * todo : improve to prevent this call when a user really cannot have access to the resource
+     * @param callback contains the code to execute
+     * @param <X> is the return Object type of the callback
+     * @return
+     * @throws RepositoryException
+     */
     public <X> X executeWithCMISSession(ExecuteCallback<X> callback) throws RepositoryException {
         try {
             return callback.execute(getCmisSession());
@@ -726,6 +734,9 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         }
     }
 
+    /**
+     * Invalidate the current user connection
+     */
     protected void invalidateCurrentConnection() {
         getActiveConnections().invalidateAll();
     }
