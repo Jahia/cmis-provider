@@ -158,7 +158,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 ArrayList<ExternalData> list = new ArrayList<>();
                 try {
                     if (!path.endsWith(JCR_CONTENT_SUFFIX)) {
-                        CmisObject object = getObjectByPath(path);
+                        CmisObject object = session.getObjectByPath(path);
                         if (object instanceof Document) {
                             return Collections.singletonList(getObjectContent((Document) object, path + JCR_CONTENT_SUFFIX));
                         } else if (object instanceof Folder) {
@@ -174,8 +174,6 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                     }
                 } catch (CmisObjectNotFoundException | PathNotFoundException e) {
                     throw new PathNotFoundException("Can't find cmis folder " + path, e);
-                } catch (CantConnectCmis e) {
-                    // continue
                 }
                 return list;
             }
@@ -701,9 +699,13 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             final HashMap<String, String> repositoryPropertiesMap = getConf().getRepositoryPropertiesMap();
             Session cmisSession = activeConnections.get(repositoryPropertiesMap.get(SessionParameter.USER), new Callable<Session>() {
                 @Override
-                public Session call() throws Exception {
-                    SessionFactory factory = SessionFactoryImpl.newInstance();
-                    return factory.createSession(repositoryPropertiesMap);
+                public Session call() throws ExecutionException {
+                    try {
+                        SessionFactory factory = SessionFactoryImpl.newInstance();
+                        return factory.createSession(repositoryPropertiesMap);
+                    } catch (Exception e) {
+                        throw new ExecutionException(e);
+                    }
                 }
             });
             firstConnectFailure = true;
@@ -745,12 +747,19 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
     @Override
     public boolean isAvailable() throws RepositoryException {
-        try {
-            getCmisSession();
-        } catch (CantConnectCmis e) {
-            return false;
-        }
-        return true;
+        return executeWithCMISSession(new ExecuteCallback<Boolean>() {
+            @Override
+            public Boolean execute(Session session) throws RepositoryException {
+                try {
+                    OperationContext operationContext = session.createOperationContext();
+                    operationContext.setCacheEnabled(false);
+                    session.getRootFolder(operationContext);
+                } catch (Exception e) {
+                    return false;
+                }
+                return true;
+            }
+        });
     }
 
     @Override
