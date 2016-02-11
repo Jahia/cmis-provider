@@ -224,7 +224,6 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     }
 
     private ExternalData getObjectContent(Document doc, String jcrContentPath) throws PathNotFoundException {
-        doc = doc.getObjectOfLatestVersion(false);
         if (jcrContentPath == null) {
             if (doc.getPaths().isEmpty() || doc.getContentStreamLength() < 0) {
                 throw new PathNotFoundException("No path found for CMIS document: " + doc.getId());
@@ -266,7 +265,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         Map<String, String[]> properties = new HashMap<>();
         String additionalMixin = null;
         if (object instanceof Document) {
-            Document doc = ((Document) object).getObjectOfLatestVersion(false);
+            Document doc = ((Document) object);
             object = doc;
             // set image mixin if mymetype match
             if (doc.getContentStreamMimeType() != null && doc.getContentStreamMimeType().matches("image/(.*)")) {
