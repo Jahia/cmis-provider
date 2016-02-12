@@ -73,6 +73,10 @@
                         <form:input path="url"/>
                     </div>
                     <div class="row-fluid">
+                        <form:label path="remotePath"><fmt:message key="cmisFactory.remote.path"/></form:label>
+                        <form:input path="remotePath"/>
+                    </div>
+                    <div class="row-fluid">
 
                         <form:label path="slowConnection"><form:checkbox path="slowConnection"/>&nbsp;<fmt:message key="cmisFactory.slowConnection"/></form:label>
                     </div>

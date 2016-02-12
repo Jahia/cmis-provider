@@ -25,6 +25,7 @@ package org.jahia.modules.external.cmis;
 
 import org.apache.chemistry.opencmis.commons.SessionParameter;
 import org.apache.chemistry.opencmis.commons.enums.BindingType;
+import org.apache.commons.lang.StringUtils;
 import org.jahia.exceptions.JahiaInitializationException;
 import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.modules.external.cmis.admin.CMISMountPointFactory;
@@ -50,7 +51,6 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
 
     private ApplicationContext applicationContext;
 
-    public static final String TYPE = "type";
     public static final String TYPE_ALFRESCO = "alfresco";
     public static final String ALFRESCO_URL = "alfresco.url";
 
@@ -68,8 +68,12 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
         CmisDataSource dataSource;
         CmisConfiguration conf = (CmisConfiguration) applicationContext.getBean("CmisConfiguration");
         String cmisUrl = mountPoint.getProperty("url").getString();
-
-        if (TYPE_ALFRESCO.equals(mountPoint.getProperty(TYPE).getString())) {
+        cmisUrl = StringUtils.endsWith(cmisUrl,"/") ? StringUtils.substring(cmisUrl, 0, cmisUrl.length() - 1) : cmisUrl;
+        String type = "";
+        if (mountPoint.hasProperty(CMISMountPointFactory.TYPE)) {
+           type = mountPoint.getProperty(CMISMountPointFactory.TYPE).getString();
+        }
+        if (TYPE_ALFRESCO.equals(type)) {
             dataSource = new AlfrescoCmisDataSource();
             conf.getRepositoryPropertiesMap().put(ALFRESCO_URL, cmisUrl);
             if (BindingType.BROWSER.value().equals(conf.getRepositoryPropertiesMap().get(SessionParameter.BINDING_TYPE))) {
@@ -87,8 +91,19 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
         conf.getRepositoryPropertiesMap().put(SessionParameter.USER, mountPoint.getProperty(CMISMountPointFactory.USER).getString());
         conf.getRepositoryPropertiesMap().put(SessionParameter.PASSWORD, mountPoint.getProperty(CMISMountPointFactory.PASSWORD).getString());
         dataSource.setConf(conf);
+        String remotePath = "";
+        if (mountPoint.hasProperty(CMISMountPointFactory.REMOTE_PATH)) {
+            remotePath = mountPoint.getProperty(CMISMountPointFactory.REMOTE_PATH).getString();
+            remotePath = StringUtils.equals(remotePath, "/")?"":remotePath;
+        }
+        dataSource.setRemotePath(remotePath);
         dataSource.start();
-        provider.setSlowConnection(mountPoint.getProperty(CMISMountPointFactory.SLOW_CONNECTION).getBoolean());
+
+        boolean slowConnection = false;
+        if (mountPoint.hasProperty(CMISMountPointFactory.SLOW_CONNECTION)) {
+            slowConnection = mountPoint.getProperty(CMISMountPointFactory.SLOW_CONNECTION).getBoolean();
+        }
+        provider.setSlowConnection(slowConnection);
         provider.setDataSource(dataSource);
         provider.setOverridableItems(Arrays.asList("jmix:description.*", "jmix:i18n.*"));
         provider.setNonExtendableMixins(Arrays.asList("cmismix:base", "cmismix:folder", "cmismix:document", "jmix:image"));

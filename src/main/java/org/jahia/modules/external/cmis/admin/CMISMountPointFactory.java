@@ -52,6 +52,8 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
     public static final String URL = "url";
     public static final String SLOW_CONNECTION="slowConnection";
     public static final String TYPE_CMIS = "cmis";
+    public static final String REMOTE_PATH = "remotePath";
+    public static final String TYPE = "type";
     public static final String CMIS_SERVICE_ENDPOINT = "/api/-default-/public/cmis/versions/1.1/atom";
 
     private static final long serialVersionUID = 2927976149191746013L;
@@ -68,6 +70,8 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
     @NotEmpty
     private String url;
     private boolean slowConnection = false;
+
+    private String remotePath;
 
     @Override
     public String getName() {
@@ -99,6 +103,7 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
         mountNode.setProperty(PASSWORD, password);
         mountNode.setProperty(URL, url);
         mountNode.setProperty(SLOW_CONNECTION, slowConnection);
+        mountNode.setProperty(REMOTE_PATH, remotePath);
         if (CmisProviderFactory.TYPE_ALFRESCO.equals(type)) {
 
             // get repository id from the server
@@ -122,11 +127,11 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
             }
 
             mountNode.setProperty(REPOSITORY_ID, alfrescoRepositoryId);
-            mountNode.setProperty(CmisProviderFactory.TYPE, CmisProviderFactory.TYPE_ALFRESCO);
+            mountNode.setProperty(TYPE, CmisProviderFactory.TYPE_ALFRESCO);
             mountNode.setProtectedPropertyNames(new String[]{PASSWORD, REPOSITORY_ID});
         } else {
             mountNode.setProperty(REPOSITORY_ID, repositoryId);
-            mountNode.setProperty(CmisProviderFactory.TYPE, TYPE_CMIS);
+            mountNode.setProperty(TYPE, TYPE_CMIS);
             mountNode.setProtectedPropertyNames(new String[]{PASSWORD});
         }
     }
@@ -143,9 +148,10 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
         this.repositoryId = nodeWrapper.getPropertyAsString(REPOSITORY_ID);
         this.user = nodeWrapper.getPropertyAsString(USER);
         this.password = nodeWrapper.getPropertyAsString(PASSWORD);
-        this.type = nodeWrapper.hasProperty(CmisProviderFactory.TYPE) && CmisProviderFactory.TYPE_ALFRESCO.equals(nodeWrapper.getPropertyAsString(CmisProviderFactory.TYPE)) ? CmisProviderFactory.TYPE_ALFRESCO : TYPE_CMIS;
+        this.type = nodeWrapper.hasProperty(TYPE) && CmisProviderFactory.TYPE_ALFRESCO.equals(nodeWrapper.getPropertyAsString(TYPE)) ? CmisProviderFactory.TYPE_ALFRESCO : TYPE_CMIS;
+        this.remotePath = nodeWrapper.hasProperty(REMOTE_PATH) ? nodeWrapper.getProperty(REMOTE_PATH).getString() : "";
         this.url = nodeWrapper.getPropertyAsString(URL);
-        this.slowConnection = nodeWrapper.getProperty(SLOW_CONNECTION).getBoolean();
+        this.slowConnection = nodeWrapper.hasProperty(SLOW_CONNECTION) && nodeWrapper.getProperty(SLOW_CONNECTION).getBoolean();
     }
 
     public String getRepositoryId() {
@@ -194,5 +200,13 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
 
     public void setSlowConnection(boolean slowConnection) {
         this.slowConnection = slowConnection;
+    }
+
+    public String getRemotePath() {
+        return remotePath;
+    }
+
+    public void setRemotePath(String remotePath) {
+        this.remotePath = remotePath;
     }
 }

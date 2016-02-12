@@ -10,6 +10,7 @@
     - url (string)
     - slowConnection (boolean)
     - type (string)
+    - remotePath (string)
 
 [cmismix:base] mixin
     - cmis:objectId  (string) protected

@@ -88,6 +88,8 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     protected Cache<String, Session> activeConnections;
     private boolean recordingConnectionsStats;
 
+    private String remotePath;
+
     private final RemovalListener<String, Session> removalListener = new RemovalListener<String, Session>() {
         @Override
         public void onRemoval(RemovalNotification<String, Session> removal) {
@@ -122,9 +124,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                     executeWithCMISSession(new ExecuteCallback<Object>() {
                         @Override
                         public Object execute(Session session) {
-                            OperationContext operationContext = session.createOperationContext();
-                            operationContext.setMaxItemsPerPage(Integer.MAX_VALUE);
-                            ItemIterable<CmisObject> children = folder.getChildren(operationContext);
+                            ItemIterable<CmisObject> children = folder.getChildren();
                             for (CmisObject child : children) {
                                 list.add(child.getName());
                             }
@@ -146,7 +146,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         return executeWithCMISSession(new ExecuteCallback<CmisObject>() {
             @Override
             public CmisObject execute(Session session) throws RepositoryException {
-                return session.getObjectByPath(path);
+                return session.getObjectByPath(addRemotePath(path));
             }
         });
     }
@@ -159,7 +159,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 ArrayList<ExternalData> list = new ArrayList<>();
                 try {
                     if (!path.endsWith(JCR_CONTENT_SUFFIX)) {
-                        CmisObject object = session.getObjectByPath(path);
+                        CmisObject object = session.getObjectByPath(addRemotePath(path));
                         if (object instanceof Document) {
                             return Collections.singletonList(getObjectContent((Document) object, path + JCR_CONTENT_SUFFIX));
                         } else if (object instanceof Folder) {
@@ -234,7 +234,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         }
         Map<String, String[]> properties = new HashMap<>(1);
         properties.put(Constants.JCR_MIMETYPE, new String[]{doc.getContentStreamMimeType()});
-        ExternalData externalData = new ExternalData(stripVersionFromId(doc.getId()) + JCR_CONTENT_SUFFIX, jcrContentPath, Constants.NT_RESOURCE, properties);
+        ExternalData externalData = new ExternalData(stripVersionFromId(doc.getId()) + JCR_CONTENT_SUFFIX, removeRemotePath(jcrContentPath), Constants.NT_RESOURCE, properties);
 
         Map<String, Binary[]> binaryProperties = new HashMap<>(1);
         if (doc.getContentStreamLength() > 0) {
@@ -289,13 +289,21 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         properties.put(Constants.JCR_CREATED, formatDate(object.getCreationDate()));
         properties.put(Constants.JCR_LASTMODIFIED, formatDate(object.getLastModificationDate()));
         mapProperties(properties, object, typeMapping, 'r');
-        ExternalData externalData = new ExternalData(stripVersionFromId(object.getId()), path, typeMapping.getJcrName(), properties);
+        ExternalData externalData = new ExternalData(stripVersionFromId(object.getId()), removeRemotePath(path), typeMapping.getJcrName(), properties);
         Set<String> mixins = new HashSet<>(typeMapping.getJcrMixins());
         if (additionalMixin != null) {
             mixins.add(additionalMixin);
         }
         externalData.setMixin(new ArrayList<String>(mixins));
         return externalData;
+    }
+
+    private String removeRemotePath(String path) {
+        return StringUtils.startsWith(path, remotePath) ? ( StringUtils.equals(path, remotePath) ? "/" : StringUtils.substringAfter(path, remotePath)) : path;
+    }
+
+    private String addRemotePath(String path) {
+        return remotePath + path;
     }
 
     private String[] formatDate(GregorianCalendar date) {
@@ -467,7 +475,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
     @Override
     public void saveItem(ExternalData data) throws RepositoryException {
-        String path = data.getPath();
+        String path = addRemotePath(data.getPath());
         String jcrTypeName = data.getType();
         ExtendedNodeType nodeType = NodeTypeRegistry.getInstance().getNodeType(jcrTypeName);
         if (path.endsWith(JCR_CONTENT_SUFFIX)) {
@@ -601,7 +609,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         if (data.getBinaryProperties() == null) {
             return null;
         }
-        String path = data.getPath();
+        String path = addRemotePath(data.getPath());
         if (path.endsWith(JCR_CONTENT_SUFFIX)) {
             path = path.substring(0, path.lastIndexOf('/'));
         }
@@ -661,7 +669,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                         } else {
                             String id = hit.getPropertyValueByQueryName("id").toString();
                             CmisObject object = session.getObject(id);
-                            path = ((FileableCmisObject) object).getPaths().get(0);
+                            path = removeRemotePath(((FileableCmisObject) object).getPaths().get(0));
                         }
                         res.add(path);
                     }
@@ -822,5 +830,9 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
      */
     public boolean isRecordingConnectionsStats() {
         return recordingConnectionsStats;
+    }
+
+    public void setRemotePath(String remotePath) {
+        this.remotePath = remotePath;
     }
 }
