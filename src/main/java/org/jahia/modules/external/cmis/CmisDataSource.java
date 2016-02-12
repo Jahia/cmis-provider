@@ -27,6 +27,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import org.apache.chemistry.opencmis.client.api.*;
 import org.apache.chemistry.opencmis.client.api.Property;
 import org.apache.chemistry.opencmis.client.api.Session;
@@ -699,17 +700,13 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             Session cmisSession = activeConnections.get(repositoryPropertiesMap.get(SessionParameter.USER), new Callable<Session>() {
                 @Override
                 public Session call() throws ExecutionException {
-                    try {
-                        SessionFactory factory = SessionFactoryImpl.newInstance();
-                        return factory.createSession(repositoryPropertiesMap);
-                    } catch (Exception e) {
-                        throw new ExecutionException(e);
-                    }
+                    SessionFactory factory = SessionFactoryImpl.newInstance();
+                    return factory.createSession(repositoryPropertiesMap);
                 }
             });
             firstConnectFailure = true;
             return cmisSession;
-        } catch (CmisBaseException | ExecutionException e) {
+        } catch (CmisBaseException | ExecutionException | UncheckedExecutionException e) {
             if (firstConnectFailure) {
                 log.error("Can't establish cmis connection", e);
                 firstConnectFailure = false;

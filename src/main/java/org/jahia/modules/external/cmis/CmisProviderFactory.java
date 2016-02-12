@@ -52,6 +52,7 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
 
     public static final String TYPE = "type";
     public static final String TYPE_ALFRESCO = "alfresco";
+    public static final String ALFRESCO_URL = "alfresco.url";
 
 
     @Override
@@ -70,7 +71,7 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
 
         if (TYPE_ALFRESCO.equals(mountPoint.getProperty(TYPE).getString())) {
             dataSource = new AlfrescoCmisDataSource();
-            conf.getRepositoryPropertiesMap().put("alfresco.url", cmisUrl);
+            conf.getRepositoryPropertiesMap().put(ALFRESCO_URL, cmisUrl);
             if (BindingType.BROWSER.value().equals(conf.getRepositoryPropertiesMap().get(SessionParameter.BINDING_TYPE))) {
                 conf.getRepositoryPropertiesMap().put(SessionParameter.BROWSER_URL, cmisUrl + ALFRESCO_ENDPOINT_BROWSER);
             } else {

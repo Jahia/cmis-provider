@@ -23,9 +23,11 @@
  */
 package org.jahia.modules.external.cmis;
 
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import org.apache.chemistry.opencmis.client.api.Session;
 import org.apache.chemistry.opencmis.client.runtime.SessionFactoryImpl;
 import org.apache.chemistry.opencmis.commons.SessionParameter;
+import org.apache.chemistry.opencmis.commons.exceptions.CmisBaseException;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.modules.external.ExternalDataSource;
@@ -89,7 +91,7 @@ public class AlfrescoCmisDataSource extends CmisDataSource implements ExternalDa
                     if (!user.startsWith(" system ") &&
                             !user.equals("root")) {
 
-                        WebTarget target = client.target(repositoryPropertiesMap.get("alfresco.url")).
+                        WebTarget target = client.target(repositoryPropertiesMap.get(CmisProviderFactory.ALFRESCO_URL)).
                                 path("service/impersonateLogin").
                                 queryParam("format", "json").
                                 queryParam("username", user);
@@ -105,7 +107,7 @@ public class AlfrescoCmisDataSource extends CmisDataSource implements ExternalDa
                     return factory.createSession(propertiesMap);
                 }
             });
-        } catch (ExecutionException e) {
+        } catch (CmisBaseException | ExecutionException | UncheckedExecutionException  e) {
             throw new CantConnectCmis(e);
         }
     }
