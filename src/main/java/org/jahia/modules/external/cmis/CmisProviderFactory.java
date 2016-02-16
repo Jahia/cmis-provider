@@ -96,6 +96,7 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
             remotePath = mountPoint.getProperty(CMISMountPointFactory.REMOTE_PATH).getString();
             remotePath = StringUtils.equals(remotePath, "/")?"":remotePath;
         }
+        dataSource.setProvider(provider);
         dataSource.setRemotePath(remotePath);
         dataSource.start();
 

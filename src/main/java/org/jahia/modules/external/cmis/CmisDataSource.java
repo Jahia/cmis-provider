@@ -47,10 +47,12 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.util.ISO8601;
 import org.apache.jackrabbit.value.BinaryImpl;
 import org.jahia.api.Constants;
+import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.modules.external.ExternalData;
 import org.jahia.modules.external.ExternalDataSource;
 import org.jahia.modules.external.ExternalQuery;
 import org.jahia.services.content.JCRContentUtils;
+import org.jahia.services.content.decorator.JCRMountPointNode;
 import org.jahia.services.content.nodetypes.ExtendedNodeType;
 import org.jahia.services.content.nodetypes.NodeTypeRegistry;
 import org.slf4j.Logger;
@@ -60,6 +62,7 @@ import javax.jcr.*;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.net.*;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -87,6 +90,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     private boolean firstConnectFailure = true;
     protected Cache<String, Session> activeConnections;
     private boolean recordingConnectionsStats;
+    private ExternalContentStoreProvider provider;
 
     private String remotePath;
 
@@ -212,13 +216,6 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 CmisObject object = getObjectByPath(path);
                 return getObject(object, path);
             }
-        } catch (PathNotFoundException e) {
-            throw e;
-        } catch (CantConnectCmis e) {  // Workaround if Repository is not accessible
-            if ("/".equals(path)) {
-                return createDummyMointPointData();
-            }
-            throw new PathNotFoundException("Can't find object by path " + path, e);
         } catch (Exception e) {
             throw new PathNotFoundException("Can't find object by path " + path, e);
         }
@@ -739,6 +736,16 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             // flush caches
             invalidateCurrentConnection();
             return callback.execute(getCmisSession());
+        } catch (Exception e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof ConnectException ||
+                    cause instanceof BindException ||
+                    cause instanceof NoRouteToHostException ||
+                    cause instanceof SocketTimeoutException ||
+                    cause instanceof UnknownHostException) {
+                provider.setMountStatus(JCRMountPointNode.MountStatus.waiting, e.getMessage());
+            }
+            throw e;
         }
     }
 
@@ -834,5 +841,9 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
     public void setRemotePath(String remotePath) {
         this.remotePath = remotePath;
+    }
+
+    public void setProvider(ExternalContentStoreProvider provider) {
+        this.provider = provider;
     }
 }
