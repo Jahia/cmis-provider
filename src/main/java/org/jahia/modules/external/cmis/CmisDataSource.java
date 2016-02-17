@@ -839,6 +839,10 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         return recordingConnectionsStats;
     }
 
+    public String getRemotePath() {
+        return remotePath;
+    }
+
     public void setRemotePath(String remotePath) {
         this.remotePath = remotePath;
     }

@@ -25,6 +25,7 @@ package org.jahia.modules.external.cmis;
 
 import org.apache.chemistry.opencmis.client.api.CmisObject;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisObjectNotFoundException;
+import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.commons.query.qom.Operator;
 import org.jahia.modules.external.ExternalQuery;
 import org.slf4j.Logger;
@@ -85,6 +86,7 @@ public class QueryResolver {
         buff.append(cmisType.getQueryName());
 //        if (selector.getSelectorName()!=null && !selector.getSelectorName().isEmpty())
 //            buff.append(" as ").append(selector.getSelectorName());
+        boolean hasConstraint = false;
         if (query.getConstraint() != null) {
             StringBuffer buffer = addConstraint(query.getConstraint());
             if (buffer == FALSE) {
@@ -92,8 +94,20 @@ public class QueryResolver {
             } else if (buffer != TRUE) {
                 buff.append(" WHERE ");
                 buff.append(buffer);
+                hasConstraint = true;
             }
         }
+        if (StringUtils.isNotBlank(dataSource.getRemotePath())) {
+            if (hasConstraint) {
+                buff.append(" AND");
+            } else {
+                buff.append(" WHERE ");
+            }
+            buff.append( " IN_TREE('");
+            buff.append( dataSource.getObjectByPath("/"));
+            buff.append("')");
+        }
+
         if (query.getOrderings() != null) {
             boolean isFirst = true;
             StringBuffer tmpBuf = new StringBuffer();
