@@ -448,7 +448,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             executeWithCMISSession(new ExecuteCallback<Object>() {
                 @Override
                 public Object execute(Session session) {
-                    FileUtils.delete(path, session);
+                    FileUtils.delete(addRemotePath(path), session);
                     return null;
                 }
             });
