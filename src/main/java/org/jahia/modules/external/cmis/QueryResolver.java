@@ -104,7 +104,7 @@ public class QueryResolver {
                 buff.append(" WHERE ");
             }
             buff.append( " IN_TREE('");
-            buff.append( dataSource.getObjectByPath("/"));
+            buff.append( dataSource.getObjectByPath("/").getId() );
             buff.append("')");
         }
 
