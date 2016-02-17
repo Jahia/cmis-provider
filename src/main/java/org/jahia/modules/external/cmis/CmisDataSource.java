@@ -472,7 +472,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
     @Override
     public void saveItem(ExternalData data) throws RepositoryException {
-        String path = addRemotePath(data.getPath());
+        String path = data.getPath();
         String jcrTypeName = data.getType();
         ExtendedNodeType nodeType = NodeTypeRegistry.getInstance().getNodeType(jcrTypeName);
         if (path.endsWith(JCR_CONTENT_SUFFIX)) {
