@@ -249,15 +249,6 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         return id.contains(";") ? StringUtils.substringBeforeLast(id, ";") : id;
     }
 
-    private ExternalData createDummyMointPointData() {
-        CmisTypeMapping typeMapping = getConf().getDefaultFolderType();
-        Map<String, String[]> properties = new HashMap<>();
-        String[] now = formatDate(new GregorianCalendar());
-        properties.put(Constants.JCR_CREATED, now);
-        properties.put(Constants.JCR_LASTMODIFIED, now);
-        return new ExternalData("-1", "/", typeMapping.getJcrName(), properties);
-    }
-
     private ExternalData getObject(CmisObject object, String path) throws PathNotFoundException {
         CmisTypeMapping typeMapping = getTypeMapping(object);
         Map<String, String[]> properties = new HashMap<>();
