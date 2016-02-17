@@ -41,6 +41,7 @@ import org.apache.chemistry.opencmis.commons.enums.Action;
 import org.apache.chemistry.opencmis.commons.enums.BaseTypeId;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisBaseException;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisObjectNotFoundException;
+import org.apache.chemistry.opencmis.commons.exceptions.CmisServiceUnavailableException;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisUnauthorizedException;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ContentStreamImpl;
 import org.apache.commons.lang.StringUtils;
@@ -733,7 +734,8 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                     cause instanceof BindException ||
                     cause instanceof NoRouteToHostException ||
                     cause instanceof SocketTimeoutException ||
-                    cause instanceof UnknownHostException) {
+                    cause instanceof UnknownHostException ||
+                    cause instanceof CmisServiceUnavailableException) {
                 provider.setMountStatus(JCRMountPointNode.MountStatus.waiting, e.getMessage());
             }
             throw e;
