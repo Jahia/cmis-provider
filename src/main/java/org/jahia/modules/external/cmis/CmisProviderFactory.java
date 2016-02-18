@@ -109,6 +109,7 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
         provider.setOverridableItems(Arrays.asList("jmix:description.*", "jmix:i18n.*"));
         provider.setNonExtendableMixins(Arrays.asList("cmismix:base", "cmismix:folder", "cmismix:document", "jmix:image"));
         provider.setDynamicallyMounted(true);
+        provider.setCacheKeyOnReferenceSupport(TYPE_ALFRESCO.equals(type));
         provider.setSessionFactory(JCRSessionFactory.getInstance());
         try {
             provider.start();
