@@ -29,6 +29,7 @@ import org.apache.chemistry.opencmis.client.runtime.SessionFactoryImpl;
 import org.apache.chemistry.opencmis.commons.SessionParameter;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisBaseException;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
+import org.jahia.api.Constants;
 import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.modules.external.ExternalDataSource;
 import org.jahia.services.content.JCRSessionFactory;
@@ -90,11 +91,15 @@ public class AlfrescoCmisDataSource extends CmisDataSource implements ExternalDa
                     HashMap<String, String> propertiesMap = new HashMap<>(repositoryPropertiesMap);
                     if (!user.startsWith(" system ") &&
                             !user.equals("root")) {
-
+                        String u = user;
+                        if (user.trim().equals(Constants.GUEST_USERNAME)) {
+                            // use empty user to get an anonymous session
+                            u = " ";
+                        }
                         WebTarget target = client.target(repositoryPropertiesMap.get(CmisProviderFactory.ALFRESCO_URL)).
                                 path("service/impersonateLogin").
                                 queryParam("format", "json").
-                                queryParam("username", user);
+                                queryParam("username", u);
 
                         String response = target.request().accept(MediaType.APPLICATION_JSON).get(String.class);
                         JSONObject obj = new JSONObject(response);
