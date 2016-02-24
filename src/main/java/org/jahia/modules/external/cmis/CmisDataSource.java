@@ -84,6 +84,8 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     private static final String CONF_SESSION_CACHE_MAXIMUM_SIZE = "org.jahia.cmis.session.cache.maximumSize";
     private static final String CONF_SESSION_CACHE_EXPIRE_AFTER_ACCESS = "org.jahia.cmis.session.cache.expireAfterAccess";
 
+    private static final String CONF_MAX_CHILD_NODES = "org.jahia.cmis.max.child.nodes";
+
     private static final String DEFAULT_MIMETYPE = "binary/octet-stream";
     private static final List<String> JCR_CONTENT_LIST = Collections.singletonList(Constants.JCR_CONTENT);
     private static final String JCR_CONTENT_SUFFIX = "/" + Constants.JCR_CONTENT;
@@ -92,6 +94,8 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     protected Cache<String, Session> activeConnections;
     private boolean recordingConnectionsStats;
     private ExternalContentStoreProvider provider;
+
+    private int maxChildNodes = 0;
 
     private String remotePath;
 
@@ -130,8 +134,13 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                         @Override
                         public Object execute(Session session) {
                             ItemIterable<CmisObject> children = folder.getChildren();
+                            int i = 0;
                             for (CmisObject child : children) {
                                 list.add(child.getName());
+                                if (maxChildNodes > 0 && ++i > maxChildNodes) {
+                                    log.warn(String.format("getChildren returns too many children - path : %s , number of children %s, max children %s", path, children.getTotalNumItems(), maxChildNodes));
+                                    break;
+                                }
                             }
                             return null;
                         }
@@ -170,7 +179,12 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                         } else if (object instanceof Folder) {
                             Folder folder = (Folder) object;
                             ItemIterable<CmisObject> children = folder.getChildren();
+                            int i = 0;
                             for (CmisObject child : children) {
+                                if (maxChildNodes > 0 && ++i > maxChildNodes) {
+                                    log.warn(String.format("getChildrenNodes returns too many children - path : %s , number of children %s, max children %s", path, children.getTotalNumItems(), maxChildNodes));
+                                    break;
+                                }
                                 list.add(getObject(child, (!folder.getPath().equals("/") ? folder.getPath() + "/" : "/") + child.getName()));
                                 if (child instanceof Document) {
                                     list.add(getObjectContent((Document) child, (!folder.getPath().equals("/") ? folder.getPath() + "/" : "/") + child.getName() + JCR_CONTENT_SUFFIX));
@@ -361,7 +375,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         int concurrencyLevel = parseInt(repositoryPropertiesMap, CONF_SESSION_CACHE_CONCURRENCY_LEVEL);
         int size = parseInt(repositoryPropertiesMap, CONF_SESSION_CACHE_MAXIMUM_SIZE);
         int duration = parseInt(repositoryPropertiesMap, CONF_SESSION_CACHE_EXPIRE_AFTER_ACCESS);
-
+        maxChildNodes = parseInt(repositoryPropertiesMap, CONF_MAX_CHILD_NODES);
         cacheBuilder = CacheBuilder.newBuilder().removalListener(removalListener)
                 .concurrencyLevel(concurrencyLevel)
                 .maximumSize(size)
@@ -722,12 +736,17 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
      * @throws RepositoryException
      */
     public <X> X executeWithCMISSession(ExecuteCallback<X> callback) throws RepositoryException {
+        Session cmisSession = getCmisSession();
+        if (maxChildNodes > 0) {
+            cmisSession.getDefaultContext().setMaxItemsPerPage(maxChildNodes);
+            cmisSession.getDefaultContext().setOrderBy("cmis:name");
+        }
         try {
-            return callback.execute(getCmisSession());
+            return callback.execute(cmisSession);
         } catch (CmisUnauthorizedException e) {
             // flush caches
             invalidateCurrentConnection();
-            return callback.execute(getCmisSession());
+            return callback.execute(cmisSession);
         } catch (Exception e) {
             Throwable cause = e.getCause();
             if (cause instanceof ConnectException ||
