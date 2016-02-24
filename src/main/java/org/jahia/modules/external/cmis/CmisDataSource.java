@@ -508,20 +508,24 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             } catch (CmisUnauthorizedException e) {
                 throw new AccessDeniedException(e);
             } catch (CmisObjectNotFoundException e) { // Not found - create
-                if (!data.isNew()) {
-                    throw new PathNotFoundException("Path not found " + path + " Can't update node.");
+                try {
+                    if (!data.isNew()) {
+                        throw new PathNotFoundException("Path not found " + path + " Can't update node.");
+                    }
+                    path = path.substring(0, path.lastIndexOf('/'));
+                    if (path.length() == 0) {
+                        path = "/";
+                    }
+                    Folder parentFolder = (Folder) getObjectByPath(path);
+                    properties.put(PropertyIds.OBJECT_TYPE_ID, cmisType.getCmisName());
+                    properties.put(PropertyIds.NAME, name);
+                    mapProperties(properties, data, cmisType, 'c');
+                    Folder newFolder = parentFolder.createFolder(properties);
+                    // change externalData id since it's generate by a parent call and can be inconsistent with CMIS provider ids, we can override it
+                    data.setId(stripVersionFromId(newFolder.getId()));
+                } catch (CmisUnauthorizedException e1) {
+                    throw new AccessDeniedException(e1);
                 }
-                path = path.substring(0, path.lastIndexOf('/'));
-                if (path.length() == 0) {
-                    path = "/";
-                }
-                Folder parentFolder = (Folder) getObjectByPath(path);
-                properties.put(PropertyIds.OBJECT_TYPE_ID, cmisType.getCmisName());
-                properties.put(PropertyIds.NAME, name);
-                mapProperties(properties, data, cmisType, 'c');
-                Folder newFolder = parentFolder.createFolder(properties);
-                // change externalData id since it's generate by a parent call and can be inconsistent with CMIS provider ids, we can override it
-                data.setId(stripVersionFromId(newFolder.getId()));
             }
         } else if (nodeType.isNodeType("jnt:file")) {
             CmisTypeMapping cmisType = conf.getTypeByJCR(jcrTypeName);
@@ -543,30 +547,32 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             } catch (CmisUnauthorizedException e) {
                 throw new AccessDeniedException(e);
             } catch (CmisObjectNotFoundException e) { // Not found - create
-                if (!data.isNew()) {
-                    throw new PathNotFoundException("Path not found " + path + " Can't update node.");
+                try {
+                    if (!data.isNew()) {
+                        throw new PathNotFoundException("Path not found " + path + " Can't update node.");
+                    }
+                    path = path.substring(0, path.lastIndexOf('/'));
+                    if (path.length() == 0) {
+                        path = "/";
+                    }
+                    Folder parentFolder = (Folder) getObjectByPath(path);
+                    properties.put(PropertyIds.OBJECT_TYPE_ID, cmisType.getCmisName());
+                    properties.put(PropertyIds.NAME, name);
+                    mapProperties(properties, data, cmisType, 'c');
+                    String mimeType = JCRContentUtils.getMimeType(name, DEFAULT_MIMETYPE);
+                    if (properties.containsKey(PropertyIds.CONTENT_STREAM_MIME_TYPE)) {
+                        mimeType = properties.get(PropertyIds.CONTENT_STREAM_MIME_TYPE).toString();
+                    }
+                    InputStream stream = new ByteArrayInputStream(new byte[0]);
+                    ContentStream contentStream = new ContentStreamImpl(name, BigInteger.valueOf(0),
+                            mimeType, stream);
+                    Document newDocument = parentFolder.createDocument(properties, contentStream, null);
+                    // change externalData id since it's generate by a parent call and can be inconsistent with CMIS provider ids, we can override it
+                    data.setId(stripVersionFromId(newDocument.getId()));
+                } catch (CmisUnauthorizedException e1) {
+                    throw new RepositoryException(e1);
                 }
-                path = path.substring(0, path.lastIndexOf('/'));
-                if (path.length() == 0) {
-                    path = "/";
-                }
-                Folder parentFolder = (Folder) getObjectByPath(path);
-                properties.put(PropertyIds.OBJECT_TYPE_ID, cmisType.getCmisName());
-                properties.put(PropertyIds.NAME, name);
-                mapProperties(properties, data, cmisType, 'c');
-                String mimeType = JCRContentUtils.getMimeType(name, DEFAULT_MIMETYPE);
-                if (properties.containsKey(PropertyIds.CONTENT_STREAM_MIME_TYPE)) {
-                    mimeType = properties.get(PropertyIds.CONTENT_STREAM_MIME_TYPE).toString();
-                }
-                InputStream stream = new ByteArrayInputStream(new byte[0]);
-                ContentStream contentStream = new ContentStreamImpl(name, BigInteger.valueOf(0),
-                        mimeType, stream);
-                Document newDocument = parentFolder.createDocument(properties, contentStream, null);
-                // change externalData id since it's generate by a parent call and can be inconsistent with CMIS provider ids, we can override it
-                data.setId(stripVersionFromId(newDocument.getId()));
             }
-        } else if (nodeType.isNodeType("nt:resource")) {
-            //ignore
         }
     }
 
