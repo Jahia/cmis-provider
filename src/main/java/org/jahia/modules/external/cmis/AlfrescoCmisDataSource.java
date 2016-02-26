@@ -97,13 +97,14 @@ public class AlfrescoCmisDataSource extends CmisDataSource implements ExternalDa
                         if (!user.startsWith(" system ") &&
                                 !user.equals("root")) {
                             if (user.trim().equals(Constants.GUEST_USERNAME)) {
+                                // guest user is not authorize to browse cmis repo, public user should be use if set
                                 throw new CmisUnauthorizedException();
                             }
                             setConnectionProperties(propertiesMap, user);
                         }
                         return factory.createSession(propertiesMap);
                     } catch (CmisUnauthorizedException e) {
-                        // log failed try to connect as guest
+                        // log failed try to connect with public user
                         if (StringUtils.isEmpty(publicUser)) {
                             throw new CmisUnauthorizedException("You cannot access Alfresco as guest user, please set a public user in your configuration");
                         } else {
