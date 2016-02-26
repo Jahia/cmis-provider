@@ -93,7 +93,7 @@ public class CMISMountPointFactoryHandler extends AbstractMountPointFactoryHandl
             }
         } catch (RepositoryException e) {
             logger.error("Error saving mount point " + cmisMountPointFactory.getName(), e);
-            MessageBuilder messageBuilder = new MessageBuilder().error().defaultText(Messages.get(BUNDLE, "serverSettings.cmisMountPointFactory.save.error", locale));
+            MessageBuilder messageBuilder = new MessageBuilder().error().defaultText(Messages.getWithArgs(BUNDLE, "serverSettings.cmisMountPointFactory.save.error", locale, e.getMessage()));
             messageContext.addMessage(messageBuilder.build());
         }
         return false;

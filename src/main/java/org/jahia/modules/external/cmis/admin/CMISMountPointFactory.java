@@ -124,7 +124,7 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
 
                 alfrescoRepositoryId = domDoc.getElementsByTagName("cmis:repositoryId").item(0).getTextContent();
             } catch (Exception e) {
-                throw new RepositoryException("Unable to get repository id from " + url + CMIS_SERVICE_ENDPOINT, e);
+                throw new RepositoryException(String.format("Unable to get repository id from %s due to the following error '%s'", url + CMIS_SERVICE_ENDPOINT, e.getMessage()), e);
             } finally {
                 client.close();
             }
