@@ -81,6 +81,9 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
             } else {
                 conf.getRepositoryPropertiesMap().put(SessionParameter.ATOMPUB_URL, cmisUrl + ALFRESCO_ENDPOINT_ATOM);
             }
+            if (mountPoint.hasProperty(CMISMountPointFactory.PUBLIC_USER)) {
+                ((AlfrescoCmisDataSource) dataSource).setPublicUser(mountPoint.getProperty(CMISMountPointFactory.PUBLIC_USER).getString());
+            }
         } else {
             // legacy support
             dataSource = new CmisDataSource();

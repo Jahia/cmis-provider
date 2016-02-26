@@ -28,6 +28,8 @@ import org.apache.chemistry.opencmis.client.api.Session;
 import org.apache.chemistry.opencmis.client.runtime.SessionFactoryImpl;
 import org.apache.chemistry.opencmis.commons.SessionParameter;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisBaseException;
+import org.apache.chemistry.opencmis.commons.exceptions.CmisConnectionException;
+import org.apache.commons.lang.StringUtils;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.jahia.api.Constants;
 import org.jahia.modules.external.ExternalContentStoreProvider;
@@ -56,6 +58,7 @@ public class AlfrescoCmisDataSource extends CmisDataSource implements ExternalDa
     private static final Logger log = LoggerFactory.getLogger(AlfrescoCmisDataSource.class);
 
     private Client client;
+    private String publicUser;
 
     public AlfrescoCmisDataSource() {
     }
@@ -93,8 +96,11 @@ public class AlfrescoCmisDataSource extends CmisDataSource implements ExternalDa
                             !user.equals("root")) {
                         String u = user;
                         if (user.trim().equals(Constants.GUEST_USERNAME)) {
-                            // use empty user to get an anonymous session
-                            u = " ";
+                            if (StringUtils.isEmpty(publicUser)) {
+                                throw new CmisConnectionException("You cannot access Alfresco as guest user, please set a public user in your configuration");
+                            }
+                            // use public user
+                            u = publicUser;
                         }
                         WebTarget target = client.target(repositoryPropertiesMap.get(CmisProviderFactory.ALFRESCO_URL)).
                                 path("service/impersonateLogin").
@@ -113,6 +119,7 @@ public class AlfrescoCmisDataSource extends CmisDataSource implements ExternalDa
                 }
             });
         } catch (CmisBaseException | ExecutionException | UncheckedExecutionException  e) {
+            log.warn(e.getMessage());
             throw new CantConnectCmis(e);
         }
     }
@@ -122,5 +129,9 @@ public class AlfrescoCmisDataSource extends CmisDataSource implements ExternalDa
         JahiaUser aliasedUser = JCRSessionFactory.getInstance().getCurrentAliasedUser();
         final String user = aliasedUser != null ? aliasedUser.getName() : ExternalContentStoreProvider.getCurrentSession().getUserID();
         getActiveConnections().invalidate(user);
+    }
+
+    public void setPublicUser(String publicUser) {
+        this.publicUser = publicUser;
     }
 }

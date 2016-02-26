@@ -8,6 +8,7 @@
     - user (string)
     - password (string) hidden
     - url (string)
+    - publicUser (String)
     - slowConnection (boolean)
     - type (string)
     - remotePath (string)

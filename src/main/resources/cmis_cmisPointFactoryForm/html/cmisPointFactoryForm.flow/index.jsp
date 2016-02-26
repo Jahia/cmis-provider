@@ -72,8 +72,12 @@
                         <form:label ng-show="cmisType == 'alfresco'" path="url"><fmt:message key="cmisFactory.urlAlfresco"/> <span style="color: red">*</span></form:label>
                         <form:input path="url"/>
                     </div>
+                    <div class="row-fluid" ng-show="cmisType == 'alfresco'">
+                        <form:label path="publicUser"><fmt:message key="cmisFactory.publicUser"/></form:label>
+                        <form:input path="publicUser"/>
+                    </div>
                     <div class="row-fluid">
-                        <form:label path="remotePath"><fmt:message key="cmisFactory.remote.path"/></form:label>
+                        <form:label path="remotePath"><fmt:message key="cmisFactory.remotePath"/></form:label>
                         <form:input path="remotePath"/>
                     </div>
                     <div class="row-fluid">

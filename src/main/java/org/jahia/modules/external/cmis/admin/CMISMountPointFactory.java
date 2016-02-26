@@ -55,6 +55,7 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
     public static final String REMOTE_PATH = "remotePath";
     public static final String TYPE = "type";
     public static final String CMIS_SERVICE_ENDPOINT = "/api/-default-/public/cmis/versions/1.1/atom";
+    public static final String PUBLIC_USER = "publicUser";
 
     private static final long serialVersionUID = 2927976149191746013L;
     @NotEmpty
@@ -70,6 +71,8 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
     @NotEmpty
     private String url;
     private boolean slowConnection = false;
+
+    private String publicUser = "";
 
     private String remotePath;
 
@@ -111,7 +114,7 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
             Client client = ClientBuilder.newBuilder().register(HttpAuthenticationFeature.basic(user, password)).build();
 
             try {
-                WebTarget target = client.target(url).path(CMIS_SERVICE_ENDPOINT);
+                WebTarget target = client.target(url).path("/service/cmis");
 
                 // get reposiroty id
 
@@ -129,6 +132,7 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
             mountNode.setProperty(REPOSITORY_ID, alfrescoRepositoryId);
             mountNode.setProperty(TYPE, CmisProviderFactory.TYPE_ALFRESCO);
             mountNode.setProtectedPropertyNames(new String[]{PASSWORD, REPOSITORY_ID});
+            mountNode.setProperty(PUBLIC_USER, publicUser);
         } else {
             mountNode.setProperty(REPOSITORY_ID, repositoryId);
             mountNode.setProperty(TYPE, TYPE_CMIS);
@@ -149,6 +153,7 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
         this.user = nodeWrapper.getPropertyAsString(USER);
         this.password = nodeWrapper.getPropertyAsString(PASSWORD);
         this.type = nodeWrapper.hasProperty(TYPE) && CmisProviderFactory.TYPE_ALFRESCO.equals(nodeWrapper.getPropertyAsString(TYPE)) ? CmisProviderFactory.TYPE_ALFRESCO : TYPE_CMIS;
+        this.publicUser = nodeWrapper.getPropertyAsString(PUBLIC_USER);
         this.remotePath = nodeWrapper.hasProperty(REMOTE_PATH) ? nodeWrapper.getProperty(REMOTE_PATH).getString() : "";
         this.url = nodeWrapper.getPropertyAsString(URL);
         this.slowConnection = nodeWrapper.hasProperty(SLOW_CONNECTION) && nodeWrapper.getProperty(SLOW_CONNECTION).getBoolean();
@@ -208,5 +213,13 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
 
     public void setRemotePath(String remotePath) {
         this.remotePath = remotePath;
+    }
+
+    public String getPublicUser() {
+        return publicUser;
+    }
+
+    public void setPublicUser(String publicUser) {
+        this.publicUser = publicUser;
     }
 }
