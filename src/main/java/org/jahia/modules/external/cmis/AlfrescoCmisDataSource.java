@@ -28,7 +28,7 @@ import org.apache.chemistry.opencmis.client.api.Session;
 import org.apache.chemistry.opencmis.client.runtime.SessionFactoryImpl;
 import org.apache.chemistry.opencmis.commons.SessionParameter;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisBaseException;
-import org.apache.chemistry.opencmis.commons.exceptions.CmisConnectionException;
+import org.apache.chemistry.opencmis.commons.exceptions.CmisUnauthorizedException;
 import org.apache.commons.lang.StringUtils;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.jahia.api.Constants;
@@ -36,6 +36,7 @@ import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.modules.external.ExternalDataSource;
 import org.jahia.services.content.JCRSessionFactory;
 import org.jahia.services.usermanager.JahiaUser;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,7 +70,7 @@ public class AlfrescoCmisDataSource extends CmisDataSource implements ExternalDa
         HashMap<String, String> repositoryPropertiesMap = getConf().getRepositoryPropertiesMap();
         client = ClientBuilder.newBuilder()
                 .register(HttpAuthenticationFeature.basic(repositoryPropertiesMap.get(SessionParameter.USER),
-                                repositoryPropertiesMap.get(SessionParameter.PASSWORD)))
+                        repositoryPropertiesMap.get(SessionParameter.PASSWORD)))
                 .build();
     }
 
@@ -92,33 +93,40 @@ public class AlfrescoCmisDataSource extends CmisDataSource implements ExternalDa
                     // create session
 
                     HashMap<String, String> propertiesMap = new HashMap<>(repositoryPropertiesMap);
-                    if (!user.startsWith(" system ") &&
-                            !user.equals("root")) {
-                        String u = user;
-                        if (user.trim().equals(Constants.GUEST_USERNAME)) {
-                            if (StringUtils.isEmpty(publicUser)) {
-                                throw new CmisConnectionException("You cannot access Alfresco as guest user, please set a public user in your configuration");
+                    try {
+                        if (!user.startsWith(" system ") &&
+                                !user.equals("root")) {
+                            if (user.trim().equals(Constants.GUEST_USERNAME)) {
+                                throw new CmisUnauthorizedException();
                             }
-                            // use public user
-                            u = publicUser;
+                            setConnectionProperties(propertiesMap, user);
                         }
-                        WebTarget target = client.target(repositoryPropertiesMap.get(CmisProviderFactory.ALFRESCO_URL)).
-                                path("service/impersonateLogin").
-                                queryParam("format", "json").
-                                queryParam("username", u);
-
-                        String response = target.request().accept(MediaType.APPLICATION_JSON).get(String.class);
-                        JSONObject obj = new JSONObject(response);
-                        String ticket = obj.getJSONObject("data").getString("ticket");
-
-                        propertiesMap.put(SessionParameter.USER, "ROLE_TICKET");
-                        propertiesMap.put(SessionParameter.PASSWORD, ticket);
+                        return factory.createSession(propertiesMap);
+                    } catch (CmisUnauthorizedException e) {
+                        // log failed try to connect as guest
+                        if (StringUtils.isEmpty(publicUser)) {
+                            throw new CmisUnauthorizedException("You cannot access Alfresco as guest user, please set a public user in your configuration");
+                        } else {
+                            setConnectionProperties(propertiesMap, publicUser);
+                            return factory.createSession(propertiesMap);
+                        }
                     }
+                }
 
-                    return factory.createSession(propertiesMap);
+                private void setConnectionProperties(HashMap<String, String> propertiesMap, String user) throws JSONException {
+                    WebTarget target = client.target(getConf().getRepositoryPropertiesMap().get(CmisProviderFactory.ALFRESCO_URL)).
+                            path("service/impersonateLogin").
+                            queryParam("format", "json").
+                            queryParam("username", user);
+                    String response = target.request().accept(MediaType.APPLICATION_JSON).get(String.class);
+                    JSONObject obj = new JSONObject(response);
+                    String ticket = obj.getJSONObject("data").getString("ticket");
+
+                    propertiesMap.put(SessionParameter.USER, "ROLE_TICKET");
+                    propertiesMap.put(SessionParameter.PASSWORD, ticket);
                 }
             });
-        } catch (CmisBaseException | ExecutionException | UncheckedExecutionException  e) {
+        } catch (CmisBaseException | ExecutionException | UncheckedExecutionException e) {
             log.warn(e.getMessage());
             throw new CantConnectCmis(e);
         }
