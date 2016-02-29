@@ -114,7 +114,7 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
             Client client = ClientBuilder.newBuilder().register(HttpAuthenticationFeature.basic(user, password)).build();
 
             try {
-                WebTarget target = client.target(url).path("/service/cmis");
+                WebTarget target = client.target(url).path(CMIS_SERVICE_ENDPOINT);
 
                 // get reposiroty id
 
