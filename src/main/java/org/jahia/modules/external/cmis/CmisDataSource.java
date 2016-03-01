@@ -165,6 +165,15 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         });
     }
 
+    protected CmisObject getObjectById(final String id) throws RepositoryException {
+        return executeWithCMISSession(new ExecuteCallback<CmisObject>() {
+            @Override
+            public CmisObject execute(Session session) throws RepositoryException {
+                return session.getObject(id);
+            }
+        });
+
+    }
     @Override
     public List<ExternalData> getChildrenNodes(final String path) throws RepositoryException {
         return executeWithCMISSession(new ExecuteCallback<List<ExternalData>>() {
@@ -181,13 +190,15 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                             ItemIterable<CmisObject> children = folder.getChildren();
                             int i = 0;
                             for (CmisObject child : children) {
-                                if (maxChildNodes > 0 && ++i > maxChildNodes) {
-                                    log.warn(String.format("getChildrenNodes returns too many children - path : %s , number of children %s, max children %s", path, children.getTotalNumItems(), maxChildNodes));
-                                    break;
-                                }
-                                list.add(getObject(child, (!folder.getPath().equals("/") ? folder.getPath() + "/" : "/") + child.getName()));
-                                if (child instanceof Document) {
-                                    list.add(getObjectContent((Document) child, (!folder.getPath().equals("/") ? folder.getPath() + "/" : "/") + child.getName() + JCR_CONTENT_SUFFIX));
+                                if (child.getBaseTypeId() == BaseTypeId.CMIS_DOCUMENT || child.getBaseTypeId() == BaseTypeId.CMIS_FOLDER) {
+                                    if (maxChildNodes > 0 && ++i > maxChildNodes) {
+                                        log.warn(String.format("getChildrenNodes returns too many children - path : %s , number of children %s, max children %s", path, children.getTotalNumItems(), maxChildNodes));
+                                        break;
+                                    }
+                                    list.add(getObject(child, (!folder.getPath().equals("/") ? folder.getPath() + "/" : "/") + child.getName()));
+                                    if (child.getBaseTypeId() == BaseTypeId.CMIS_DOCUMENT) {
+                                        list.add(getObjectContent((Document) child, (!folder.getPath().equals("/") ? folder.getPath() + "/" : "/") + child.getName() + JCR_CONTENT_SUFFIX));
+                                    }
                                 }
                             }
                         }
@@ -250,7 +261,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
         Map<String, Binary[]> binaryProperties = new HashMap<>(1);
         if (doc.getContentStreamLength() > 0) {
-            CmisBinaryImpl cmisBinary = new CmisBinaryImpl(doc);
+            CmisBinaryImpl cmisBinary = new CmisBinaryImpl(doc, jcrContentPath, this);
             binaryProperties.put(Constants.JCR_DATA, new Binary[]{cmisBinary});
         } else {
             BinaryImpl binary = new BinaryImpl("unable to get binary content".getBytes());

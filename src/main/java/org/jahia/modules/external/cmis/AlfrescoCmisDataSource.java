@@ -41,6 +41,7 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.jcr.RepositoryException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
@@ -84,7 +85,9 @@ public class AlfrescoCmisDataSource extends CmisDataSource implements ExternalDa
     public Session getCmisSession() throws CantConnectCmis {
         try {
             JahiaUser aliasedUser = JCRSessionFactory.getInstance().getCurrentAliasedUser();
-            final String user = aliasedUser != null ? aliasedUser.getName() : ExternalContentStoreProvider.getCurrentSession().getUserID();
+            String sesssionUSer = ExternalContentStoreProvider.getCurrentSession() != null ? ExternalContentStoreProvider.getCurrentSession().getUserID() : JCRSessionFactory.getInstance().getCurrentUserSession().getUser().getName();
+            final String user = aliasedUser != null ? aliasedUser.getName() : sesssionUSer;
+            ;
             return activeConnections.get(user, new Callable<Session>() {
                 @Override
                 public Session call() throws Exception {
@@ -127,7 +130,7 @@ public class AlfrescoCmisDataSource extends CmisDataSource implements ExternalDa
                     propertiesMap.put(SessionParameter.PASSWORD, ticket);
                 }
             });
-        } catch (CmisBaseException | ExecutionException | UncheckedExecutionException e) {
+        } catch (RepositoryException | CmisBaseException | ExecutionException | UncheckedExecutionException e) {
             log.warn(e.getMessage());
             throw new CantConnectCmis(e);
         }

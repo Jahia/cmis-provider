@@ -3,21 +3,21 @@
  * =                            JAHIA'S ENTERPRISE DISTRIBUTION                             =
  * ==========================================================================================
  *
- *                                  http://www.jahia.com
+ * http://www.jahia.com
  *
  * JAHIA'S ENTERPRISE DISTRIBUTIONS LICENSING - IMPORTANT INFORMATION
  * ==========================================================================================
  *
- *     Copyright (C) 2002-2016 Jahia Solutions Group. All rights reserved.
+ * Copyright (C) 2002-2016 Jahia Solutions Group. All rights reserved.
  *
- *     This file is part of a Jahia's Enterprise Distribution.
+ * This file is part of a Jahia's Enterprise Distribution.
  *
- *     Jahia's Enterprise Distributions must be used in accordance with the terms
- *     contained in the Jahia Solutions Group Terms & Conditions as well as
- *     the Jahia Sustainable Enterprise License (JSEL).
+ * Jahia's Enterprise Distributions must be used in accordance with the terms
+ * contained in the Jahia Solutions Group Terms & Conditions as well as
+ * the Jahia Sustainable Enterprise License (JSEL).
  *
- *     For questions regarding licensing, support, production usage...
- *     please contact our team at sales@jahia.com or go to http://www.jahia.com/license.
+ * For questions regarding licensing, support, production usage...
+ * please contact our team at sales@jahia.com or go to http://www.jahia.com/license.
  *
  * ==========================================================================================
  */
@@ -25,6 +25,7 @@ package org.jahia.modules.external.cmis;
 
 import org.apache.chemistry.opencmis.client.api.Document;
 import org.apache.chemistry.opencmis.commons.data.ContentStream;
+import org.apache.chemistry.opencmis.commons.exceptions.CmisUnauthorizedException;
 import org.apache.commons.io.IOUtils;
 
 import javax.jcr.Binary;
@@ -44,9 +45,18 @@ public class CmisBinaryImpl implements Binary {
     //    ContentStream contentStream;
     Document doc;
     ArrayList<InputStream> listOfStreamsForClose;
+    CmisDataSource dataSource;
+    String path;
 
     public CmisBinaryImpl(Document doc) {
         this.doc = doc;
+//        this.contentStream = doc.getContentStream();
+    }
+
+    public CmisBinaryImpl(Document doc, String path, CmisDataSource dataSource) {
+        this.doc = doc;
+        this.dataSource = dataSource;
+        this.path = path;
 //        this.contentStream = doc.getContentStream();
     }
 
@@ -61,6 +71,13 @@ public class CmisBinaryImpl implements Binary {
         }
         try {
             return stream = doc.getContentStream().getStream();
+        } catch (CmisUnauthorizedException e1) {
+            // restore session on cmis object if session times out
+            if (dataSource != null) {
+                doc = (Document) dataSource.getObjectById(doc.getId());
+                return stream = doc.getContentStream().getStream();
+            }
+            throw new RepositoryException(String.format("unable to get item %s", path), e1);
         } catch (Exception e) {
             throw new RepositoryException(e);
         } finally {
