@@ -84,7 +84,17 @@ public class CmisBinaryImpl implements Binary {
                 String user = dataSource.getConf().getRepositoryPropertiesMap().get(SessionParameter.USER);
                 dataSource.getActiveConnections().invalidate(user);
                 doc = (Document) dataSource.getObjectById(doc.getId());
-                return stream = doc.getContentStream().getStream();
+                try {
+                    return stream = doc.getContentStream().getStream();
+                } catch (Exception e) {
+                    log.error("Error while retreiving binary content of {}", path);
+                    if (dataSource != null) {
+                        log.error("with user {}", dataSource.getConf().getRepositoryPropertiesMap().get(SessionParameter.USER));
+                    } else {
+                        log.error("Datasource is not available");
+                    }
+                    throw new RepositoryException(e);
+                }
             }
             throw new RepositoryException(String.format("unable to get item %s", path), e1);
         } catch (Exception e) {
