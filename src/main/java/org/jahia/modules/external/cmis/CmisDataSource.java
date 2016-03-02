@@ -32,13 +32,13 @@ import org.apache.chemistry.opencmis.client.api.*;
 import org.apache.chemistry.opencmis.client.api.Property;
 import org.apache.chemistry.opencmis.client.api.Session;
 import org.apache.chemistry.opencmis.client.runtime.SessionFactoryImpl;
-import org.apache.chemistry.opencmis.client.util.FileUtils;
 import org.apache.chemistry.opencmis.commons.PropertyIds;
 import org.apache.chemistry.opencmis.commons.SessionParameter;
 import org.apache.chemistry.opencmis.commons.data.AllowableActions;
 import org.apache.chemistry.opencmis.commons.data.ContentStream;
 import org.apache.chemistry.opencmis.commons.enums.Action;
 import org.apache.chemistry.opencmis.commons.enums.BaseTypeId;
+import org.apache.chemistry.opencmis.commons.enums.UnfileObject;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisBaseException;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisObjectNotFoundException;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisServiceUnavailableException;
@@ -174,6 +174,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         });
 
     }
+
     @Override
     public List<ExternalData> getChildrenNodes(final String path) throws RepositoryException {
         return executeWithCMISSession(new ExecuteCallback<List<ExternalData>>() {
@@ -313,7 +314,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     }
 
     private String removeRemotePath(String path) {
-        return StringUtils.startsWith(path, remotePath) ? ( StringUtils.equals(path, remotePath) ? "/" : StringUtils.substringAfter(path, remotePath)) : path;
+        return StringUtils.startsWith(path, remotePath) ? (StringUtils.equals(path, remotePath) ? "/" : StringUtils.substringAfter(path, remotePath)) : path;
     }
 
     private String addRemotePath(String path) {
@@ -471,13 +472,15 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     @Override
     public void removeItemByPath(final String path) throws RepositoryException {
         try {
-            executeWithCMISSession(new ExecuteCallback<Object>() {
-                @Override
-                public Object execute(Session session) {
-                    FileUtils.delete(addRemotePath(path), session);
-                    return null;
+            CmisObject object = getObjectByPath(path);
+            if (object instanceof Folder) {
+                List<String> failedToDelete = ((Folder) object).deleteTree(true, UnfileObject.DELETE, true);
+                if (failedToDelete.size() > 0) {
+                    throw new RepositoryException(String.format("unable to delete folder %s", StringUtils.substringAfterLast(path, "/")));
                 }
-            });
+            } else {
+                object.delete(true);
+            }
         } catch (CmisUnauthorizedException e) {
             throw new AccessDeniedException(e);
         } catch (CmisObjectNotFoundException e) {
