@@ -24,9 +24,12 @@
 package org.jahia.modules.external.cmis;
 
 import org.apache.chemistry.opencmis.client.api.Document;
+import org.apache.chemistry.opencmis.commons.SessionParameter;
 import org.apache.chemistry.opencmis.commons.data.ContentStream;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisUnauthorizedException;
 import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jcr.Binary;
 import javax.jcr.RepositoryException;
@@ -47,6 +50,9 @@ public class CmisBinaryImpl implements Binary {
     ArrayList<InputStream> listOfStreamsForClose;
     CmisDataSource dataSource;
     String path;
+
+    private static final Logger log = LoggerFactory.getLogger(CmisBinaryImpl.class);
+
 
     public CmisBinaryImpl(Document doc) {
         this.doc = doc;
@@ -74,11 +80,20 @@ public class CmisBinaryImpl implements Binary {
         } catch (CmisUnauthorizedException e1) {
             // restore session on cmis object if session times out
             if (dataSource != null) {
+                // clean up the session
+                String user = dataSource.getConf().getRepositoryPropertiesMap().get(SessionParameter.USER);
+                dataSource.getActiveConnections().invalidate(user);
                 doc = (Document) dataSource.getObjectById(doc.getId());
                 return stream = doc.getContentStream().getStream();
             }
             throw new RepositoryException(String.format("unable to get item %s", path), e1);
         } catch (Exception e) {
+            log.error("Error while retreiving binary content of {}", path);
+            if (dataSource != null) {
+                log.error("with user {}", dataSource.getConf().getRepositoryPropertiesMap().get(SessionParameter.USER));
+            } else {
+                log.error("Datasource is not available");
+            }
             throw new RepositoryException(e);
         } finally {
             if (stream != null) {
