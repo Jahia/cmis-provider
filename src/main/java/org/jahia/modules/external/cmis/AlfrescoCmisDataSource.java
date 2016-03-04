@@ -81,7 +81,6 @@ public class AlfrescoCmisDataSource extends CmisDataSource implements ExternalDa
     @Override
     public synchronized Session getCmisSession(final String user) throws CantConnectCmis {
         try {
-           ;
             return activeConnections.get(user, new Callable<Session>() {
                 @Override
                 public Session call() throws Exception {
