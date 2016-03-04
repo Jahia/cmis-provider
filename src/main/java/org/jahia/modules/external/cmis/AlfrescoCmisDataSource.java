@@ -32,10 +32,7 @@ import org.apache.chemistry.opencmis.commons.exceptions.CmisUnauthorizedExceptio
 import org.apache.commons.lang.StringUtils;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.jahia.api.Constants;
-import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.modules.external.ExternalDataSource;
-import org.jahia.services.content.JCRSessionFactory;
-import org.jahia.services.usermanager.JahiaUser;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -82,12 +79,9 @@ public class AlfrescoCmisDataSource extends CmisDataSource implements ExternalDa
     }
 
     @Override
-    public Session getCmisSession() throws CantConnectCmis {
+    public synchronized Session getCmisSession(final String user) throws CantConnectCmis {
         try {
-            JahiaUser aliasedUser = JCRSessionFactory.getInstance().getCurrentAliasedUser();
-            String sesssionUSer = ExternalContentStoreProvider.getCurrentSession() != null ? ExternalContentStoreProvider.getCurrentSession().getUserID() : JCRSessionFactory.getInstance().getCurrentUserSession().getUser().getName();
-            final String user = aliasedUser != null ? aliasedUser.getName() : sesssionUSer;
-            ;
+           ;
             return activeConnections.get(user, new Callable<Session>() {
                 @Override
                 public Session call() throws Exception {
@@ -130,17 +124,15 @@ public class AlfrescoCmisDataSource extends CmisDataSource implements ExternalDa
                     propertiesMap.put(SessionParameter.PASSWORD, ticket);
                 }
             });
-        } catch (RepositoryException | CmisBaseException | ExecutionException | UncheckedExecutionException e) {
+        } catch (CmisBaseException | ExecutionException | UncheckedExecutionException e) {
             log.warn(e.getMessage());
             throw new CantConnectCmis(e);
         }
     }
 
     @Override
-    protected void invalidateCurrentConnection() {
-        JahiaUser aliasedUser = JCRSessionFactory.getInstance().getCurrentAliasedUser();
-        final String user = aliasedUser != null ? aliasedUser.getName() : ExternalContentStoreProvider.getCurrentSession().getUserID();
-        getActiveConnections().invalidate(user);
+    protected void invalidateCurrentConnection() throws RepositoryException {
+        getActiveConnections().invalidate(resolveUser());
     }
 
     public void setPublicUser(String publicUser) {

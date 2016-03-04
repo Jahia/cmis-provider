@@ -24,7 +24,6 @@
 package org.jahia.modules.external.cmis;
 
 import org.apache.chemistry.opencmis.client.api.Document;
-import org.apache.chemistry.opencmis.commons.SessionParameter;
 import org.apache.chemistry.opencmis.commons.data.ContentStream;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisUnauthorizedException;
 import org.apache.commons.io.IOUtils;
@@ -50,6 +49,7 @@ public class CmisBinaryImpl implements Binary {
     ArrayList<InputStream> listOfStreamsForClose;
     CmisDataSource dataSource;
     String path;
+    String user;
 
     private static final Logger log = LoggerFactory.getLogger(CmisBinaryImpl.class);
 
@@ -59,10 +59,11 @@ public class CmisBinaryImpl implements Binary {
 //        this.contentStream = doc.getContentStream();
     }
 
-    public CmisBinaryImpl(Document doc, String path, CmisDataSource dataSource) {
+    public CmisBinaryImpl(Document doc, String path, CmisDataSource dataSource, String user) {
         this.doc = doc;
         this.dataSource = dataSource;
         this.path = path;
+        this.user = user;
 //        this.contentStream = doc.getContentStream();
     }
 
@@ -81,29 +82,18 @@ public class CmisBinaryImpl implements Binary {
             // restore session on cmis object if session times out
             if (dataSource != null) {
                 // clean up the session
-                String user = dataSource.getConf().getRepositoryPropertiesMap().get(SessionParameter.USER);
                 dataSource.getActiveConnections().invalidate(user);
-                doc = (Document) dataSource.getObjectById(doc.getId());
+                doc = (Document) dataSource.getObjectById(user, doc.getId());
                 try {
                     return stream = doc.getContentStream().getStream();
                 } catch (Exception e) {
-                    log.error("Error while retreiving binary content of {}", path);
-                    if (dataSource != null) {
-                        log.error("with user {}", dataSource.getConf().getRepositoryPropertiesMap().get(SessionParameter.USER));
-                    } else {
-                        log.error("Datasource is not available");
-                    }
+                    log.error("Error while retreiving binary content of {} with user {}", path, user);
                     throw new RepositoryException(e);
                 }
             }
-            throw new RepositoryException(String.format("unable to get item %s", path), e1);
+            throw new RepositoryException(String.format("unable to get item %s with user %s", path, user), e1);
         } catch (Exception e) {
-            log.error("Error while retreiving binary content of {}", path);
-            if (dataSource != null) {
-                log.error("with user {}", dataSource.getConf().getRepositoryPropertiesMap().get(SessionParameter.USER));
-            } else {
-                log.error("Datasource is not available");
-            }
+            log.error("Error while retreiving binary content of {} with user {}", path, user);
             throw new RepositoryException(e);
         } finally {
             if (stream != null) {

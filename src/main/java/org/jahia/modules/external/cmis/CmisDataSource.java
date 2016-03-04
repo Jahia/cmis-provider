@@ -53,9 +53,11 @@ import org.jahia.modules.external.ExternalData;
 import org.jahia.modules.external.ExternalDataSource;
 import org.jahia.modules.external.ExternalQuery;
 import org.jahia.services.content.JCRContentUtils;
+import org.jahia.services.content.JCRSessionFactory;
 import org.jahia.services.content.decorator.JCRMountPointNode;
 import org.jahia.services.content.nodetypes.ExtendedNodeType;
 import org.jahia.services.content.nodetypes.NodeTypeRegistry;
+import org.jahia.services.usermanager.JahiaUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -120,6 +122,17 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
      */
     CmisConfiguration conf;
 
+    /**
+     * Resolve the username from the Aliased / External Session / JCR Session
+     * @return the username
+     */
+    protected static String resolveUser() {
+        JahiaUser aliasedUser = JCRSessionFactory.getInstance().getCurrentAliasedUser();
+        String sesssionUSer = ExternalContentStoreProvider.getCurrentSession().getUserID();
+        return aliasedUser != null ? aliasedUser.getName() : sesssionUSer;
+    }
+
+
     @Override
     public List<String> getChildren(final String path) throws RepositoryException {
         final List<String> list = new ArrayList<>();
@@ -165,8 +178,8 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         });
     }
 
-    protected CmisObject getObjectById(final String id) throws RepositoryException {
-        return executeWithCMISSession(new ExecuteCallback<CmisObject>() {
+    protected CmisObject getObjectById(final String user, final String id) throws RepositoryException {
+        return executeWithCMISSession(user, new ExecuteCallback<CmisObject>() {
             @Override
             public CmisObject execute(Session session) throws RepositoryException {
                 return session.getObject(id);
@@ -262,7 +275,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
         Map<String, Binary[]> binaryProperties = new HashMap<>(1);
         if (doc.getContentStreamLength() > 0) {
-            CmisBinaryImpl cmisBinary = new CmisBinaryImpl(doc, jcrContentPath, this);
+            CmisBinaryImpl cmisBinary = new CmisBinaryImpl(doc, jcrContentPath, this, resolveUser());
             binaryProperties.put(Constants.JCR_DATA, new Binary[]{cmisBinary});
         } else {
             BinaryImpl binary = new BinaryImpl("unable to get binary content".getBytes());
@@ -723,8 +736,9 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
      *
      * @return Session
      * @throws CantConnectCmis
+     * @param user
      */
-    public synchronized Session getCmisSession() throws CantConnectCmis {
+    public synchronized Session getCmisSession(String user) throws CantConnectCmis {
         try {
             // get or create session
             final HashMap<String, String> repositoryPropertiesMap = getConf().getRepositoryPropertiesMap();
@@ -746,17 +760,22 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         }
     }
 
+    public <X> X executeWithCMISSession(ExecuteCallback<X> callback) throws RepositoryException {
+        return executeWithCMISSession(resolveUser(), callback);
+    }
+
     /**
      * Execute the callback again with a new session if it fails due to authorization issue
      * todo : improve to prevent this call when a user really cannot have access to the resource
      *
+     * @param user user to use in the session
      * @param callback contains the code to execute
      * @param <X>      is the return Object type of the callback
      * @return
      * @throws RepositoryException
      */
-    public <X> X executeWithCMISSession(ExecuteCallback<X> callback) throws RepositoryException {
-        Session cmisSession = getCmisSession();
+    public <X> X executeWithCMISSession(String user, ExecuteCallback<X> callback) throws RepositoryException {
+        Session cmisSession = getCmisSession(user);
         if (maxChildNodes > 0) {
             cmisSession.getDefaultContext().setMaxItemsPerPage(maxChildNodes);
             cmisSession.getDefaultContext().setOrderBy("cmis:name");
@@ -784,7 +803,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     /**
      * Invalidate the current user connection
      */
-    protected void invalidateCurrentConnection() {
+    protected void invalidateCurrentConnection() throws RepositoryException {
         getActiveConnections().invalidateAll();
     }
 
