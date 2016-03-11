@@ -844,6 +844,8 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                     case CAN_ADD_OBJECT_TO_FOLDER:
                         privileges.add(JCR_WRITE + "_" + EDIT_WORKSPACE);
                         privileges.add(JCR_WRITE + "_" + LIVE_WORKSPACE);
+                        privileges.add(JCR_ADD_CHILD_NODES + "_" + EDIT_WORKSPACE);
+                        privileges.add(JCR_ADD_CHILD_NODES + "_" + LIVE_WORKSPACE);
                         break;
                     case CAN_DELETE_TREE:
                         privileges.add(JCR_REMOVE_CHILD_NODES + "_" + EDIT_WORKSPACE);
