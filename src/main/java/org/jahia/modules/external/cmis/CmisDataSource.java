@@ -487,6 +487,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         try {
             CmisObject object = getObjectByPath(path);
             if (object instanceof Folder) {
+                cleanUpCache(object, getCmisSession(resolveUser()));
                 List<String> failedToDelete = ((Folder) object).deleteTree(true, UnfileObject.DELETE, true);
                 if (failedToDelete.size() > 0) {
                     throw new RepositoryException(String.format("unable to delete folder %s", StringUtils.substringAfterLast(path, "/")));
@@ -500,6 +501,16 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             throw new PathNotFoundException("Path not found " + path);
         } catch (Exception e) {
             throw new RepositoryException(e);
+        }
+    }
+
+    private void cleanUpCache(CmisObject object, Session session) {
+        // remove current version
+        session.removeObjectFromCache(object.getId());
+        if (object instanceof Folder) {
+            for (CmisObject o : ((Folder) object).getChildren()) {
+                cleanUpCache(o, session);
+            }
         }
     }
 
@@ -841,7 +852,6 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                     case CAN_SET_CONTENT_STREAM:
                     case CAN_CREATE_FOLDER:
                     case CAN_CREATE_DOCUMENT:
-                    case CAN_ADD_OBJECT_TO_FOLDER:
                         privileges.add(JCR_WRITE + "_" + EDIT_WORKSPACE);
                         privileges.add(JCR_WRITE + "_" + LIVE_WORKSPACE);
                         privileges.add(JCR_ADD_CHILD_NODES + "_" + EDIT_WORKSPACE);
