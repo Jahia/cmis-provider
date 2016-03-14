@@ -489,8 +489,23 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             if (object instanceof Folder) {
                 cleanUpCache(object, getCmisSession(resolveUser()));
                 List<String> failedToDelete = ((Folder) object).deleteTree(true, UnfileObject.DELETE, true);
+                boolean hasError = false;
                 if (failedToDelete.size() > 0) {
-                    throw new RepositoryException(String.format("unable to delete folder %s", StringUtils.substringAfterLast(path, "/")));
+                    // Alfresco 4.2 returns the list of the child nodes as failed nodes
+                    // even if they are really removed
+                    for (String id : failedToDelete) {
+                        try {
+                            CmisObject doc = getObjectById(resolveUser(), id);
+                        } catch (CmisObjectNotFoundException e) {
+                            // this is the excpected behavior
+                        } catch (Exception e1) {
+                            hasError = true;
+                            break;
+                        }
+                    }
+                    if (hasError) {
+                        throw new RepositoryException(String.format("unable to delete folder %s", StringUtils.substringAfterLast(path, "/")));
+                    }
                 }
             } else {
                 object.delete(true);
@@ -505,9 +520,14 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     }
 
     private void cleanUpCache(CmisObject object, Session session) {
-        // remove current version
-        session.removeObjectFromCache(object.getId());
-        if (object instanceof Folder) {
+        // remove cache key
+        session.removeObjectFromCache(object);
+        // cleanup all documents from the cache
+        if (object instanceof Document) {
+            for (CmisObject version : ((Document) object).getAllVersions()) {
+                session.removeObjectFromCache(version);
+            }
+        } else if (object instanceof Folder) {
             for (CmisObject o : ((Folder) object).getChildren()) {
                 cleanUpCache(o, session);
             }
