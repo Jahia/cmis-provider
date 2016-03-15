@@ -426,6 +426,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     @Override
     public void move(String oldPath, String newPath) throws RepositoryException {
         CmisObject object = getObjectByPath(oldPath);
+        cleanUpCache(object, getCmisSession(resolveUser()));
         if (!(object instanceof FileableCmisObject)) {
             throw new RepositoryException("Can't move " + oldPath + "to " + newPath);
         }
@@ -496,6 +497,9 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                     for (String id : failedToDelete) {
                         try {
                             CmisObject doc = getObjectById(resolveUser(), id);
+                            // doc still available, send error
+                            hasError = true;
+                            break;
                         } catch (CmisObjectNotFoundException e) {
                             // this is the excpected behavior
                         } catch (Exception e1) {
