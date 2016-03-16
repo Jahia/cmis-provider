@@ -546,6 +546,8 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         if (path.endsWith(JCR_CONTENT_SUFFIX)) {
             path = path.substring(0, path.lastIndexOf('/'));
             Document doc = (Document) getObjectByPath(path);
+            // cleanup cache
+            cleanUpCache(doc, getCmisSession(resolveUser()));
             ContentStreamBinaryImpl contentStream = getContentStream(data, doc.getContentStreamMimeType());
             if (contentStream != null) {
                 doc.setContentStream(contentStream, true, true);
