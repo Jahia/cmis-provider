@@ -426,7 +426,6 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     @Override
     public void move(String oldPath, String newPath) throws RepositoryException {
         CmisObject object = getObjectByPath(oldPath);
-        cleanUpCache(object, getCmisSession(resolveUser()));
         if (!(object instanceof FileableCmisObject)) {
             throw new RepositoryException("Can't move " + oldPath + "to " + newPath);
         }
@@ -444,31 +443,24 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             if (oldFolder.length() == 0) {
                 oldFolder = "/";
             }
-            String newName = newPath.substring(newPath.lastIndexOf('/') + 1);
             String newFolder = newPath.substring(0, newPath.lastIndexOf('/'));
             if (newFolder.length() == 0) {
                 newFolder = "/";
             }
 
-            boolean sameName = oldName.equals(newName);
-            // in case of a node renaming, the folder is the same, no need to move the node then, just rename it
-            if (oldFolder.equals(newFolder)) {
-                // should be always the case, same name move is not possible when cut/paste in same folder, but test anyway to be sure
-                if (!sameName) {
-                    file.rename(newName);
-                }
-            } else {
-                if (!sameName) {
-                    // generate temporary name to avoid name conflict with other sibling files.
-                    file = (FileableCmisObject) file.rename(UUID.randomUUID().toString());
-                }
+            file.move(getObjectByPath(oldFolder), getObjectByPath(newFolder));
 
-                file = file.move(getObjectByPath(oldFolder), getObjectByPath(newFolder));
-
-                if (!sameName) {
-                    // perform the renaming now
-                    file.rename(newName);
-                }
+            // clean caches
+            cleanUpCache(object, getCmisSession(resolveUser()));
+            // clean path
+            // the cache maintains 2 maps, one by id, the other by path
+            // we only have access to the cached map by id that is handled by cleanUpCache()
+            // to remove the item from the cached map by path, we have to try to get the item
+            // this is an issue in move because the reference still exists and both path point on the same object
+            try {
+                getItemByPath(oldPath);
+            } catch (Exception e) {
+                // do nothing
             }
 
         } catch (CmisUnauthorizedException e) {
