@@ -820,7 +820,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         } catch (CmisUnauthorizedException e) {
             // flush caches
             invalidateCurrentConnection();
-            return callback.execute(cmisSession);
+            return callback.execute(getCmisSession(user));
         } catch (Exception e) {
             Throwable cause = e.getCause();
             if (cause instanceof ConnectException ||
@@ -839,7 +839,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
      * Invalidate the current user connection
      */
     protected void invalidateCurrentConnection() throws RepositoryException {
-        getActiveConnections().invalidateAll();
+        getActiveConnections().invalidate(resolveUser());
     }
 
     @Override
