@@ -429,6 +429,9 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         if (!(object instanceof FileableCmisObject)) {
             throw new RepositoryException("Can't move " + oldPath + "to " + newPath);
         }
+        if (StringUtils.equals(newPath, oldPath)) {
+            return;
+        }
         try {
             FileableCmisObject file;
             if (object instanceof Document) {
@@ -438,18 +441,19 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 file = (FileableCmisObject) object;
             }
 
-            String oldName = oldPath.substring(oldPath.lastIndexOf('/') + 1);
-            String oldFolder = oldPath.substring(0, oldPath.lastIndexOf('/'));
+            String oldFolder = StringUtils.substringBeforeLast(oldPath, "/");
             if (oldFolder.length() == 0) {
                 oldFolder = "/";
             }
-            String newFolder = newPath.substring(0, newPath.lastIndexOf('/'));
+            String newFolder = StringUtils.substringBeforeLast(newPath, "/");
             if (newFolder.length() == 0) {
                 newFolder = "/";
             }
-
-            file.move(getObjectByPath(oldFolder), getObjectByPath(newFolder));
-
+            if (newFolder.equals(oldFolder)) {
+                file.rename(StringUtils.substringAfterLast(newPath, "/"));
+            } else {
+                file.move(getObjectByPath(oldFolder), getObjectByPath(newFolder));
+            }
             // clean caches
             cleanUpCache(object, getCmisSession(resolveUser()));
             // clean path
