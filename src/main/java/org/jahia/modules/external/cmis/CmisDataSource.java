@@ -808,12 +808,12 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
      * @throws RepositoryException
      */
     public <X> X executeWithCMISSession(String user, ExecuteCallback<X> callback) throws RepositoryException {
-        Session cmisSession = getCmisSession(user);
-        if (maxChildNodes > 0) {
-            cmisSession.getDefaultContext().setMaxItemsPerPage(maxChildNodes);
-            cmisSession.getDefaultContext().setOrderBy("cmis:name");
-        }
         try {
+            Session cmisSession = getCmisSession(user);
+            if (maxChildNodes > 0) {
+                cmisSession.getDefaultContext().setMaxItemsPerPage(maxChildNodes);
+                cmisSession.getDefaultContext().setOrderBy("cmis:name");
+                }
             return callback.execute(cmisSession);
         } catch (CmisUnauthorizedException e) {
             // flush caches
@@ -821,7 +821,8 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             return callback.execute(getCmisSession(user));
         } catch (Exception e) {
             Throwable cause = e.getCause();
-            if (cause instanceof ConnectException ||
+            if (    e instanceof CantConnectCmis ||
+                    cause instanceof ConnectException ||
                     cause instanceof BindException ||
                     cause instanceof NoRouteToHostException ||
                     cause instanceof SocketTimeoutException ||
