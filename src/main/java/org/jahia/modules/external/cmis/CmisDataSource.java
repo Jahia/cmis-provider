@@ -888,11 +888,12 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                         privileges.add(JCR_READ + "_" + LIVE_WORKSPACE);
                         break;
                     case CAN_UPDATE_PROPERTIES:
+                        privileges.add(JCR_MODIFY_PROPERTIES + "_" + EDIT_WORKSPACE);
+                        privileges.add(JCR_MODIFY_PROPERTIES + "_" + LIVE_WORKSPACE);
+                        break;
                     case CAN_SET_CONTENT_STREAM:
                     case CAN_CREATE_FOLDER:
                     case CAN_CREATE_DOCUMENT:
-                        privileges.add(JCR_WRITE + "_" + EDIT_WORKSPACE);
-                        privileges.add(JCR_WRITE + "_" + LIVE_WORKSPACE);
                         privileges.add(JCR_ADD_CHILD_NODES + "_" + EDIT_WORKSPACE);
                         privileges.add(JCR_ADD_CHILD_NODES + "_" + LIVE_WORKSPACE);
                         break;
@@ -903,6 +904,10 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                     case CAN_DELETE_OBJECT:
                         privileges.add(JCR_REMOVE_NODE + "_" + EDIT_WORKSPACE);
                         privileges.add(JCR_REMOVE_NODE + "_" + LIVE_WORKSPACE);
+                        break;
+                    case CAN_REMOVE_OBJECT_FROM_FOLDER:
+                        privileges.add(JCR_REMOVE_CHILD_NODES + "_" + EDIT_WORKSPACE);
+                        privileges.add(JCR_REMOVE_CHILD_NODES + "_" + LIVE_WORKSPACE);
                         break;
                 }
             }
