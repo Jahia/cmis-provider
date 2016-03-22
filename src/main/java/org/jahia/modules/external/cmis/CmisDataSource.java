@@ -843,7 +843,11 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 } catch (JSONParseException e1) {
                     // parsing fail .. return all object
                 }
-                log.error("an error occurs on remote server:\n {}", errorContent);
+                if (e instanceof CmisObjectNotFoundException) {
+                    log.debug("an error occurs on remote server:\n {}", errorContent);
+                } else {
+                    log.error("an error occurs on remote server:\n {}", errorContent);
+                }
             }
 
             throw e;
