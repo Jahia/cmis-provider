@@ -44,6 +44,9 @@ import org.apache.chemistry.opencmis.commons.exceptions.CmisObjectNotFoundExcept
 import org.apache.chemistry.opencmis.commons.exceptions.CmisServiceUnavailableException;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisUnauthorizedException;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ContentStreamImpl;
+import org.apache.chemistry.opencmis.commons.impl.json.JSONObject;
+import org.apache.chemistry.opencmis.commons.impl.json.parser.JSONParseException;
+import org.apache.chemistry.opencmis.commons.impl.json.parser.JSONParser;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.util.ISO8601;
 import org.apache.jackrabbit.value.BinaryImpl;
@@ -813,7 +816,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             if (maxChildNodes > 0) {
                 cmisSession.getDefaultContext().setMaxItemsPerPage(maxChildNodes);
                 cmisSession.getDefaultContext().setOrderBy("cmis:name");
-                }
+            }
             return callback.execute(cmisSession);
         } catch (CmisUnauthorizedException e) {
             // flush caches
@@ -821,7 +824,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             return callback.execute(getCmisSession(user));
         } catch (Exception e) {
             Throwable cause = e.getCause();
-            if (    e instanceof CantConnectCmis ||
+            if (e instanceof CantConnectCmis ||
                     cause instanceof ConnectException ||
                     cause instanceof BindException ||
                     cause instanceof NoRouteToHostException ||
@@ -830,6 +833,19 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                     cause instanceof CmisServiceUnavailableException) {
                 provider.setMountStatus(JCRMountPointNode.MountStatus.waiting, e.getMessage());
             }
+
+            if (e instanceof CmisBaseException) {
+                JSONParser jp = new JSONParser();
+                String errorContent = ((CmisBaseException) e).getErrorContent();
+                try {
+                    JSONObject json = (JSONObject) jp.parse(errorContent);
+                    errorContent = json.get("stacktrace").toString();
+                } catch (JSONParseException e1) {
+                    // parsing fail .. return all object
+                }
+                log.error("an error occurs on remote server:\n {}", errorContent);
+            }
+
             throw e;
         }
     }
