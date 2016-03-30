@@ -888,6 +888,8 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 switch (action) {
                     case CAN_GET_FOLDER_TREE:
                     case CAN_GET_PROPERTIES:
+                    case CAN_GET_DESCENDANTS:
+                    case CAN_GET_CHILDREN:
                         privileges.add(JCR_READ + "_" + EDIT_WORKSPACE);
                         privileges.add(JCR_READ + "_" + LIVE_WORKSPACE);
                         break;
@@ -898,8 +900,14 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                     case CAN_SET_CONTENT_STREAM:
                     case CAN_CREATE_FOLDER:
                     case CAN_CREATE_DOCUMENT:
+                    case CAN_ADD_OBJECT_TO_FOLDER:
+                    case CAN_CREATE_ITEM:
                         privileges.add(JCR_ADD_CHILD_NODES + "_" + EDIT_WORKSPACE);
                         privileges.add(JCR_ADD_CHILD_NODES + "_" + LIVE_WORKSPACE);
+                        break;
+                    case CAN_MOVE_OBJECT:
+                        privileges.add(JCR_WRITE + "_" + EDIT_WORKSPACE);
+                        privileges.add(JCR_WRITE + "_" + LIVE_WORKSPACE);
                         break;
                     case CAN_DELETE_TREE:
                         privileges.add(JCR_REMOVE_CHILD_NODES + "_" + EDIT_WORKSPACE);
