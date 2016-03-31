@@ -863,26 +863,19 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
     @Override
     public boolean isAvailable() throws RepositoryException {
-        try {
-            return executeWithCMISSession(new ExecuteCallback<Boolean>() {
-                @Override
-                public Boolean execute(Session session) throws RepositoryException {
-                    try {
-                        OperationContext operationContext = session.createOperationContext();
-                        operationContext.setCacheEnabled(false);
-                        session.getRootFolder(operationContext);
-                    } catch (Exception e) {
-                        return false;
-                    }
-                    return true;
+        return executeWithCMISSession(new ExecuteCallback<Boolean>() {
+            @Override
+            public Boolean execute(Session session) throws RepositoryException {
+                try {
+                    OperationContext operationContext = session.createOperationContext();
+                    operationContext.setCacheEnabled(false);
+                    session.getRootFolder(operationContext);
+                } catch (Exception e) {
+                    return false;
                 }
-            });
-        } catch (Exception e) {
-            if (log.isDebugEnabled()) {
-                log.debug("an unexcpected error occurs while checking the availability of the provider " + provider.getId(), e);
+                return true;
             }
-            return false;
-        }
+        });
     }
 
     @Override
