@@ -453,7 +453,12 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 newFolder = "/";
             }
             if (newFolder.equals(oldFolder)) {
-                file.rename(StringUtils.substringAfterLast(newPath, "/"));
+                // disable refresh here because using open CMIS server lead to CmisObjectNotFoundException
+                // because open cmis ids are based on the path of the file on the file system.
+                // changing the name, also change the id of the object
+                // disabling this refresh does'nt cause any issue for us, because we refresh the list of item after an edition, move, or rename
+                // so the file will be rename and correctly display after the action
+                file.rename(StringUtils.substringAfterLast(newPath, "/"), false);
             } else {
                 file.move(getObjectByPath(oldFolder), getObjectByPath(newFolder));
             }
@@ -526,14 +531,18 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         // remove cache key
         session.removeObjectFromCache(object);
         // cleanup all documents from the cache
-        if (object instanceof Document) {
-            for (CmisObject version : ((Document) object).getAllVersions()) {
-                session.removeObjectFromCache(version);
+        try {
+            if (object instanceof Document) {
+                for (CmisObject version : ((Document) object).getAllVersions()) {
+                    session.removeObjectFromCache(version);
+                }
+            } else if (object instanceof Folder) {
+                for (CmisObject o : ((Folder) object).getChildren()) {
+                    cleanUpCache(o, session);
+                }
             }
-        } else if (object instanceof Folder) {
-            for (CmisObject o : ((Folder) object).getChildren()) {
-                cleanUpCache(o, session);
-            }
+        } catch (CmisObjectNotFoundException e) {
+            // object don't exist anymore
         }
     }
 
