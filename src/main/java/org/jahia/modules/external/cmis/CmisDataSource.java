@@ -61,12 +61,14 @@ import org.jahia.services.content.decorator.JCRMountPointNode;
 import org.jahia.services.content.nodetypes.ExtendedNodeType;
 import org.jahia.services.content.nodetypes.NodeTypeRegistry;
 import org.jahia.services.usermanager.JahiaUser;
+import org.jahia.settings.SettingsBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jcr.*;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.*;
 import java.util.*;
@@ -99,6 +101,8 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     protected Cache<String, Session> activeConnections;
     private boolean recordingConnectionsStats;
     private ExternalContentStoreProvider provider;
+
+    private enum Operation { ENCODE, DECODE }
 
     private int maxChildNodes = 0;
 
@@ -212,9 +216,10 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                                         log.warn(String.format("getChildrenNodes returns too many children - path : %s , number of children %s, max children %s", path, children.getTotalNumItems(), maxChildNodes));
                                         break;
                                     }
-                                    list.add(getObject(child, (!folder.getPath().equals("/") ? folder.getPath() + "/" : "/") + child.getName()));
+                                    String childPath = transformPath(removeRemotePath(!folder.getPath().equals("/") ? folder.getPath() + "/" : "/") + child.getName(), Operation.ENCODE);
+                                    list.add(getObject(child, childPath));
                                     if (child.getBaseTypeId() == BaseTypeId.CMIS_DOCUMENT) {
-                                        list.add(getObjectContent((Document) child, (!folder.getPath().equals("/") ? folder.getPath() + "/" : "/") + child.getName() + JCR_CONTENT_SUFFIX));
+                                        list.add(getObjectContent((Document) child, childPath + JCR_CONTENT_SUFFIX));
                                     }
                                 }
                             }
@@ -269,12 +274,12 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             if (doc.getPaths().isEmpty() || doc.getContentStreamLength() < 0) {
                 throw new PathNotFoundException("No path found for CMIS document: " + doc.getId());
             } else {
-                jcrContentPath = doc.getPaths().get(0) + JCR_CONTENT_SUFFIX;
+                jcrContentPath = transformPath(removeRemotePath(doc.getPaths().get(0) + JCR_CONTENT_SUFFIX), Operation.ENCODE);
             }
         }
         Map<String, String[]> properties = new HashMap<>(1);
         properties.put(Constants.JCR_MIMETYPE, new String[]{doc.getContentStreamMimeType()});
-        ExternalData externalData = new ExternalData(stripVersionFromId(doc.getId()) + JCR_CONTENT_SUFFIX, removeRemotePath(jcrContentPath), Constants.NT_RESOURCE, properties);
+        ExternalData externalData = new ExternalData(stripVersionFromId(doc.getId()) + JCR_CONTENT_SUFFIX, jcrContentPath, Constants.NT_RESOURCE, properties);
 
         Map<String, Binary[]> binaryProperties = new HashMap<>(1);
         if (doc.getContentStreamLength() > 0) {
@@ -308,19 +313,19 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 if (doc.getPaths().isEmpty()) {
                     throw new PathNotFoundException("No path found for CMIS document: " + doc.getId());
                 } else {
-                    path = doc.getPaths().get(0);
+                    path = transformPath(removeRemotePath(doc.getPaths().get(0)), Operation.ENCODE);
                 }
             }
         } else if (object instanceof Folder) {
             Folder folder = (Folder) object;
             if (path == null) {
-                path = folder.getPath();
+                path = transformPath(removeRemotePath(folder.getPath()), Operation.ENCODE);
             }
         }
         properties.put(Constants.JCR_CREATED, formatDate(object.getCreationDate()));
         properties.put(Constants.JCR_LASTMODIFIED, formatDate(object.getLastModificationDate()));
         mapProperties(properties, object, typeMapping, 'r');
-        ExternalData externalData = new ExternalData(stripVersionFromId(object.getId()), removeRemotePath(path), typeMapping.getJcrName(), properties);
+        ExternalData externalData = new ExternalData(stripVersionFromId(object.getId()), path, typeMapping.getJcrName(), properties);
         Set<String> mixins = new HashSet<>(typeMapping.getJcrMixins());
         if (additionalMixin != null) {
             mixins.add(additionalMixin);
@@ -458,7 +463,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 // changing the name, also change the id of the object
                 // disabling this refresh does'nt cause any issue for us, because we refresh the list of item after an edition, move, or rename
                 // so the file will be rename and correctly display after the action
-                file.rename(StringUtils.substringAfterLast(newPath, "/"), false);
+                file.rename(transformPath(StringUtils.substringAfterLast(newPath, "/"), Operation.DECODE), false);
             } else {
                 file.move(getObjectByPath(oldFolder), getObjectByPath(newFolder));
             }
@@ -566,7 +571,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             if (cmisType == null) {
                 cmisType = conf.getDefaultFolderType();
             }
-            String name = path.substring(path.lastIndexOf('/') + 1);
+            String name = transformPath(path.substring(path.lastIndexOf('/') + 1), Operation.DECODE);
             Map<String, Object> properties = new HashMap<>();
             try {
                 CmisObject folder = getObjectByPath(path);
@@ -604,7 +609,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             if (cmisType == null) {
                 cmisType = conf.getDefaultDocumentType();
             }
-            String name = path.substring(path.lastIndexOf('/') + 1);
+            String name = transformPath(path.substring(path.lastIndexOf('/') + 1), Operation.DECODE);
             Map<String, Object> properties = new HashMap<>();
             Document doc;
             try {
@@ -977,5 +982,27 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
     public void setProvider(ExternalContentStoreProvider provider) {
         this.provider = provider;
+    }
+
+    private String transformPath(String path, Operation operation) throws PathNotFoundException {
+        try {
+            if (StringUtils.equals(path, "/")) {
+                return path;
+            }
+            String sep = StringUtils.contains(path, "/") ? "/" : "";
+            StringBuilder sb = new StringBuilder();
+            for (String p : StringUtils.split(path, "/")) {
+                sb.append(sep);
+                if (operation == Operation.DECODE) {
+                    sb.append(URLDecoder.decode(p, SettingsBean.getInstance().getCharacterEncoding()));
+                } else {
+                    sb.append(URLEncoder.encode(p, SettingsBean.getInstance().getCharacterEncoding()));
+                }
+            }
+            log.info((operation == Operation.DECODE?"DECODE":"ENCODE") + " {} to {}", path, sb);
+            return sb.toString();
+        } catch  (UnsupportedEncodingException e) {
+            throw new PathNotFoundException(e);
+        }
     }
 }
