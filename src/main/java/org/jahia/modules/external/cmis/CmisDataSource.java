@@ -180,7 +180,9 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         return executeWithCMISSession(new ExecuteCallback<CmisObject>() {
             @Override
             public CmisObject execute(Session session) throws RepositoryException {
-                return session.getObjectByPath(addRemotePath(path));
+                // the path is encoded by DX using JCRContentUtils.escapeLocalNodeName() that
+                // do not encode "+" that has to be encoded
+                return session.getObjectByPath(addRemotePath(path.replace("+", "%2B")));
             }
         });
     }
@@ -203,7 +205,9 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 ArrayList<ExternalData> list = new ArrayList<>();
                 try {
                     if (!path.endsWith(JCR_CONTENT_SUFFIX)) {
-                        CmisObject object = session.getObjectByPath(addRemotePath(path));
+                        // the path is encoded by DX using JCRContentUtils.escapeLocalNodeName() that
+                        // do not encode "+" that has to be encoded
+                        CmisObject object = session.getObjectByPath(addRemotePath(path.replace("+", "%2B")));
                         if (object instanceof Document) {
                             return Collections.singletonList(getObjectContent((Document) object, path + JCR_CONTENT_SUFFIX));
                         } else if (object instanceof Folder) {
@@ -994,9 +998,11 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             for (String p : StringUtils.split(path, "/")) {
                 sb.append(sep);
                 if (operation == Operation.DECODE) {
-                    sb.append(URLDecoder.decode(p, SettingsBean.getInstance().getCharacterEncoding()));
+                    // as + is decoded to space, we have first to escape it
+                    sb.append(URLDecoder.decode(p.replace("+", "%2B"), SettingsBean.getInstance().getCharacterEncoding()));
                 } else {
-                    sb.append(URLEncoder.encode(p, SettingsBean.getInstance().getCharacterEncoding()));
+                    // replace encoded space to "+" by %20
+                    sb.append(URLEncoder.encode(p, SettingsBean.getInstance().getCharacterEncoding()).replace("+", "%20"));
                 }
             }
             log.info((operation == Operation.DECODE?"DECODE":"ENCODE") + " {} to {}", path, sb);
