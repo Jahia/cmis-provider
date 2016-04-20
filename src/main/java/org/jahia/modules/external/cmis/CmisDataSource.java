@@ -49,6 +49,7 @@ import org.apache.chemistry.opencmis.commons.impl.json.parser.JSONParseException
 import org.apache.chemistry.opencmis.commons.impl.json.parser.JSONParser;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.util.ISO8601;
+import org.apache.jackrabbit.util.Text;
 import org.apache.jackrabbit.value.BinaryImpl;
 import org.jahia.api.Constants;
 import org.jahia.modules.external.ExternalContentStoreProvider;
@@ -61,14 +62,12 @@ import org.jahia.services.content.decorator.JCRMountPointNode;
 import org.jahia.services.content.nodetypes.ExtendedNodeType;
 import org.jahia.services.content.nodetypes.NodeTypeRegistry;
 import org.jahia.services.usermanager.JahiaUser;
-import org.jahia.settings.SettingsBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jcr.*;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.*;
 import java.util.*;
@@ -102,7 +101,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     private boolean recordingConnectionsStats;
     private ExternalContentStoreProvider provider;
 
-    private enum Operation { ENCODE, DECODE }
+    private enum Operation { ENCODE, DECODE, URLENCODE }
 
     private int maxChildNodes = 0;
 
@@ -182,7 +181,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             public CmisObject execute(Session session) throws RepositoryException {
                 // the path is encoded by DX using JCRContentUtils.escapeLocalNodeName() that
                 // do not encode "+" that has to be encoded
-                return session.getObjectByPath(addRemotePath(path.replace("+", "%2B")));
+                return session.getObjectByPath(addRemotePath(transformPath(transformPath(path, Operation.DECODE), Operation.URLENCODE)));
             }
         });
     }
@@ -207,7 +206,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                     if (!path.endsWith(JCR_CONTENT_SUFFIX)) {
                         // the path is encoded by DX using JCRContentUtils.escapeLocalNodeName() that
                         // do not encode "+" that has to be encoded
-                        CmisObject object = session.getObjectByPath(addRemotePath(path.replace("+", "%2B")));
+                        CmisObject object = session.getObjectByPath(addRemotePath(transformPath(transformPath(path, Operation.DECODE), Operation.URLENCODE)));
                         if (object instanceof Document) {
                             return Collections.singletonList(getObjectContent((Document) object, path + JCR_CONTENT_SUFFIX));
                         } else if (object instanceof Folder) {
@@ -944,6 +943,8 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         } catch (RepositoryException cantConnectCmis) {
             log.error(cantConnectCmis.getMessage(), cantConnectCmis);
             throw new RuntimeException(cantConnectCmis);
+        } catch (CmisObjectNotFoundException cmisObjectNotFound) {
+            log.warn("Cannot get privileges for "+path, cmisObjectNotFound);
         }
         return privileges.toArray(new String[privileges.size()]);
     }
@@ -989,26 +990,40 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     }
 
     private String transformPath(String path, Operation operation) throws PathNotFoundException {
-        try {
-            if (StringUtils.equals(path, "/")) {
-                return path;
-            }
-            String sep = StringUtils.contains(path, "/") ? "/" : "";
-            StringBuilder sb = new StringBuilder();
+        if (StringUtils.equals(path, "/")) {
+            return path;
+        }
+        String sep = StringUtils.contains(path, "/") ? "/" : "";
+        StringBuilder sb = new StringBuilder();
+        if (operation != Operation.URLENCODE) {
             for (String p : StringUtils.split(path, "/")) {
                 sb.append(sep);
                 if (operation == Operation.DECODE) {
                     // as + is decoded to space, we have first to escape it
-                    sb.append(URLDecoder.decode(p.replace("+", "%2B"), SettingsBean.getInstance().getCharacterEncoding()));
+                    sb.append(p != null && p.indexOf('%') != -1 ? Text.unescapeIllegalJcrChars(p) : p);
                 } else {
                     // replace encoded space to "+" by %20
-                    sb.append(URLEncoder.encode(p, SettingsBean.getInstance().getCharacterEncoding()).replace("+", "%20"));
+                    for (int i = 0; i < p.length(); i++) {
+                        char ch = p.charAt(i);
+                        if (ch == '[' || ch == ']' || ch == '*' || ch == '|' || ch == '%') {
+                            sb.append('%');
+                            sb.append(Character.toUpperCase(Character.forDigit(ch / 16, 16)));
+                            sb.append(Character.toUpperCase(Character.forDigit(ch % 16, 16)));
+                        } else {
+                            sb.append(ch);
+                        }
+                    }
                 }
             }
-            log.info((operation == Operation.DECODE?"DECODE":"ENCODE") + " {} to {}", path, sb);
-            return sb.toString();
-        } catch  (UnsupportedEncodingException e) {
-            throw new PathNotFoundException(e);
+        } else {
+            try {
+                return (new URI(null,null,path,null)).toString().replace("+","%2B");
+            } catch (URISyntaxException e) {
+                throw new PathNotFoundException(e);
+            }
         }
+        return sb.toString();
+
     }
+
 }
