@@ -38,6 +38,7 @@ import org.apache.chemistry.opencmis.commons.data.AllowableActions;
 import org.apache.chemistry.opencmis.commons.data.ContentStream;
 import org.apache.chemistry.opencmis.commons.enums.Action;
 import org.apache.chemistry.opencmis.commons.enums.BaseTypeId;
+import org.apache.chemistry.opencmis.commons.enums.BindingType;
 import org.apache.chemistry.opencmis.commons.enums.UnfileObject;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisBaseException;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisObjectNotFoundException;
@@ -1016,10 +1017,16 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 }
             }
         } else {
-            try {
-                return (new URI(null,null,path,null)).toString().replace("+","%2B");
-            } catch (URISyntaxException e) {
-                throw new PathNotFoundException(e);
+            // Browser binding needs to encode the path as it is part of the url path
+            // in the other case (atompub), the path is part of the queryString and is encoded by the CMIS implementation
+            if (BindingType.BROWSER.value().equals(getConf().getRepositoryPropertiesMap().get(SessionParameter.BINDING_TYPE))) {
+                try {
+                    return (new URI(null,null,path,null)).toString().replace("+","%2B");
+                } catch (URISyntaxException e) {
+                    throw new PathNotFoundException(e);
+                }
+            } else {
+                return path;
             }
         }
         return sb.toString();
