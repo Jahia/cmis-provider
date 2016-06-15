@@ -3,6 +3,8 @@
 <cmis = 'http://www.jahia.org/jahia/cmis/1.0'>
 <cmismix = 'http://www.jahia.org/jahia/cmis/mix/1.0'>
 
+[jnt:cmisfile] > jnt:file
+
 [cmis:cmisMountPoint] > jnt:mountPoint
     - repositoryId (string)
     - user (string)

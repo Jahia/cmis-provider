@@ -63,7 +63,7 @@
         <property name="typeMapping">
             <list>
                 <bean class="org.jahia.modules.external.cmis.CmisTypeMapping" parent="cmis_base" id="cmis_document"
-                      p:jcrName="jnt:file"
+                      p:jcrName="jnt:cmisfile"
                       p:jcrMixins="cmismix:document"
                       p:cmisName="cmis:document">
                     <property name="properties">
@@ -122,7 +122,9 @@
         </property>
     </bean>
 
-    <bean id="cmisProviderFactory" class="org.jahia.modules.external.cmis.CmisProviderFactory"/>
+    <bean id="cmisProviderFactory" class="org.jahia.modules.external.cmis.CmisProviderFactory">
+        <property name="jcrStoreService" ref="JCRStoreService"/>
+    </bean>
     <bean class="org.jahia.modules.external.cmis.actions.ActiveCmisSessions" id="activeCmisSessions">
         <property name="requireAuthenticatedUser" value="true"/>
         <property name="jcrStoreService" ref="JCRStoreService"/>

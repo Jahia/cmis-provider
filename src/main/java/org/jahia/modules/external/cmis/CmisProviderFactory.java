@@ -29,13 +29,12 @@ import org.apache.commons.lang.StringUtils;
 import org.jahia.exceptions.JahiaInitializationException;
 import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.modules.external.cmis.admin.CMISMountPointFactory;
+import org.jahia.modules.external.cmis.services.NuxeoFileNode;
 import org.jahia.security.license.LicenseCheckException;
 import org.jahia.security.license.LicenseCheckerService;
 import org.jahia.services.SpringContextSingleton;
-import org.jahia.services.content.JCRNodeWrapper;
-import org.jahia.services.content.JCRSessionFactory;
-import org.jahia.services.content.JCRStoreProvider;
-import org.jahia.services.content.ProviderFactory;
+import org.jahia.services.content.*;
+import org.jahia.services.content.decorator.JCRNodeDecorator;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -43,6 +42,7 @@ import org.springframework.context.ApplicationContextAware;
 
 import javax.jcr.RepositoryException;
 import java.util.Arrays;
+import java.util.Map;
 
 public class CmisProviderFactory implements ProviderFactory, ApplicationContextAware, InitializingBean {
 
@@ -57,7 +57,7 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
 
     public static final String TYPE_NUXEO = "nuxeo";
     public static final String NUXEO_URL = "nuxeo.url";
-
+    private JCRStoreService jcrStoreService;
 
     @Override
     public String getNodeTypeName() {
@@ -89,6 +89,11 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
                 ((AlfrescoCmisDataSource) dataSource).setPublicUser(mountPoint.getProperty(CMISMountPointFactory.PUBLIC_USER).getString());
             }
         } else if(TYPE_NUXEO.equals(type)) {
+            //Change file and folders decorator to use the nuxeo one
+            if(!jcrStoreService.getDecorators().containsKey("jnt:cmisfile")) {
+                jcrStoreService.addDecorator("jnt:cmisfile", NuxeoFileNode.class);
+            }
+            //Setup datasource
             dataSource = new NuxeoCmisDataSource();
             conf.getRepositoryPropertiesMap().put(NUXEO_URL, cmisUrl);
             conf.getRepositoryPropertiesMap().put(SessionParameter.BINDING_TYPE, BindingType.ATOMPUB.value());
@@ -141,5 +146,9 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
         if (!LicenseCheckerService.Stub.isAllowed("org.jahia.cmis")) {
             throw new LicenseCheckException("No license found for CMIS connector");
         }
+    }
+
+    public void setJcrStoreService(JCRStoreService jcrStoreService) {
+        this.jcrStoreService = jcrStoreService;
     }
 }
