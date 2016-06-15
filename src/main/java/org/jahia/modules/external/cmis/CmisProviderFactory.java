@@ -48,11 +48,15 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
 
     private static final String ALFRESCO_ENDPOINT_BROWSER = "/api/-default-/public/cmis/versions/1.1/browser";
     private static final String ALFRESCO_ENDPOINT_ATOM = "/api/-default-/public/cmis/versions/1.1/atom";
+    private static final String NUXEO_ENDPOINT_ATOM = "/nuxeo/atom/cmis/default/";
 
     private ApplicationContext applicationContext;
 
     public static final String TYPE_ALFRESCO = "alfresco";
     public static final String ALFRESCO_URL = "alfresco.url";
+
+    public static final String TYPE_NUXEO = "nuxeo";
+    public static final String NUXEO_URL = "nuxeo.url";
 
 
     @Override
@@ -84,6 +88,11 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
             if (mountPoint.hasProperty(CMISMountPointFactory.PUBLIC_USER)) {
                 ((AlfrescoCmisDataSource) dataSource).setPublicUser(mountPoint.getProperty(CMISMountPointFactory.PUBLIC_USER).getString());
             }
+        } else if(TYPE_NUXEO.equals(type)) {
+            dataSource = new NuxeoCmisDataSource();
+            conf.getRepositoryPropertiesMap().put(NUXEO_URL, cmisUrl);
+            conf.getRepositoryPropertiesMap().put(SessionParameter.BINDING_TYPE, BindingType.ATOMPUB.value());
+            conf.getRepositoryPropertiesMap().put(SessionParameter.ATOMPUB_URL, cmisUrl + NUXEO_ENDPOINT_ATOM);
         } else {
             // legacy support
             dataSource = new CmisDataSource();

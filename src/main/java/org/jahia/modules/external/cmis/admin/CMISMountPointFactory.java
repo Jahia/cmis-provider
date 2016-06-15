@@ -135,7 +135,12 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
             mountNode.setProperty(PUBLIC_USER, publicUser);
         } else {
             mountNode.setProperty(REPOSITORY_ID, repositoryId);
-            mountNode.setProperty(TYPE, TYPE_CMIS);
+            if(CmisProviderFactory.TYPE_NUXEO.equals(type)){
+                mountNode.setProperty(TYPE, CmisProviderFactory.TYPE_NUXEO);
+            }
+            else{
+                mountNode.setProperty(TYPE, TYPE_CMIS);
+            }
             mountNode.setProtectedPropertyNames(new String[]{PASSWORD});
         }
     }

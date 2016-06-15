@@ -21,14 +21,16 @@ angular.module('cmisMount', ['folderPicker'])
 
         $scope.$watch('cmisType', function(newVal, oldVal) {
             // save old value in case of switch between type
-            if(newVal == "alfresco") {
+            if(newVal == "alfresco" || newVal == "nuxeo") {
                 if(oldVal == "cmis") {
                     $scope.cmisRepoId = angular.copy($scope.repositoryId);
                 }
-                // keep as default value, will be overrided by the mount point factory
-                $scope.repositoryId = "-default-";
+                if(newVal == "alfresco" ){
+                    // keep as default value, will be overrided by the mount point factory
+                    $scope.repositoryId = "-default-";
+                }
             }
-            if(newVal == "cmis" && oldVal == "alfresco") {
+            if(newVal == "cmis" && (oldVal == "alfresco" || oldVal == "nuxeo")) {
                 $scope.repositoryId = $scope.cmisRepoId;
             }
         })

@@ -45,6 +45,7 @@
                             <option value=""><fmt:message key="cmisFactory.type.empty"/></option>
                             <option value="cmis"><fmt:message key="cmisFactory.type.cmis"/></option>
                             <option value="alfresco"><fmt:message key="cmisFactory.type.alfresco"/></option>
+                            <option value="nuxeo"><fmt:message key="cmisFactory.type.nuxeo"/></option>
                         </select>&nbsp;<span class="admin_tooltip" data-placement="right" title="<fmt:message key="cmisFactory.type.tooltip"/>"><i class="icon-info-sign"></i></span>
                     </div>
                 </div>
@@ -55,7 +56,7 @@
                         <form:label path="name"><fmt:message key="label.name"/> <span style="color: red">*</span></form:label>
                         <form:input path="name"/>
                     </div>
-                    <div class="row-fluid" ng-show="cmisType == 'cmis'">
+                    <div class="row-fluid" ng-show="cmisType == 'cmis' || cmisType == 'nuxeo' ">
                         <form:label path="repositoryId"><fmt:message key="cmisFactory.repositoryId"/> <span style="color: red">*</span></form:label>
                         <input ng-model="repositoryId" id="repositoryId" name="repositoryId" type="text">
                     </div>
@@ -70,6 +71,7 @@
                     <div class="row-fluid">
                         <form:label ng-show="cmisType == 'cmis'" path="url"><fmt:message key="cmisFactory.url"/> <span style="color: red">*</span></form:label>
                         <form:label ng-show="cmisType == 'alfresco'" path="url"><fmt:message key="cmisFactory.urlAlfresco"/> <span style="color: red">*</span></form:label>
+                        <form:label ng-show="cmisType == 'nuxeo'" path="url"><fmt:message key="cmisFactory.urlNuxeo"/><span style="color: red">*</span></form:label>
                         <form:input path="url"/>
                     </div>
                     <div class="row-fluid" ng-show="cmisType == 'alfresco'">

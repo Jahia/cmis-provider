@@ -95,16 +95,16 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
     private static final String DEFAULT_MIMETYPE = "binary/octet-stream";
     private static final List<String> JCR_CONTENT_LIST = Collections.singletonList(Constants.JCR_CONTENT);
-    private static final String JCR_CONTENT_SUFFIX = "/" + Constants.JCR_CONTENT;
+    protected static final String JCR_CONTENT_SUFFIX = "/" + Constants.JCR_CONTENT;
 
     private boolean firstConnectFailure = true;
     protected Cache<String, Session> activeConnections;
     private boolean recordingConnectionsStats;
     private ExternalContentStoreProvider provider;
 
-    private enum Operation { ENCODE, DECODE, URLENCODE }
+    protected enum Operation { ENCODE, DECODE, URLENCODE }
 
-    private int maxChildNodes = 0;
+    protected int maxChildNodes = 0;
 
     private String remotePath;
 
@@ -273,7 +273,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         }
     }
 
-    private ExternalData getObjectContent(Document doc, String jcrContentPath) throws PathNotFoundException {
+    protected ExternalData getObjectContent(Document doc, String jcrContentPath) throws PathNotFoundException {
         if (jcrContentPath == null) {
             if (doc.getPaths().isEmpty() || doc.getContentStreamLength() < 0) {
                 throw new PathNotFoundException("No path found for CMIS document: " + doc.getId());
@@ -301,7 +301,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         return id.contains(";") ? StringUtils.substringBeforeLast(id, ";") : id;
     }
 
-    private ExternalData getObject(CmisObject object, String path) throws PathNotFoundException {
+    protected ExternalData getObject(CmisObject object, String path) throws PathNotFoundException {
         CmisTypeMapping typeMapping = getTypeMapping(object);
         Map<String, String[]> properties = new HashMap<>();
         String additionalMixin = null;
@@ -338,11 +338,11 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         return externalData;
     }
 
-    private String removeRemotePath(String path) {
+    protected String removeRemotePath(String path) {
         return StringUtils.startsWith(path, remotePath) ? (StringUtils.equals(path, remotePath) ? "/" : StringUtils.substringAfter(path, remotePath)) : path;
     }
 
-    private String addRemotePath(String path) {
+    protected String addRemotePath(String path) {
         return remotePath + path;
     }
 
@@ -773,7 +773,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         });
     }
 
-    private String removeContentSufix(String identifier) {
+    protected String removeContentSufix(String identifier) {
         return identifier.substring(0, identifier.length() - JCR_CONTENT_SUFFIX.length());
     }
 
@@ -990,7 +990,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         this.provider = provider;
     }
 
-    private String transformPath(String path, Operation operation) throws PathNotFoundException {
+    protected String transformPath(String path, Operation operation) throws PathNotFoundException {
         if (StringUtils.equals(path, "/")) {
             return path;
         }

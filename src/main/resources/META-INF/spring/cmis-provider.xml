@@ -70,6 +70,8 @@
                         <list merge="true">
                             <bean p:cmisName="cmis:isImmutable" p:jcrName="cmis:isImmutable"
                                   class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
+                            <bean p:cmisName="cmis:name" p:jcrName="jcr:title"
+                                  class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
                             <bean p:cmisName="cmis:isLatestVersion" p:jcrName="cmis:isLatestVersion"
                                   class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
                             <bean p:cmisName="cmis:isMajorVersion" p:jcrName="cmis:isMajorVersion"
