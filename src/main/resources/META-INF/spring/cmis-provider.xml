@@ -11,7 +11,7 @@
        http://www.eclipse.org/gemini/blueprint/schema/blueprint/gemini-blueprint.xsd
        http://www.springframework.org/schema/mvc
        http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd">
-    
+
     <mvc:annotation-driven conversion-service="springTypeConversionService"/>
     <bean id="messageSource" class="org.jahia.utils.i18n.ModuleMessageSource"/>
 
@@ -63,7 +63,7 @@
         <property name="typeMapping">
             <list>
                 <bean class="org.jahia.modules.external.cmis.CmisTypeMapping" parent="cmis_base" id="cmis_document"
-                      p:jcrName="jnt:cmisfile"
+                      p:jcrName="cmis:file"
                       p:jcrMixins="cmismix:document"
                       p:cmisName="cmis:document">
                     <property name="properties">

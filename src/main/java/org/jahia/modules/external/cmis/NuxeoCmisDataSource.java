@@ -5,6 +5,7 @@ import org.apache.chemistry.opencmis.commons.enums.BaseTypeId;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisObjectNotFoundException;
 import org.jahia.modules.external.ExternalData;
 import org.jahia.modules.external.ExternalDataSource;
+import org.jahia.modules.external.ExternalQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +23,7 @@ public class NuxeoCmisDataSource extends CmisDataSource implements ExternalDataS
     * The logger instance for this class
      */
     private static final Logger log = LoggerFactory.getLogger(NuxeoCmisDataSource.class);
+
     @Override
     public List<ExternalData> getChildrenNodes(final String path) throws RepositoryException {
         return executeWithCMISSession(new ExecuteCallback<List<ExternalData>>() {
@@ -34,7 +36,7 @@ public class NuxeoCmisDataSource extends CmisDataSource implements ExternalDataS
                         // do not encode "+" that has to be encoded
                         CmisObject object = session.getObjectByPath(addRemotePath(transformPath(transformPath(path, Operation.DECODE), Operation.URLENCODE)));
                         if (object instanceof Document) {
-                            if(hasContent(object)) {
+                            if (hasContent(object)) {
                                 return Collections.singletonList(getObjectContent((Document) object, path + JCR_CONTENT_SUFFIX));
                             } else {
                                 return new ArrayList<ExternalData>();
@@ -52,12 +54,12 @@ public class NuxeoCmisDataSource extends CmisDataSource implements ExternalDataS
                                     //Change object path resolution in order to be able to handle non updated paths when object's title changes
                                     String childPath;
                                     Property pathProperty = child.getProperty("cmis:path");
-                                    if(pathProperty != null) {
-                                        childPath = transformPath(removeRemotePath(pathProperty.getValueAsString()),Operation.ENCODE);
+                                    if (pathProperty != null) {
+                                        childPath = transformPath(removeRemotePath(pathProperty.getValueAsString()), Operation.ENCODE);
                                     } else {
                                         //Specific code made to handle Nuxeo path segment specific truncation by getting nuxeo custom property
                                         Property pathSegment = child.getProperty("nuxeo:pathSegment");
-                                        if(pathSegment != null) {
+                                        if (pathSegment != null) {
                                             childPath = transformPath(removeRemotePath(!folder.getPath().equals("/") ? folder.getPath() + "/" : "/") + pathSegment.getValueAsString(), Operation.ENCODE);
                                         } else {
                                             childPath = transformPath(removeRemotePath(!folder.getPath().equals("/") ? folder.getPath() + "/" : "/") + child.getName(), Operation.ENCODE);
@@ -85,7 +87,7 @@ public class NuxeoCmisDataSource extends CmisDataSource implements ExternalDataS
             if (path.endsWith(CmisDataSource.JCR_CONTENT_SUFFIX)) {
                 CmisObject object = getObjectByPath(removeContentSufix(path));
                 //Handle case of CMIS documents without binaries
-                if(hasContent(object)) {
+                if (hasContent(object)) {
                     return getObjectContent((Document) object, path);
                 } else {
                     return getObject(object, path);
@@ -101,17 +103,73 @@ public class NuxeoCmisDataSource extends CmisDataSource implements ExternalDataS
 
     /**
      * This function check if the cmis object in parameters has a content stream length greater than 0
+     *
      * @param object : the cmis object of which content stream size has to be checked
      * @return true if content stream size is greater than 0 and false in the other case
      */
-    private boolean hasContent(CmisObject object){
+    private boolean hasContent(CmisObject object) {
         //Get the content stream size property of the cmis object
         Property contentStreamLength = object.getProperty("cmis:contentStreamLength");
         //Check if the size property exists and if its value is greater than 0
-        if(contentStreamLength != null && contentStreamLength.getValues().size() > 0){
+        if (contentStreamLength != null && contentStreamLength.getValues().size() > 0) {
             return true;
         } else {
             return false;
         }
     }
+
+    @Override
+    public List<String> search(final ExternalQuery query) throws RepositoryException {
+        return executeWithCMISSession(new ExecuteCallback<List<String>>() {
+            @Override
+            public List<String> execute(Session session) {
+                try {
+                    NuxeoQueryResolver resolver = new NuxeoQueryResolver(NuxeoCmisDataSource.this, query);
+                    String sql = resolver.resolve();
+
+                    // Not mapped or unsupported queries treated as empty.
+                    if (sql == null) {
+                        return Collections.emptyList();
+                    }
+
+                    boolean isFolder = false;
+                    if (BaseTypeId.CMIS_FOLDER.equals(session.getTypeDefinition(resolver.cmisType.getCmisName()).getBaseTypeId())) {
+                        isFolder = true;
+                        sql = sql.replace("cmis:objectId", "cmis:path");
+                    }
+                    if (log.isDebugEnabled()) {
+                        log.debug("CMIS query " + sql);
+                    }
+                    OperationContext operationContext = session.createOperationContext();
+                    operationContext.setIncludePathSegments(true);
+                    //In nuxeo the search query MUST be done with searchAllVersions attribute to true
+                    ItemIterable<QueryResult> results = session.query(sql, true, operationContext);
+                    if (query.getLimit() > 0 && query.getLimit() < Integer.MAX_VALUE) {
+                        results = results.getPage((int) query.getLimit());
+                    }
+                    if (query.getOffset() != 0) {
+                        results = results.skipTo(query.getOffset());
+                    }
+                    ArrayList<String> res = new ArrayList<>();
+                    for (QueryResult hit : results) {
+                        String path;
+                        if (isFolder) {
+                            path = removeRemotePath(hit.getPropertyValueByQueryName("cmis:objectId").toString());
+                        } else {
+                            String id = hit.getPropertyValueByQueryName("cmis:objectId").toString();
+                            CmisObject object = session.getObject(id);
+                            path = removeRemotePath(((FileableCmisObject) object).getPaths().get(0));
+                        }
+                        res.add(path);
+                    }
+                    return res;
+                } catch (RepositoryException | CmisObjectNotFoundException e) {
+                    // CmisObjectNotFoundException in case of the cmis server doesn't support query
+                    log.warn("Can't execute query to cmis ", e);
+                    return Collections.emptyList();
+                }
+            }
+        });
+    }
+
 }

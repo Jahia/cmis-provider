@@ -1,26 +1,3 @@
-/**
- * ==========================================================================================
- * =                            JAHIA'S ENTERPRISE DISTRIBUTION                             =
- * ==========================================================================================
- * <p/>
- * http://www.jahia.com
- * <p/>
- * JAHIA'S ENTERPRISE DISTRIBUTIONS LICENSING - IMPORTANT INFORMATION
- * ==========================================================================================
- * <p/>
- * Copyright (C) 2002-2016 Jahia Solutions Group. All rights reserved.
- * <p/>
- * This file is part of a Jahia's Enterprise Distribution.
- * <p/>
- * Jahia's Enterprise Distributions must be used in accordance with the terms
- * contained in the Jahia Solutions Group Terms & Conditions as well as
- * the Jahia Sustainable Enterprise License (JSEL).
- * <p/>
- * For questions regarding licensing, support, production usage...
- * please contact our team at sales@jahia.com or go to http://www.jahia.com/license.
- * <p/>
- * ==========================================================================================
- */
 package org.jahia.modules.external.cmis;
 
 import org.apache.chemistry.opencmis.client.api.CmisObject;
@@ -38,30 +15,25 @@ import javax.jcr.Value;
 import javax.jcr.query.qom.*;
 
 /**
- * Helper class used for convert JCR ExternalQuery to CMIS Query
- * Created by: Boris
- * Date: 2/4/14
- * Time: 6:49 PM
+ * Created by rizak on 17/06/16.
+ * This class is based on the CMIS QueryResolver but implements Nuxeo Query building specificities
  */
-public class QueryResolver {
+public class NuxeoQueryResolver extends QueryResolver{
     /*
-    * The logger instance for this class
-    */
+     * The logger instance for this class
+     */
     private static final Logger log = LoggerFactory.getLogger(CmisDataSource.class);
 
     private final StringBuffer TRUE = new StringBuffer("true");
     private final StringBuffer FALSE = new StringBuffer("false");
+    private final StringBuffer EMPTY = new StringBuffer("");
 
     CmisDataSource dataSource;
     ExternalQuery query;
     CmisConfiguration conf;
     CmisTypeMapping cmisType;
 
-    public QueryResolver(){
-        //Default constructor for the children classes
-    }
-
-    public QueryResolver(CmisDataSource dataSource, ExternalQuery query) {
+    public NuxeoQueryResolver(CmisDataSource dataSource, ExternalQuery query) {
         this.dataSource = dataSource;
         this.query = query;
         conf = dataSource.conf;
@@ -79,7 +51,7 @@ public class QueryResolver {
         String nodeTypeName = selector.getNodeTypeName();
 
         // Supports queries on hierarchyNode as file queries
-        if (nodeTypeName.equals("nt:hierarchyNode")) {
+        if (nodeTypeName.equals("nt:hierarchyNode") || nodeTypeName.equals("jmix:searchable")) {
             nodeTypeName = "cmis:file";
         }
         cmisType = conf.getTypeByJCR(nodeTypeName);
@@ -87,7 +59,15 @@ public class QueryResolver {
             log.debug("Unmapped types not supported in CMIS queries");
             return null;
         }
+        //TODO : Check the repository on mount point for the "capabilityJoin" attribute before implementing the join between files and folders (Adding an option with user choice in mount point creation form ?)
+        //TODO : When the JOIN will be implemented the contraints operand will need to be doubled to verify properties in files and in folders
+        //Join Files and folders in the search
+        //buff.append("(");
         buff.append(cmisType.getQueryName());
+        //buff.append(" AS file JOIN ");
+        //cmisType = conf.getTypeByJCR("jnt:folder");
+        //buff.append(cmisType.getQueryName()+" AS folder ON file.nuxeo:parentId = folder.cmis:objectId )");
+
 //        if (selector.getSelectorName()!=null && !selector.getSelectorName().isEmpty())
 //            buff.append(" as ").append(selector.getSelectorName());
         boolean hasConstraint = false;
@@ -119,6 +99,10 @@ public class QueryResolver {
                 tmpBuf.setLength(0);
                 try {
                     addOperand(tmpBuf, ordering.getOperand());
+                    //In Nuxeo the score can only be used when using fulltext search
+                    if (tmpBuf.toString().equals(" myscore ") && (!buff.toString().contains("contains("))) {
+                        return buff.toString();
+                    }
                     if (isFirst) {
                         buff.append(" ORDER BY ");
                         isFirst = false;
@@ -152,10 +136,16 @@ public class QueryResolver {
             if (constraint1 == TRUE || constraint2 == TRUE) {
                 return TRUE;
             }
-            if (constraint1 == FALSE) {
+            if (constraint1 == FALSE && constraint2 == FALSE) {
+                return EMPTY;
+            }
+            if (constraint1 == EMPTY && constraint2 == EMPTY) {
+                return EMPTY;
+            }
+            if (constraint1 == FALSE || constraint1 == EMPTY) {
                 return constraint2;
             }
-            if (constraint2 == FALSE) {
+            if (constraint2 == FALSE || constraint2 == EMPTY) {
                 return constraint1;
             }
             buff.append(" (");
@@ -168,12 +158,15 @@ public class QueryResolver {
             StringBuffer constraint1 = addConstraint(c.getConstraint1());
             StringBuffer constraint2 = addConstraint(c.getConstraint2());
             if (constraint1 == FALSE || constraint2 == FALSE) {
-                return FALSE;
+                return EMPTY;
             }
-            if (constraint1 == TRUE) {
+            if (constraint1 == EMPTY && constraint2 == EMPTY) {
+                return EMPTY;
+            }
+            if (constraint1 == TRUE || constraint1 == EMPTY) {
                 return constraint2;
             }
-            if (constraint2 == TRUE) {
+            if (constraint2 == TRUE || constraint2 == EMPTY) {
                 return constraint1;
             }
             buff.append(" (");
@@ -183,6 +176,7 @@ public class QueryResolver {
             buff.append(") ");
         } else if (constraint instanceof Comparison) {
             Comparison c = (Comparison) constraint;
+            boolean date = false;
             buff.append(" (");
             try {
                 int pos = buff.length();
@@ -194,9 +188,13 @@ public class QueryResolver {
                 addOperand(buff, c.getOperand2());
                 String op2 = buff.substring(pos);
                 buff.setLength(pos);
-
+                //Handling Dates comparison case :
+                //Need to prefixe the String with DATE or TIMESTAMP in order for the server to process it like a date
+                if (op1.equals("cmis:creationDate") || op1.equals("cmis:lastModificationDate")) {
+                    date = true;
+                }
                 Operator operator = Operator.getOperatorByName(c.getOperator());
-                buff.append(operator.formatSql(op1, op2));
+                buff.append(operator.formatSql(op1, date ? "TIMESTAMP " + op2 : op2));
             } catch (NotMappedCmisProperty e) {
                 return FALSE;
             }
@@ -249,9 +247,25 @@ public class QueryResolver {
             }
         } else if (constraint instanceof FullTextSearch) {
             FullTextSearch c = (FullTextSearch) constraint;
-            buff.append(" contains(");
-            addOperand(buff, c.getFullTextSearchExpression());
-            buff.append(") ");
+            //If fulltext search is done on jcr:content then executing fulltext search
+            if (c.getPropertyName().equals("jcr:content")) {
+                buff.append(" contains(");
+                addOperand(buff, c.getFullTextSearchExpression());
+                buff.append(") ");
+            }
+            //If fulltext search is done on another property then checking the property mapping
+            else {
+                CmisPropertyMapping propertyByJCR = cmisType.getPropertyByJCR(c.getPropertyName());
+                //If the property is mapped then use like operator to avoid "contains" repetition
+                if (propertyByJCR != null) {
+                    String searchTerm = c.getFullTextSearchExpression().toString();
+                    searchTerm = searchTerm.substring(1, searchTerm.length() - 1);
+                    buff.append(propertyByJCR.getCmisName() + "  like '%" + searchTerm + "%' ");
+                } else {
+                    //If the property is not mapped we don't do anything
+                    return EMPTY;
+                }
+            }
         }
         return buff;
     }
@@ -309,10 +323,5 @@ public class QueryResolver {
         } else {
             throw new UnsupportedRepositoryOperationException("Unsupported operand type " + operand.getClass());
         }
-    }
-
-    protected String escapeString(String string) {
-        return string.replace("\\", "\\\\").replace("'", "\\'");
-
     }
 }

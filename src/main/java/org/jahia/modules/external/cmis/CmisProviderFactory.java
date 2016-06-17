@@ -2,23 +2,23 @@
  * ==========================================================================================
  * =                            JAHIA'S ENTERPRISE DISTRIBUTION                             =
  * ==========================================================================================
- *
+ * <p/>
  * http://www.jahia.com
- *
+ * <p/>
  * JAHIA'S ENTERPRISE DISTRIBUTIONS LICENSING - IMPORTANT INFORMATION
  * ==========================================================================================
- *
+ * <p/>
  * Copyright (C) 2002-2016 Jahia Solutions Group. All rights reserved.
- *
+ * <p/>
  * This file is part of a Jahia's Enterprise Distribution.
- *
+ * <p/>
  * Jahia's Enterprise Distributions must be used in accordance with the terms
  * contained in the Jahia Solutions Group Terms & Conditions as well as
  * the Jahia Sustainable Enterprise License (JSEL).
- *
+ * <p/>
  * For questions regarding licensing, support, production usage...
  * please contact our team at sales@jahia.com or go to http://www.jahia.com/license.
- *
+ * <p/>
  * ==========================================================================================
  */
 package org.jahia.modules.external.cmis;
@@ -34,7 +34,6 @@ import org.jahia.security.license.LicenseCheckException;
 import org.jahia.security.license.LicenseCheckerService;
 import org.jahia.services.SpringContextSingleton;
 import org.jahia.services.content.*;
-import org.jahia.services.content.decorator.JCRNodeDecorator;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -42,7 +41,6 @@ import org.springframework.context.ApplicationContextAware;
 
 import javax.jcr.RepositoryException;
 import java.util.Arrays;
-import java.util.Map;
 
 public class CmisProviderFactory implements ProviderFactory, ApplicationContextAware, InitializingBean {
 
@@ -72,10 +70,10 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
         CmisDataSource dataSource;
         CmisConfiguration conf = (CmisConfiguration) applicationContext.getBean("CmisConfiguration");
         String cmisUrl = mountPoint.getProperty("url").getString();
-        cmisUrl = StringUtils.endsWith(cmisUrl,"/") ? StringUtils.substring(cmisUrl, 0, cmisUrl.length() - 1) : cmisUrl;
+        cmisUrl = StringUtils.endsWith(cmisUrl, "/") ? StringUtils.substring(cmisUrl, 0, cmisUrl.length() - 1) : cmisUrl;
         String type = "";
         if (mountPoint.hasProperty(CMISMountPointFactory.TYPE)) {
-           type = mountPoint.getProperty(CMISMountPointFactory.TYPE).getString();
+            type = mountPoint.getProperty(CMISMountPointFactory.TYPE).getString();
         }
         if (TYPE_ALFRESCO.equals(type)) {
             dataSource = new AlfrescoCmisDataSource();
@@ -88,10 +86,10 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
             if (mountPoint.hasProperty(CMISMountPointFactory.PUBLIC_USER)) {
                 ((AlfrescoCmisDataSource) dataSource).setPublicUser(mountPoint.getProperty(CMISMountPointFactory.PUBLIC_USER).getString());
             }
-        } else if(TYPE_NUXEO.equals(type)) {
+        } else if (TYPE_NUXEO.equals(type)) {
             //Change file and folders decorator to use the nuxeo one
-            if(!jcrStoreService.getDecorators().containsKey("jnt:cmisfile")) {
-                jcrStoreService.addDecorator("jnt:cmisfile", NuxeoFileNode.class);
+            if (!jcrStoreService.getDecorators().containsKey("cmis:file")) {
+                jcrStoreService.addDecorator("cmis:file", NuxeoFileNode.class);
             }
             //Setup datasource
             dataSource = new NuxeoCmisDataSource();
@@ -111,7 +109,7 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
         String remotePath = "";
         if (mountPoint.hasProperty(CMISMountPointFactory.REMOTE_PATH)) {
             remotePath = mountPoint.getProperty(CMISMountPointFactory.REMOTE_PATH).getString();
-            remotePath = StringUtils.equals(remotePath, "/")?"":remotePath;
+            remotePath = StringUtils.equals(remotePath, "/") ? "" : remotePath;
         }
         dataSource.setProvider(provider);
         dataSource.setRemotePath(remotePath);
