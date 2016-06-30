@@ -27,6 +27,7 @@ import org.apache.chemistry.opencmis.client.api.CmisObject;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisObjectNotFoundException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.commons.query.qom.Operator;
+import org.apache.jackrabbit.core.query.lucene.constraint.FullTextConstraint;
 import org.jahia.modules.external.ExternalQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,10 +48,11 @@ public class QueryResolver {
     /*
     * The logger instance for this class
     */
-    private static final Logger log = LoggerFactory.getLogger(CmisDataSource.class);
+    protected static final Logger log = LoggerFactory.getLogger(CmisDataSource.class);
 
-    private final StringBuffer TRUE = new StringBuffer("true");
-    private final StringBuffer FALSE = new StringBuffer("false");
+    protected final StringBuffer TRUE = new StringBuffer("true");
+    protected final StringBuffer FALSE = new StringBuffer("false");
+    protected final StringBuffer EMPTY = new StringBuffer("");
 
     CmisDataSource dataSource;
     ExternalQuery query;
@@ -79,7 +81,7 @@ public class QueryResolver {
         String nodeTypeName = selector.getNodeTypeName();
 
         // Supports queries on hierarchyNode as file queries
-        if (nodeTypeName.equals("nt:hierarchyNode")) {
+        if (nodeTypeName.equals("nt:hierarchyNode") || nodeTypeName.equals("jmix:searchable")) {
             nodeTypeName = "cmis:file";
         }
         cmisType = conf.getTypeByJCR(nodeTypeName);
@@ -143,116 +145,194 @@ public class QueryResolver {
     }
 
 
-    private StringBuffer addConstraint(Constraint constraint) throws RepositoryException {
+    protected StringBuffer addConstraint(Constraint constraint) throws RepositoryException {
         StringBuffer buff = new StringBuffer();
         if (constraint instanceof Or) {
-            Or c = (Or) constraint;
-            StringBuffer constraint1 = addConstraint(c.getConstraint1());
-            StringBuffer constraint2 = addConstraint(c.getConstraint2());
-            if (constraint1 == TRUE || constraint2 == TRUE) {
-                return TRUE;
-            }
-            if (constraint1 == FALSE) {
-                return constraint2;
-            }
-            if (constraint2 == FALSE) {
-                return constraint1;
-            }
-            buff.append(" (");
-            buff.append(constraint1);
-            buff.append(" OR ");
-            buff.append(constraint2);
-            buff.append(") ");
+           buff = getOrConstraint((Or) constraint);
         } else if (constraint instanceof And) {
-            And c = (And) constraint;
-            StringBuffer constraint1 = addConstraint(c.getConstraint1());
-            StringBuffer constraint2 = addConstraint(c.getConstraint2());
-            if (constraint1 == FALSE || constraint2 == FALSE) {
-                return FALSE;
-            }
-            if (constraint1 == TRUE) {
-                return constraint2;
-            }
-            if (constraint2 == TRUE) {
-                return constraint1;
-            }
-            buff.append(" (");
-            buff.append(constraint1);
-            buff.append(" AND ");
-            buff.append(constraint2);
-            buff.append(") ");
+            buff = getAndConstraint((And) constraint);
         } else if (constraint instanceof Comparison) {
-            Comparison c = (Comparison) constraint;
-            buff.append(" (");
             try {
-                int pos = buff.length();
-                addOperand(buff, c.getOperand1());
-                String op1 = buff.substring(pos);
-                buff.setLength(pos);
-
-                pos = buff.length();
-                addOperand(buff, c.getOperand2());
-                String op2 = buff.substring(pos);
-                buff.setLength(pos);
-
-                Operator operator = Operator.getOperatorByName(c.getOperator());
-                buff.append(operator.formatSql(op1, op2));
+                buff = getComparisonConstraint((Comparison) constraint);
             } catch (NotMappedCmisProperty e) {
                 return FALSE;
             }
-            buff.append(") ");
         } else if (constraint instanceof PropertyExistence) {
-            PropertyExistence c = (PropertyExistence) constraint;
-            CmisPropertyMapping propertyMapping = cmisType.getPropertyByJCR(c.getPropertyName());
-            if (propertyMapping == null)
-                return FALSE;
-            else
-                buff.append(" (").append(propertyMapping.getQueryName()).append(" IS NOT NULL) ");
+            buff = getPropertyExistenceConstraint((PropertyExistence) constraint);
         } else if (constraint instanceof SameNode) {
-            try {
-                SameNode c = (SameNode) constraint;
-                String path = c.getPath();
-                CmisObject object = dataSource.getObjectByPath(path);
-                buff.append(" (cmis:objectId='").append(object.getId()).append("') ");
+            try{
+                buff = getSameNodeConstraint((SameNode) constraint);
             } catch (CmisObjectNotFoundException e) {
                 return FALSE;
             }
         } else if (constraint instanceof Not) {
-            Not c = (Not) constraint;
-            StringBuffer constraint1 = addConstraint(c.getConstraint());
-            if (constraint1 == FALSE) {
-                return TRUE;
-            }
-            if (constraint1 == TRUE) {
-                return FALSE;
-            }
-            buff.append(" NOT(");
-            buff.append(constraint1);
-            buff.append(") ");
+            buff = getNotConstraint((Not) constraint);
         } else if (constraint instanceof ChildNode) {
             try {
-                ChildNode c = (ChildNode) constraint;
-                String parentPath = c.getParentPath();
-                CmisObject object = dataSource.getObjectByPath(parentPath);
-                buff.append(" IN_FOLDER('").append(object.getId()).append("') ");
+                buff = getChildNodeConstraint((ChildNode) constraint);
             } catch (CmisObjectNotFoundException e) {
                 return FALSE;
             }
         } else if (constraint instanceof DescendantNode) {
             try {
-                DescendantNode c = (DescendantNode) constraint;
-                String ancestorPath = c.getAncestorPath();
-                CmisObject object = dataSource.getObjectByPath(ancestorPath);
-                buff.append(" IN_TREE('").append(object.getId()).append("') ");
+                buff = getDescendantNodeConstraint((DescendantNode) constraint);
             } catch (CmisObjectNotFoundException e) {
                 return FALSE;
             }
         } else if (constraint instanceof FullTextSearch) {
-            FullTextSearch c = (FullTextSearch) constraint;
+            buff = getFullTextSearchConstraint((FullTextSearch) constraint);
+        }
+        return buff;
+    }
+
+    protected StringBuffer getFullTextSearchConstraint(FullTextSearch c) throws RepositoryException{
+        StringBuffer buff = new StringBuffer();
+        //If fulltext search is done on jcr:content then executing fulltext search
+        if (c.getPropertyName().equals("jcr:content")) {
             buff.append(" contains(");
             addOperand(buff, c.getFullTextSearchExpression());
             buff.append(") ");
         }
+        //If fulltext search is done on another property then checking the property mapping
+        else {
+            CmisPropertyMapping propertyByJCR = cmisType.getPropertyByJCR(c.getPropertyName());
+            //If the property is mapped then use like operator to avoid "contains" repetition
+            if (propertyByJCR != null) {
+                String searchTerm = c.getFullTextSearchExpression().toString();
+                searchTerm = searchTerm.substring(1, searchTerm.length() - 1);
+                buff.append(propertyByJCR.getCmisName() + "  like '%" + searchTerm + "%' ");
+            } else {
+                //If the property is not mapped we don't do anything
+                return EMPTY;
+            }
+        }
+        return buff;
+    }
+
+    protected StringBuffer getDescendantNodeConstraint(DescendantNode c) throws CmisObjectNotFoundException, RepositoryException{
+        StringBuffer buff = new StringBuffer();
+        String ancestorPath = c.getAncestorPath();
+        CmisObject object = dataSource.getObjectByPath(ancestorPath);
+        buff.append(" IN_TREE('").append(object.getId()).append("') ");
+        return buff;
+    }
+
+    protected StringBuffer getChildNodeConstraint(ChildNode c) throws CmisObjectNotFoundException, RepositoryException{
+        StringBuffer buff = new StringBuffer();
+        String parentPath = c.getParentPath();
+        CmisObject object = dataSource.getObjectByPath(parentPath);
+        buff.append(" IN_FOLDER('").append(object.getId()).append("') ");
+        return buff;
+    }
+
+    protected StringBuffer getNotConstraint(Not c) throws CmisObjectNotFoundException, RepositoryException{
+        StringBuffer buff = new StringBuffer();
+        StringBuffer constraint1 = addConstraint(c.getConstraint());
+        if (constraint1 == FALSE) {
+            return TRUE;
+        }
+        if (constraint1 == TRUE) {
+            return FALSE;
+        }
+        if (constraint1 == EMPTY) {
+            return EMPTY;
+        }
+        buff.append(" NOT(");
+        buff.append(constraint1);
+        buff.append(") ");
+        return buff;
+    }
+
+    protected StringBuffer getSameNodeConstraint(SameNode c) throws CmisObjectNotFoundException, RepositoryException{
+        StringBuffer buff = new StringBuffer();
+        String path = c.getPath();
+        CmisObject object = dataSource.getObjectByPath(path);
+        buff.append(" (cmis:objectId='").append(object.getId()).append("') ");
+        return buff;
+    }
+
+    protected StringBuffer getPropertyExistenceConstraint(PropertyExistence c) throws CmisObjectNotFoundException, RepositoryException{
+        StringBuffer buff = new StringBuffer();
+        CmisPropertyMapping propertyMapping = cmisType.getPropertyByJCR(c.getPropertyName());
+        if (propertyMapping == null)
+            return FALSE;
+        else
+            buff.append(" (").append(propertyMapping.getQueryName()).append(" IS NOT NULL) ");
+        return buff;
+    }
+
+    protected StringBuffer getComparisonConstraint(Comparison c) throws NotMappedCmisProperty, RepositoryException{
+        StringBuffer buff = new StringBuffer();
+        boolean date = false;
+        buff.append(" (");
+        int pos = buff.length();
+        addOperand(buff, c.getOperand1());
+        String op1 = buff.substring(pos);
+        buff.setLength(pos);
+
+        pos = buff.length();
+        addOperand(buff, c.getOperand2());
+        String op2 = buff.substring(pos);
+        buff.setLength(pos);
+        //Handling Dates comparison case :
+        //Need to prefixe the String with DATE or TIMESTAMP in order for the server to process it like a date
+        if (op1.equals("cmis:creationDate") || op1.equals("cmis:lastModificationDate")) {
+            date = true;
+        }
+        Operator operator = Operator.getOperatorByName(c.getOperator());
+        buff.append(operator.formatSql(op1, date ? "TIMESTAMP " + op2 : op2));
+        buff.append(") ");
+        return buff;
+    }
+
+    protected StringBuffer getAndConstraint(And c) throws RepositoryException{
+        StringBuffer buff = new StringBuffer();
+        StringBuffer constraint1 = addConstraint(c.getConstraint1());
+        StringBuffer constraint2 = addConstraint(c.getConstraint2());
+        if (constraint1 == FALSE || constraint2 == FALSE) {
+            return EMPTY;
+        }
+        if (constraint1 == EMPTY && constraint2 == EMPTY) {
+            return EMPTY;
+        }
+        if (constraint1 == TRUE || constraint1 == EMPTY) {
+            return constraint2;
+        }
+        if (constraint2 == TRUE || constraint2 == EMPTY) {
+            return constraint1;
+        }
+        buff.append(" (");
+        buff.append(constraint1);
+        buff.append(" AND ");
+        buff.append(constraint2);
+        buff.append(") ");
+        return buff;
+    }
+
+    protected StringBuffer getOrConstraint(Or c) throws RepositoryException{
+        StringBuffer buff = new StringBuffer();
+        StringBuffer constraint1 = addConstraint(c.getConstraint1());
+        StringBuffer constraint2 = addConstraint(c.getConstraint2());
+        if (constraint1 == TRUE || constraint2 == TRUE) {
+            return TRUE;
+        }
+        if (constraint1 == FALSE && constraint2 == FALSE) {
+            return FALSE;
+        }
+        if (constraint1 == EMPTY && constraint2 == EMPTY) {
+            return EMPTY;
+        }
+        if (constraint1 == FALSE || constraint1 == EMPTY) {
+            return constraint2;
+        }
+        if (constraint2 == FALSE || constraint2 == EMPTY) {
+            return constraint1;
+        }
+        buff.append(" (");
+        buff.append(constraint1);
+        buff.append(" OR ");
+        buff.append(constraint2);
+        buff.append(") ");
         return buff;
     }
 
@@ -300,7 +380,7 @@ public class QueryResolver {
                 case PropertyType.REFERENCE:
                 case PropertyType.WEAKREFERENCE:
                 case PropertyType.URI:
-                    // TODO implement valid suppoert for this operand types
+                    // TODO implement valid support for this operand types
                     buff.append("'").append(val.getString()).append("'");
                     break;
                 default:
