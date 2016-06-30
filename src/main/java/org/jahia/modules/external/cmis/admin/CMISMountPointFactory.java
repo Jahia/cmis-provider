@@ -157,7 +157,14 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
         this.repositoryId = nodeWrapper.getPropertyAsString(REPOSITORY_ID);
         this.user = nodeWrapper.getPropertyAsString(USER);
         this.password = nodeWrapper.getPropertyAsString(PASSWORD);
-        this.type = nodeWrapper.hasProperty(TYPE) && CmisProviderFactory.TYPE_ALFRESCO.equals(nodeWrapper.getPropertyAsString(TYPE)) ? CmisProviderFactory.TYPE_ALFRESCO : TYPE_CMIS;
+        String type = TYPE_CMIS;
+        if(nodeWrapper.hasProperty(TYPE) && CmisProviderFactory.TYPE_ALFRESCO.equals(nodeWrapper.getPropertyAsString(TYPE))){
+            type = CmisProviderFactory.TYPE_ALFRESCO;
+        }
+        if(nodeWrapper.hasProperty(TYPE) && CmisProviderFactory.TYPE_NUXEO.equals(nodeWrapper.getPropertyAsString(TYPE))){
+            type = CmisProviderFactory.TYPE_NUXEO;
+        }
+        this.type = type;
         this.publicUser = nodeWrapper.getPropertyAsString(PUBLIC_USER);
         this.remotePath = nodeWrapper.hasProperty(REMOTE_PATH) ? nodeWrapper.getProperty(REMOTE_PATH).getString() : "";
         this.url = nodeWrapper.getPropertyAsString(URL);
