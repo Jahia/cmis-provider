@@ -75,19 +75,16 @@ public class NuxeoCmisDataSource extends CmisDataSource implements ExternalDataS
                                         break;
                                     }
                                     //Change object path resolution in order to be able to handle non updated paths when object's title changes
-                                    String childPath;
-                                    Property pathProperty = child.getProperty("cmis:path");
+                                    String remotePath;
+                                    Property<?> pathProperty = child.getProperty("cmis:path");
                                     if (pathProperty != null) {
-                                        childPath = transformPath(removeRemotePath(pathProperty.getValueAsString()), Operation.ENCODE);
+                                        remotePath = removeRemotePath(pathProperty.getValueAsString());
                                     } else {
                                         //Specific code made to handle Nuxeo path segment specific truncation by getting nuxeo custom property
-                                        Property pathSegment = child.getProperty("nuxeo:pathSegment");
-                                        if (pathSegment != null) {
-                                            childPath = transformPath(removeRemotePath(!folder.getPath().equals("/") ? folder.getPath() + "/" : "/") + pathSegment.getValueAsString(), Operation.ENCODE);
-                                        } else {
-                                            childPath = transformPath(removeRemotePath(!folder.getPath().equals("/") ? folder.getPath() + "/" : "/") + child.getName(), Operation.ENCODE);
-                                        }
+                                        Property<?> pathSegment = child.getProperty("nuxeo:pathSegment");
+                                        remotePath = removeRemotePath(!folder.getPath().equals("/") ? folder.getPath() + "/" : "/") + (pathSegment != null ? pathSegment.getValueAsString() : child.getName());
                                     }
+                                    String childPath = transformPath(remotePath, Operation.ENCODE);
                                     list.add(getObject(child, childPath));
                                     if (child.getBaseTypeId() == BaseTypeId.CMIS_DOCUMENT && hasContent(child)) {
                                         list.add(getObjectContent((Document) child, childPath + JCR_CONTENT_SUFFIX));
@@ -176,15 +173,12 @@ public class NuxeoCmisDataSource extends CmisDataSource implements ExternalDataS
                     }
                     ArrayList<String> res = new ArrayList<>();
                     for (QueryResult hit : results) {
-                        String path;
-                        if (isFolder) {
-                            path = removeRemotePath(hit.getPropertyValueByQueryName("cmis:objectId").toString());
-                        } else {
-                            String id = hit.getPropertyValueByQueryName("cmis:objectId").toString();
-                            CmisObject object = session.getObject(id);
-                            path = removeRemotePath(((FileableCmisObject) object).getPaths().get(0));
+                        String remotePath = hit.getPropertyValueByQueryName("cmis:objectId").toString();
+                        if (!isFolder) {
+                            CmisObject object = session.getObject(remotePath);
+                            remotePath = ((FileableCmisObject) object).getPaths().get(0);
                         }
-                        res.add(path);
+                        res.add(removeRemotePath(remotePath));
                     }
                     return res;
                 } catch (RepositoryException | CmisObjectNotFoundException e) {
