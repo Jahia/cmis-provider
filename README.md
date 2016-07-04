@@ -38,7 +38,10 @@ The goals of this project are as follows:
     - any specific behaviour for multivalue properties is not implemented.
     - date type is supported only if cast expression is used (no auto converting).
 6. Configurable mapping for custom types.
+
 CMIS not supports languages attribute, so if Jahia will add language restrictions there will be not mapped property in CMIS queries.
+
+In the case of Nuxeo mount points the move and the rename operations are not supported due to Nuxeo path management
 
 ### Implementation tips
 
