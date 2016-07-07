@@ -155,7 +155,7 @@ public class QueryResolver {
             try {
                 buff = getComparisonConstraint((Comparison) constraint);
             } catch (NotMappedCmisProperty e) {
-                return FALSE;
+                return EMPTY;
             }
         } else if (constraint instanceof PropertyExistence) {
             buff = getPropertyExistenceConstraint((PropertyExistence) constraint);
