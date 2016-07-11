@@ -255,7 +255,7 @@ public class QueryResolver {
         StringBuffer buff = new StringBuffer();
         CmisPropertyMapping propertyMapping = cmisType.getPropertyByJCR(c.getPropertyName());
         if (propertyMapping == null)
-            return FALSE;
+            return EMPTY;
         else
             buff.append(" (").append(propertyMapping.getQueryName()).append(" IS NOT NULL) ");
         return buff;
@@ -290,7 +290,7 @@ public class QueryResolver {
         StringBuffer constraint1 = addConstraint(c.getConstraint1());
         StringBuffer constraint2 = addConstraint(c.getConstraint2());
         if (constraint1 == FALSE || constraint2 == FALSE) {
-            return EMPTY;
+            return FALSE;
         }
         if (constraint1 == EMPTY && constraint2 == EMPTY) {
             return EMPTY;
