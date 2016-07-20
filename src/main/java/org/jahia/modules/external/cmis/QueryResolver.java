@@ -51,7 +51,6 @@ public class QueryResolver {
 
     private final StringBuffer TRUE = new StringBuffer("true");
     private final StringBuffer FALSE = new StringBuffer("false");
-    private final StringBuffer EMPTY = new StringBuffer("");
 
     CmisDataSource dataSource;
     ExternalQuery query;
@@ -149,16 +148,10 @@ public class QueryResolver {
             if (constraint1 == TRUE || constraint2 == TRUE) {
                 return TRUE;
             }
-            if (constraint1 == FALSE && constraint2 == FALSE) {
-                return EMPTY;
-            }
-            if (constraint1 == EMPTY && constraint2 == EMPTY) {
-                return EMPTY;
-            }
-            if (constraint1 == FALSE || constraint1 == EMPTY) {
+            if (constraint1 == FALSE) {
                 return constraint2;
             }
-            if (constraint2 == FALSE || constraint2 == EMPTY) {
+            if (constraint2 == FALSE) {
                 return constraint1;
             }
             buff.append(" (");
@@ -173,13 +166,10 @@ public class QueryResolver {
             if (constraint1 == FALSE || constraint2 == FALSE) {
                 return FALSE;
             }
-            if (constraint1 == EMPTY && constraint2 == EMPTY) {
-                return EMPTY;
-            }
-            if (constraint1 == TRUE || constraint1 == EMPTY) {
+            if (constraint1 == TRUE) {
                 return constraint2;
             }
-            if (constraint2 == TRUE || constraint2 == EMPTY) {
+            if (constraint2 == TRUE) {
                 return constraint1;
             }
             buff.append(" (");
@@ -189,7 +179,6 @@ public class QueryResolver {
             buff.append(") ");
         } else if (constraint instanceof Comparison) {
             Comparison c = (Comparison) constraint;
-            boolean isDate = false;
             buff.append(" (");
             try {
                 int pos = buff.length();
@@ -201,13 +190,9 @@ public class QueryResolver {
                 addOperand(buff, c.getOperand2());
                 String op2 = buff.substring(pos);
                 buff.setLength(pos);
-                //Handling Dates comparison case :
-                //Need to prefix the String with DATE or TIMESTAMP in order for the server to process it like a date
-                if (op1.equals("cmis:creationDate") || op1.equals("cmis:lastModificationDate")) {
-                    isDate = true;
-                }
+
                 Operator operator = Operator.getOperatorByName(c.getOperator());
-                buff.append(operator.formatSql(op1, isDate ? "TIMESTAMP " + op2 : op2));
+                buff.append(operator.formatSql(op1, op2));
             } catch (NotMappedCmisProperty e) {
                 return FALSE;
             }
@@ -260,25 +245,9 @@ public class QueryResolver {
             }
         } else if (constraint instanceof FullTextSearch) {
             FullTextSearch c = (FullTextSearch) constraint;
-            //If fulltext search is done on jcr:content then executing fulltext search
-            if (c.getPropertyName().equals("jcr:content")) {
-                buff.append(" contains(");
-                addOperand(buff, c.getFullTextSearchExpression());
-                buff.append(") ");
-            }
-            //If fulltext search is done on another property then checking the property mapping
-            else {
-                CmisPropertyMapping propertyByJCR = cmisType.getPropertyByJCR(c.getPropertyName());
-                //If the property is mapped then use like operator to avoid "contains" repetition
-                if (propertyByJCR != null) {
-                    String searchTerm = c.getFullTextSearchExpression().toString();
-                    searchTerm = searchTerm.substring(1, searchTerm.length() - 1);
-                    buff.append(propertyByJCR.getCmisName() + "  like '%" + searchTerm + "%' ");
-                } else {
-                    //If the property is not mapped we do anything
-                    return EMPTY;
-                }
-            }
+            buff.append(" contains(");
+            addOperand(buff, c.getFullTextSearchExpression());
+            buff.append(") ");
         }
         return buff;
     }
