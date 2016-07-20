@@ -28,6 +28,7 @@ import org.apache.chemistry.opencmis.commons.exceptions.CmisObjectNotFoundExcept
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.commons.query.qom.Operator;
 import org.jahia.modules.external.ExternalQuery;
+import org.jahia.services.content.nodetypes.NodeTypeRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,8 +75,8 @@ public class QueryResolver {
         Selector selector = (Selector) source;
         String nodeTypeName = selector.getNodeTypeName();
 
-        // Supports queries on hierarchyNode as file queries
-        if (nodeTypeName.equals("nt:hierarchyNode")) {
+        // Supports queries on nt:hierarchyNode or jmix:searchable as file queries
+        if (nodeTypeName.equals("nt:hierarchyNode") || nodeTypeName.equals("jmix:searchable")) {
             nodeTypeName = "jnt:file";
         }
         cmisType = conf.getTypeByJCR(nodeTypeName);
