@@ -52,8 +52,11 @@ To create a Nuxeo mount point using the CMIS standard, a new connector type has 
 The "CMIS connector type" in the mount point creation form can now be filled with "Nuxeo CMIS connector".
 
 By default the repository used to connect to Nuxeo through CMIS is "default".
+
 The remote path has to be filled normally for example "/default-domain/workspaces"
-![Nuxeo mount point example](/resources/img/Nuxeo_mount_point.png)
+
+![Nuxeo mount point example](src/main/resources/img/Nuxeo_mount_point.png)
+
 For more information on the Nuxeo CMIS implementation please refer to the following documentation :
 https://doc.nuxeo.com/display/NXDOC/CMIS
 
