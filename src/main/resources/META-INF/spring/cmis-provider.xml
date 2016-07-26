@@ -72,6 +72,8 @@
                                   class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
                             <bean p:cmisName="cmis:name" p:jcrName="jcr:title"
                                   class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
+                            <bean p:cmisName="cmis:contentStreamMimeType" p:jcrName="cmis:contentStreamMimeType"
+                                  class="org.jahia.modules.external.cmis.CmisPropertyMapping" p:mode="rc"/>
                             <bean p:cmisName="cmis:isLatestVersion" p:jcrName="cmis:isLatestVersion"
                                   class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
                             <bean p:cmisName="cmis:isMajorVersion" p:jcrName="cmis:isMajorVersion"
@@ -92,8 +94,6 @@
                                   class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
                             <bean p:cmisName="cmis:contentStreamLength" p:jcrName="cmis:contentStreamLength"
                                   class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
-                            <bean p:cmisName="cmis:contentStreamMimeType" p:jcrName="cmis:contentStreamMimeType"
-                                  class="org.jahia.modules.external.cmis.CmisPropertyMapping" p:mode="rc"/>
                             <bean p:cmisName="cmis:contentStreamFileName" p:jcrName="cmis:contentStreamFileName"
                                   class="org.jahia.modules.external.cmis.CmisPropertyMapping" p:mode="rc"/>
                             <bean p:cmisName="cmis:contentStreamId" p:jcrName="cmis:contentStreamId"

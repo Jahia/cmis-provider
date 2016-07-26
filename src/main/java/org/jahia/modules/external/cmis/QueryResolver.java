@@ -52,7 +52,6 @@ public class QueryResolver {
 
     protected final StringBuffer TRUE = new StringBuffer("true");
     protected final StringBuffer FALSE = new StringBuffer("false");
-    protected final StringBuffer EMPTY = new StringBuffer("");
 
     CmisDataSource dataSource;
     ExternalQuery query;
@@ -81,12 +80,12 @@ public class QueryResolver {
         String nodeTypeName = selector.getNodeTypeName();
 
         // Supports queries on hierarchyNode as file queries
-        if (nodeTypeName.equals("nt:hierarchyNode") || nodeTypeName.equals("jmix:searchable")) {
+        if (nodeTypeName.equals("nt:hierarchyNode") || nodeTypeName.equals("jmix:searchable") || nodeTypeName.equals("jnt:file") || nodeTypeName.equals("nt:file")) {
             nodeTypeName = "cmis:file";
         }
         cmisType = conf.getTypeByJCR(nodeTypeName);
         if (cmisType == null) {
-            log.debug("Unmapped types not supported in CMIS queries");
+            log.info("Unmapped types not supported in CMIS queries");
             return null;
         }
         buff.append(cmisType.getQueryName());
@@ -155,7 +154,7 @@ public class QueryResolver {
             try {
                 buff = getComparisonConstraint((Comparison) constraint);
             } catch (NotMappedCmisProperty e) {
-                return EMPTY;
+                return FALSE;
             }
         } else if (constraint instanceof PropertyExistence) {
             buff = getPropertyExistenceConstraint((PropertyExistence) constraint);
@@ -203,7 +202,7 @@ public class QueryResolver {
                 buff.append(propertyByJCR.getCmisName() + "  like '%" + searchTerm + "%' ");
             } else {
                 //If the property is not mapped we don't do anything
-                return EMPTY;
+                return FALSE;
             }
         }
         return buff;
@@ -234,9 +233,6 @@ public class QueryResolver {
         if (constraint1 == TRUE) {
             return FALSE;
         }
-        if (constraint1 == EMPTY) {
-            return EMPTY;
-        }
         buff.append(" NOT(");
         buff.append(constraint1);
         buff.append(") ");
@@ -255,7 +251,7 @@ public class QueryResolver {
         StringBuffer buff = new StringBuffer();
         CmisPropertyMapping propertyMapping = cmisType.getPropertyByJCR(c.getPropertyName());
         if (propertyMapping == null)
-            return EMPTY;
+            return FALSE;
         else
             buff.append(" (").append(propertyMapping.getQueryName()).append(" IS NOT NULL) ");
         return buff;
@@ -292,13 +288,10 @@ public class QueryResolver {
         if (constraint1 == FALSE || constraint2 == FALSE) {
             return FALSE;
         }
-        if (constraint1 == EMPTY && constraint2 == EMPTY) {
-            return EMPTY;
-        }
-        if (constraint1 == TRUE || constraint1 == EMPTY) {
+        if (constraint1 == TRUE) {
             return constraint2;
         }
-        if (constraint2 == TRUE || constraint2 == EMPTY) {
+        if (constraint2 == TRUE) {
             return constraint1;
         }
         buff.append(" (");
@@ -319,13 +312,10 @@ public class QueryResolver {
         if (constraint1 == FALSE && constraint2 == FALSE) {
             return FALSE;
         }
-        if (constraint1 == EMPTY && constraint2 == EMPTY) {
-            return EMPTY;
-        }
-        if (constraint1 == FALSE || constraint1 == EMPTY) {
+        if (constraint1 == FALSE) {
             return constraint2;
         }
-        if (constraint2 == FALSE || constraint2 == EMPTY) {
+        if (constraint2 == FALSE) {
             return constraint1;
         }
         buff.append(" (");

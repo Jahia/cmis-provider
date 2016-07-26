@@ -753,7 +753,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                     }
                     ArrayList<String> res = new ArrayList<>();
                     for (QueryResult hit : results) {
-                        String remotePath = hit.getPropertyValueByQueryName("cmis:objectId").toString();
+                        String remotePath = hit.getPropertyValueByQueryName("id").toString();
                         if (!isFolder) {
                             CmisObject object = session.getObject(remotePath);
                             remotePath = ((FileableCmisObject) object).getPaths().get(0);
