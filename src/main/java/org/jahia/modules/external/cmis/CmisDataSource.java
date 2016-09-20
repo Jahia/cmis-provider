@@ -38,6 +38,7 @@ import org.apache.chemistry.opencmis.commons.data.AllowableActions;
 import org.apache.chemistry.opencmis.commons.data.ContentStream;
 import org.apache.chemistry.opencmis.commons.enums.Action;
 import org.apache.chemistry.opencmis.commons.enums.BaseTypeId;
+import org.apache.chemistry.opencmis.commons.enums.IncludeRelationships;
 import org.apache.chemistry.opencmis.commons.enums.BindingType;
 import org.apache.chemistry.opencmis.commons.enums.UnfileObject;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisBaseException;
@@ -835,6 +836,49 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 cmisSession.getDefaultContext().setMaxItemsPerPage(maxChildNodes);
                 cmisSession.getDefaultContext().setOrderBy("cmis:name");
             }
+            // Client side caching is turned on by default. (Just add this to be sure:)
+			/* Explanation: 
+			* That is, getObject() will first look into the session cache if the object already exists there. 
+			* If this is the case, it returns the object without talking to the repository. 
+			* So it might return stale objects... -> importance of cache invalidation 
+			* There are multiple ways to deal with that: 
+			* Refresh the object data that is returned from getObject(). {code:java} CmisObject object = session.getObject(id);
+			* object.refresh(); // contacts the repository and refreshes the object
+			* object.refreshIfOld(60 * 1000); // ... or refreshes the object only if the data is older than a minute (to put in a configurable parameter)
+			*/
+            cmisSession.getDefaultContext().setCacheEnabled(true);
+			/*
+			* The property filter defines which properties the repository must return. 
+			* Only select the properties you really need to keep the transferred data as small as possible 
+			* -> huge improvement in performances possible !
+			* (rem: The repository may return more properties than specified in certain cases)
+			*
+			* The following configuration is only a proposition based on some empirical tests.
+			* TODO: the correct way to manage this should be to:
+			* 1) use a minimal configuration in the default operationContext
+			* 2) have a specific 'augmented' operationContext for each type of requests
+			* NB: only cmis fields in cmis-provider.xml (mapping) in p:cmisName fields should be used normaly
+			* -> TODO2: generate operationContexts based on this mapping file and type of object used in the query ?
+			*/
+            cmisSession.getDefaultContext().setFilterString("cmis:repositoryId, cmis:cmisMountPoint, cmis:contentStreamLength, cmis:objectTypeId, alfcmis:nodeRef, cmis:contentStreamId, cmis:name, cmis:contentStreamMimeType, cmis:creationDate, cmis:objectId, cmis:baseTypeId, cmis:contentStreamFileName, cmis:lastModificationDate, cmis:path");
+            // For the moment the checking of allowable actions is not use in Jahia (see method 'getPrivilegesNames' unused in our version of the connector)
+			cmisSession.getDefaultContext().setIncludeAllowableActions(false);
+			// For a connector with technical user (without impersonification) and in readonly mode, we could do this:
+            cmisSession.getDefaultContext().setIncludeAcls(false);
+            cmisSession.getDefaultContext().setIncludePolicies(false);
+			// CMIS 'Relationships' not used by Jahia in the current connector -> disable the retrieving of theses informations in CMIS responses : 
+			/* Explanation:
+			* When you fetch an object, you can choose to retrieve no relationships, only the relationships where the object is the source or is the target, or all relationships the object is involved in. 
+			* Some repositories have to filter which relationships the current user is allowed to see. 
+			* Even if the number of relationships that the repository returns is small, the repository might have touched a greater number of objects, so only pick what you need. 
+			* !Check whether requesting the relationships with a separate getObjectRelationships call makes more sense than getting the relationships in the same call as getObject or getObjectByPath. 
+			* This provides much better control over the result set. (Rem: The CMIS operation getObjectRelationships is called getRelationships in OpenCMIS.) 
+			*/
+            cmisSession.getDefaultContext().setIncludeRelationships(IncludeRelationships.NONE);
+			// Secondary types not used by Jahia in the current connector -> disable the retrieving of theses informations in CMIS responses : 
+            cmisSession.getDefaultContext().setLoadSecondaryTypeProperties(false);
+			// Renditions not used by Jahia in the current connector -> disable the retrieving of renditions informations in CMIS responses : 
+            cmisSession.getDefaultContext().setRenditionFilterString("cmis:none");
             return callback.execute(cmisSession);
         } catch (CmisUnauthorizedException e) {
             // flush caches
