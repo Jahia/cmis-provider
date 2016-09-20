@@ -93,6 +93,20 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
         conf.getRepositoryPropertiesMap().put(SessionParameter.REPOSITORY_ID, mountPoint.getProperty(CMISMountPointFactory.REPOSITORY_ID).getString());
         conf.getRepositoryPropertiesMap().put(SessionParameter.USER, mountPoint.getProperty(CMISMountPointFactory.USER).getString());
         conf.getRepositoryPropertiesMap().put(SessionParameter.PASSWORD, mountPoint.getProperty(CMISMountPointFactory.PASSWORD).getString());
+        // source: CMIS and Apache Chemistry in Action / Chapter 13. Performance :
+		/* CMIS sends XML and JSON requests and responses over the wire. Both compress very well (with gzip). 
+		* The size of an AtomPub feed shrinks between 5% and 95% when it s compressed. 
+		* Compression can burst application performance, especially on slow networks and over the internet.
+        * 
+		* Clients can request RESPONSE compression by setting the HTTP header Accept-Encoding. 
+		* OpenCMIS does that if you turn on compression when you set up the session, exemple:
+		* parameter.put(SessionParameter.COMPRESSION, "true");
+		* REM: That doesn t necessarily mean the repository returns a compressed response. 
+		* Some repositories support it out of the box, and others don t (and they ignore it then)
+		* Check with the repository vendor as well as the application server vendor.
+		* For Alfresco, see: https://wiki.alfresco.com/wiki/CMIS#Compression 
+        */
+        conf.getRepositoryPropertiesMap().put(SessionParameter.COMPRESSION, "true");
         dataSource.setConf(conf);
         String remotePath = "";
         if (mountPoint.hasProperty(CMISMountPointFactory.REMOTE_PATH)) {
