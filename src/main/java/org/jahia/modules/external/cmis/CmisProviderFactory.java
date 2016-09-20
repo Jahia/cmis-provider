@@ -107,6 +107,13 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
 		* For Alfresco, see: https://wiki.alfresco.com/wiki/CMIS#Compression 
         */
         conf.getRepositoryPropertiesMap().put(SessionParameter.COMPRESSION, "true");
+		/* OpenCMIS can also compress REQUESTs. 
+		* Turn on client compression when you set up the session, like this:
+		* (but it's not recommanded by default for normal use because it's not a good tradeoff : compression time VS normal packet transfert time)
+		*/ 
+        //conf.getRepositoryPropertiesMap().put(SessionParameter.CLIENT_COMPRESSION, "true");
+        //conf.getRepositoryPropertiesMap().put(SessionParameter.COOKIES, "true");
+        //conf.getRepositoryPropertiesMap().put(SessionParameter.FORCE_CMIS_VERSION, "CMIS_1_1"); //Valeur a valider
         dataSource.setConf(conf);
         String remotePath = "";
         if (mountPoint.hasProperty(CMISMountPointFactory.REMOTE_PATH)) {
