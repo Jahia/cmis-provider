@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.jcr.Binary;
 import javax.jcr.RepositoryException;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -72,12 +73,15 @@ public class CmisBinaryImpl implements Binary {
         if (listOfStreamsForClose == null) {
             listOfStreamsForClose = new ArrayList<InputStream>();
         }
-        InputStream stream = null;
+        BufferedInputStreamWrapper stream = null;
         if (doc == null) {
             throw new IllegalStateException();
         }
         try {
-            return stream = doc.getContentStream().getStream();
+            stream = new BufferedInputStreamWrapper(doc.getContentStream().getStream());
+            log.debug("init stream with {} bytes", stream.available());
+            stream.setLength(doc.getContentStreamLength());
+            return stream;
         } catch (CmisUnauthorizedException e1) {
             // restore session on cmis object if session times out
             if (dataSource != null) {
@@ -85,7 +89,9 @@ public class CmisBinaryImpl implements Binary {
                 dataSource.getActiveConnections().invalidate(user);
                 doc = (Document) dataSource.getObjectById(user, doc.getId());
                 try {
-                    return stream = doc.getContentStream().getStream();
+                    stream = new BufferedInputStreamWrapper(doc.getContentStream().getStream());
+                    stream.setLength(doc.getContentStreamLength());
+                    return stream;
                 } catch (Exception e) {
                     log.error("Error while retreiving binary content of {} with user {}", path, user);
                     throw new RepositoryException(e);
@@ -141,6 +147,63 @@ public class CmisBinaryImpl implements Binary {
         }
         listOfStreamsForClose = null;
         doc = null;
+    }
+
+    private class BufferedInputStreamWrapper extends BufferedInputStream {
+
+        private long length;
+
+        public BufferedInputStreamWrapper(InputStream in) {
+            super(in);
+        }
+
+        @Override
+        public synchronized int read(byte[] b, int off, int len) throws IOException {
+            mark(len);
+            int bytesRead;
+            int previousBytesRead = 0;
+            for (; ; ) {
+                bytesRead = super.read(b, off, len);
+                length -= bytesRead;
+                // if we did not manage to get the full buffer, we try again unless we reach the end of the file
+                // if we read twice the same amount of bytes, we can guess that we reach the end of stream
+                if (bytesRead < len && length > 0 && previousBytesRead != bytesRead) {
+                    length += bytesRead;
+                    previousBytesRead = bytesRead;
+                    reset();
+                } else {
+                    break;
+                }
+            }
+            return bytesRead;
+        }
+
+        @Override
+        public synchronized int available() throws IOException {
+            return Long.valueOf(length).intValue();
+        }
+
+        @Override
+        public synchronized long skip(long skipped) throws IOException {
+            int bufferSize = 1024;
+            if (skipped > length) {
+                return 0;
+            }
+            length -= skipped;
+            int remainToSkip = Long.valueOf(skipped).intValue();
+            // toDo: improve the skip method to not read the whole file each time
+            byte[] b = new byte[bufferSize];
+            while (remainToSkip > 0) {
+                int len = skipped > bufferSize ? bufferSize : remainToSkip;
+                int bytesRead = super.read(b, 0, len);
+                remainToSkip -= bytesRead;
+            }
+            return skipped;
+        }
+
+        public void setLength(long length) {
+            this.length = length;
+        }
     }
 
 }
