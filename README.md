@@ -160,4 +160,7 @@ There will be CMIS repository mounted in /mounts
 
 ## TODO:
  - Renditions;
+ - Use of standard Alfresco Tokenization service (instead of custom Impersonnalisation AMP to deploy)
+ 
+
 
