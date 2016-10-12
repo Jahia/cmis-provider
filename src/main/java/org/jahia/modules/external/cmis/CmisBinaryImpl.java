@@ -80,7 +80,7 @@ public class CmisBinaryImpl implements Binary {
         try {
             stream = new BufferedInputStreamWrapper(doc.getContentStream().getStream());
             log.debug("init stream with {} bytes", stream.available());
-            stream.setLength(doc.getContentStreamLength());
+            stream.setRemainingBytes(doc.getContentStreamLength());
             return stream;
         } catch (CmisUnauthorizedException e1) {
             // restore session on cmis object if session times out
@@ -90,7 +90,7 @@ public class CmisBinaryImpl implements Binary {
                 doc = (Document) dataSource.getObjectById(user, doc.getId());
                 try {
                     stream = new BufferedInputStreamWrapper(doc.getContentStream().getStream());
-                    stream.setLength(doc.getContentStreamLength());
+                    stream.setRemainingBytes(doc.getContentStreamLength());
                     return stream;
                 } catch (Exception e) {
                     log.error("Error while retreiving binary content of {} with user {}", path, user);
@@ -151,7 +151,7 @@ public class CmisBinaryImpl implements Binary {
 
     private class BufferedInputStreamWrapper extends BufferedInputStream {
 
-        private long length;
+        private long remainingBytes;
 
         public BufferedInputStreamWrapper(InputStream in) {
             super(in);
@@ -164,11 +164,11 @@ public class CmisBinaryImpl implements Binary {
             int previousBytesRead = 0;
             for (; ; ) {
                 bytesRead = super.read(b, off, len);
-                length -= bytesRead;
+                remainingBytes -= bytesRead;
                 // if we did not manage to get the full buffer, we try again unless we reach the end of the file
                 // if we read twice the same amount of bytes, we can guess that we reach the end of stream
-                if (bytesRead < len && length > 0 && previousBytesRead != bytesRead) {
-                    length += bytesRead;
+                if (bytesRead < len && remainingBytes > 0 && previousBytesRead != bytesRead) {
+                    remainingBytes += bytesRead;
                     previousBytesRead = bytesRead;
                     reset();
                 } else {
@@ -180,16 +180,16 @@ public class CmisBinaryImpl implements Binary {
 
         @Override
         public synchronized int available() throws IOException {
-            return Long.valueOf(length).intValue();
+            return Long.valueOf(remainingBytes).intValue();
         }
 
         @Override
         public synchronized long skip(long skipped) throws IOException {
             int bufferSize = 1024;
-            if (skipped > length) {
+            if (skipped > remainingBytes) {
                 return 0;
             }
-            length -= skipped;
+            remainingBytes -= skipped;
             int remainToSkip = Long.valueOf(skipped).intValue();
             // toDo: improve the skip method to not read the whole file each time
             byte[] b = new byte[bufferSize];
@@ -201,8 +201,30 @@ public class CmisBinaryImpl implements Binary {
             return skipped;
         }
 
-        public void setLength(long length) {
-            this.length = length;
+        @Override
+        public synchronized int read() throws IOException {
+            int bytesRead = super.read();
+            remainingBytes -= bytesRead;
+            return bytesRead;
+        }
+
+        @Override
+        public int read(byte[] b) throws IOException {
+            int bytesRead = super.read(b);
+            remainingBytes -= bytesRead;
+            return bytesRead;
+        }
+
+        @Override
+        public synchronized void reset() throws IOException {
+            if (pos > markpos) {
+                remainingBytes += pos - markpos;
+            }
+            super.reset();
+        }
+
+        public void setRemainingBytes(long remainingBytes) {
+            this.remainingBytes = remainingBytes;
         }
     }
 
