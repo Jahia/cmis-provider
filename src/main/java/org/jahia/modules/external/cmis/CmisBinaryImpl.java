@@ -27,12 +27,12 @@ import org.apache.chemistry.opencmis.client.api.Document;
 import org.apache.chemistry.opencmis.commons.data.ContentStream;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisUnauthorizedException;
 import org.apache.commons.io.IOUtils;
+import org.jahia.services.content.files.FileServlet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jcr.Binary;
 import javax.jcr.RepositoryException;
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -44,7 +44,7 @@ import java.util.ArrayList;
  * Date: 1/27/14
  * Time: 1:09 PM
  */
-public class CmisBinaryImpl implements Binary {
+public class CmisBinaryImpl implements Binary, FileServlet.BinaryRangesSupport {
     //    ContentStream contentStream;
     Document doc;
     ArrayList<InputStream> listOfStreamsForClose;
@@ -70,18 +70,15 @@ public class CmisBinaryImpl implements Binary {
 
     @Override
     public InputStream getStream() throws RepositoryException {
+        InputStream stream = null;
         if (listOfStreamsForClose == null) {
             listOfStreamsForClose = new ArrayList<InputStream>();
         }
-        BufferedInputStreamWrapper stream = null;
         if (doc == null) {
             throw new IllegalStateException();
         }
         try {
-            stream = new BufferedInputStreamWrapper(doc.getContentStream().getStream());
-            log.debug("init stream with {} bytes", stream.available());
-            stream.setRemainingBytes(doc.getContentStreamLength());
-            return stream;
+            return stream = doc.getContentStream().getStream();
         } catch (CmisUnauthorizedException e1) {
             // restore session on cmis object if session times out
             if (dataSource != null) {
@@ -89,9 +86,7 @@ public class CmisBinaryImpl implements Binary {
                 dataSource.getActiveConnections().invalidate(user);
                 doc = (Document) dataSource.getObjectById(user, doc.getId());
                 try {
-                    stream = new BufferedInputStreamWrapper(doc.getContentStream().getStream());
-                    stream.setRemainingBytes(doc.getContentStreamLength());
-                    return stream;
+                    return stream = doc.getContentStream().getStream();
                 } catch (Exception e) {
                     log.error("Error while retreiving binary content of {} with user {}", path, user);
                     throw new RepositoryException(e);
@@ -149,83 +144,8 @@ public class CmisBinaryImpl implements Binary {
         doc = null;
     }
 
-    private class BufferedInputStreamWrapper extends BufferedInputStream {
-
-        private long remainingBytes;
-
-        public BufferedInputStreamWrapper(InputStream in) {
-            super(in);
-        }
-
-        @Override
-        public synchronized int read(byte[] b, int off, int len) throws IOException {
-            mark(len);
-            int bytesRead;
-            int previousBytesRead = 0;
-            for (; ; ) {
-                bytesRead = super.read(b, off, len);
-                remainingBytes -= bytesRead;
-                // if we did not manage to get the full buffer, we try again unless we reach the end of the file
-                // if we read twice the same amount of bytes, we can guess that we reach the end of stream
-                if (bytesRead < len && remainingBytes > 0 && previousBytesRead != bytesRead) {
-                    remainingBytes += bytesRead;
-                    previousBytesRead = bytesRead;
-                    reset();
-                } else {
-                    break;
-                }
-            }
-            return bytesRead;
-        }
-
-        @Override
-        public synchronized int available() throws IOException {
-            return Long.valueOf(remainingBytes).intValue();
-        }
-
-        @Override
-        public synchronized long skip(long skipped) throws IOException {
-            int bufferSize = 1024;
-            if (skipped > remainingBytes) {
-                return 0;
-            }
-            remainingBytes -= skipped;
-            int remainToSkip = Long.valueOf(skipped).intValue();
-            // toDo: improve the skip method to not read the whole file each time
-            byte[] b = new byte[bufferSize];
-            while (remainToSkip > 0) {
-                int len = skipped > bufferSize ? bufferSize : remainToSkip;
-                int bytesRead = super.read(b, 0, len);
-                remainToSkip -= bytesRead;
-            }
-            return skipped;
-        }
-
-        @Override
-        public synchronized int read() throws IOException {
-            int bytesRead = super.read();
-            remainingBytes -= bytesRead;
-            return bytesRead;
-        }
-
-        @Override
-        public int read(byte[] b) throws IOException {
-            int bytesRead = super.read(b);
-            remainingBytes -= bytesRead;
-            return bytesRead;
-        }
-
-        @Override
-        public synchronized void reset() throws IOException {
-            if (pos > markpos) {
-                remainingBytes += pos - markpos;
-            }
-            super.reset();
-        }
-
-        public void setRemainingBytes(long remainingBytes) {
-            this.remainingBytes = remainingBytes;
-        }
+    @Override
+    public boolean supportRanges() {
+        return false;
     }
-
 }
