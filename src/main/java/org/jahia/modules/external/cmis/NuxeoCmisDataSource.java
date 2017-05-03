@@ -26,6 +26,7 @@ package org.jahia.modules.external.cmis;
 import org.apache.chemistry.opencmis.client.api.*;
 import org.apache.chemistry.opencmis.commons.enums.BaseTypeId;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisObjectNotFoundException;
+import org.jahia.api.Constants;
 import org.jahia.modules.external.ExternalData;
 import org.jahia.modules.external.ExternalDataSource;
 import org.jahia.modules.external.ExternalQuery;
@@ -194,7 +195,7 @@ public class NuxeoCmisDataSource extends CmisDataSource implements ExternalDataS
         Set<String> supportedNodeTypes = new HashSet<String>();
         supportedNodeTypes.addAll(conf.getSupportedNodeTypes());
         //Add jmix:image in the supportedNodeTypes set to avoid allow image picker search to use Nuxeo
-        supportedNodeTypes.add("jmix:image");
+        supportedNodeTypes.add(Constants.JAHIAMIX_IMAGE);
         return supportedNodeTypes;
     }
 

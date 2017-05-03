@@ -24,6 +24,7 @@
 package org.jahia.modules.external.cmis;
 
 
+import org.jahia.api.Constants;
 import org.jahia.modules.external.ExternalQuery;
 import org.jahia.services.content.nodetypes.NodeTypeRegistry;
 import javax.jcr.RepositoryException;
@@ -52,8 +53,8 @@ public class NuxeoQueryResolver extends QueryResolver{
         NodeTypeRegistry ntregistry = NodeTypeRegistry.getInstance();
         try {
             // Supports queries on nt:hierarchyNode or jmix:searchable as file queries
-            if (ntregistry.getNodeType("nt:hierarchyNode").isNodeType(nodeTypeName) || ntregistry.getNodeType("jmix:searchable").isNodeType(nodeTypeName) || ntregistry.getNodeType("jmix:image").isNodeType(nodeTypeName)) {
-                nodeTypeName = "jnt:file";
+            if (ntregistry.getNodeType(Constants.NT_HIERARCHYNODE).isNodeType(nodeTypeName) || ntregistry.getNodeType(Constants.JAHIAMIX_SEARCHABLE).isNodeType(nodeTypeName) || ntregistry.getNodeType(Constants.JAHIAMIX_IMAGE).isNodeType(nodeTypeName)) {
+                nodeTypeName = Constants.JAHIANT_FILE;
             }
         } catch(NoSuchNodeTypeException e){
             log.error("Did not found nodeType while trying to perform a search in Nuxeo Repository !");
@@ -70,7 +71,7 @@ public class NuxeoQueryResolver extends QueryResolver{
     protected StringBuffer getFullTextSearchConstraint(FullTextSearch c) throws RepositoryException{
         StringBuffer buff = new StringBuffer();
         //If fulltext search is done on jcr:content then executing fulltext search
-        if (c.getPropertyName().equals("jcr:content")) {
+        if (c.getPropertyName().equals(Constants.JCR_CONTENT)) {
             buff.append(" contains(");
             addOperand(buff, c.getFullTextSearchExpression());
             buff.append(") ");
