@@ -34,9 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by rizak on 10/06/16.
@@ -188,6 +186,16 @@ public class NuxeoCmisDataSource extends CmisDataSource implements ExternalDataS
                 }
             }
         });
+    }
+
+    @Override
+    public Set<String> getSupportedNodeTypes() {
+        //Create a NodeType names set from the configuration Set
+        Set<String> supportedNodeTypes = new HashSet<String>();
+        supportedNodeTypes.addAll(conf.getSupportedNodeTypes());
+        //Add jmix:image in the supportedNodeTypes set to avoid allow image picker search to use Nuxeo
+        supportedNodeTypes.add("jmix:image");
+        return supportedNodeTypes;
     }
 
 }

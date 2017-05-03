@@ -3,29 +3,31 @@
  * =                            JAHIA'S ENTERPRISE DISTRIBUTION                             =
  * ==========================================================================================
  *
- * http://www.jahia.com
+ *                                  http://www.jahia.com
  *
  * JAHIA'S ENTERPRISE DISTRIBUTIONS LICENSING - IMPORTANT INFORMATION
  * ==========================================================================================
  *
- * Copyright (C) 2002-2016 Jahia Solutions Group. All rights reserved.
+ *     Copyright (C) 2002-2017 Jahia Solutions Group. All rights reserved.
  *
- * This file is part of a Jahia's Enterprise Distribution.
+ *     This file is part of a Jahia's Enterprise Distribution.
  *
- * Jahia's Enterprise Distributions must be used in accordance with the terms
- * contained in the Jahia Solutions Group Terms & Conditions as well as
- * the Jahia Sustainable Enterprise License (JSEL).
+ *     Jahia's Enterprise Distributions must be used in accordance with the terms
+ *     contained in the Jahia Solutions Group Terms & Conditions as well as
+ *     the Jahia Sustainable Enterprise License (JSEL).
  *
- * For questions regarding licensing, support, production usage...
- * please contact our team at sales@jahia.com or go to http://www.jahia.com/license.
+ *     For questions regarding licensing, support, production usage...
+ *     please contact our team at sales@jahia.com or go to http://www.jahia.com/license.
  *
  * ==========================================================================================
  */
 package org.jahia.modules.external.cmis;
 
-import org.apache.commons.lang.StringUtils;
+
 import org.jahia.modules.external.ExternalQuery;
+import org.jahia.services.content.nodetypes.NodeTypeRegistry;
 import javax.jcr.RepositoryException;
+import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.query.qom.*;
 
 /**
@@ -39,90 +41,54 @@ public class NuxeoQueryResolver extends QueryResolver{
         conf = dataSource.conf;
     }
 
-    public String resolve() throws RepositoryException {
-        StringBuffer buff = new StringBuffer("SELECT cmis:objectId as id FROM ");
 
-        Source source = query.getSource();
-        if (source instanceof Join) {
-            log.debug("Join not supported in CMIS queries");
-            return null;
-        }
-        Selector selector = (Selector) source;
-        String nodeTypeName = selector.getNodeTypeName();
-
-        // Supports queries on hierarchyNode as file queries
-        if (nodeTypeName.equals("nt:hierarchyNode") || nodeTypeName.equals("jmix:searchable")) {
-            nodeTypeName = "cmis:file";
-        }
-        cmisType = conf.getTypeByJCR(nodeTypeName);
-        if (cmisType == null) {
-            log.debug("Unmapped types not supported in CMIS queries");
-            return null;
-        }
-        //TODO : Check the repository on mount point for the "capabilityJoin" attribute before implementing the join between files and folders (Adding an option with user choice in mount point creation form ?)
-        //TODO : When the JOIN will be implemented the contraints operand will need to be doubled to verify properties in files and in folders
-        //Join Files and folders in the search
-        //buff.append("(");
-        buff.append(cmisType.getQueryName());
-        //buff.append(" AS file JOIN ");
-        //cmisType = conf.getTypeByJCR("jnt:folder");
-        //buff.append(cmisType.getQueryName()+" AS folder ON file.nuxeo:parentId = folder.cmis:objectId )");
-
-//        if (selector.getSelectorName()!=null && !selector.getSelectorName().isEmpty())
-//            buff.append(" as ").append(selector.getSelectorName());
-        boolean hasConstraint = false;
-        if (query.getConstraint() != null) {
-            StringBuffer buffer = addConstraint(query.getConstraint());
-            if (buffer == FALSE) {
-                return null;
-            } else if (buffer != TRUE) {
-                buff.append(" WHERE ");
-                buff.append(buffer);
-                hasConstraint = true;
+    /**
+     * This function returns the node type name to search
+     * @param nodeTypeName
+     * @return
+     */
+    @Override
+    protected String getNodeTypeName (String nodeTypeName){
+        NodeTypeRegistry ntregistry = NodeTypeRegistry.getInstance();
+        try {
+            // Supports queries on nt:hierarchyNode or jmix:searchable as file queries
+            if (ntregistry.getNodeType("nt:hierarchyNode").isNodeType(nodeTypeName) || ntregistry.getNodeType("jmix:searchable").isNodeType(nodeTypeName) || ntregistry.getNodeType("jmix:image").isNodeType(nodeTypeName)) {
+                nodeTypeName = "jnt:file";
             }
+        } catch(NoSuchNodeTypeException e){
+            log.error("Did not found nodeType while trying to perform a search in Nuxeo Repository !");
         }
-        if (StringUtils.isNotBlank(dataSource.getRemotePath())) {
-            if (hasConstraint) {
-                buff.append(" AND");
+        return nodeTypeName;
+    }
+
+    /**
+     * Use contains only for jcr:content fulltextSearch, if the property is different we use like operator
+     * @param c
+     * @return
+     * @throws RepositoryException
+     */
+    protected StringBuffer getFullTextSearchConstraint(FullTextSearch c) throws RepositoryException{
+        StringBuffer buff = new StringBuffer();
+        //If fulltext search is done on jcr:content then executing fulltext search
+        if (c.getPropertyName().equals("jcr:content")) {
+            buff.append(" contains(");
+            addOperand(buff, c.getFullTextSearchExpression());
+            buff.append(") ");
+        }
+        //If fulltext search is done on another property then checking the property mapping
+        //TODO : Avoid to use the like operator as often as possible and prefer one contains on multiple expressions
+        else {
+            CmisPropertyMapping propertyByJCR = cmisType.getPropertyByJCR(c.getPropertyName());
+            //If the property is mapped then use like operator to avoid "contains" repetition
+            if (propertyByJCR != null) {
+                String searchTerm = c.getFullTextSearchExpression().toString();
+                searchTerm = searchTerm.substring(1, searchTerm.length() - 1);
+                buff.append(propertyByJCR.getCmisName() + "  like '%" + searchTerm + "%' ");
             } else {
-                buff.append(" WHERE ");
-            }
-            buff.append(" IN_TREE('");
-            buff.append(dataSource.getObjectByPath("/").getId());
-            buff.append("')");
-        }
-
-        if (query.getOrderings() != null) {
-            boolean isFirst = true;
-            StringBuffer tmpBuf = new StringBuffer();
-            for (Ordering ordering : query.getOrderings()) {
-                tmpBuf.setLength(0);
-                try {
-                    addOperand(tmpBuf, ordering.getOperand());
-                    //In Nuxeo the score can only be used when using fulltext search
-                    if (tmpBuf.toString().equals(" myscore ") && (!buff.toString().contains("contains("))) {
-                        return buff.toString();
-                    }
-                    if (isFirst) {
-                        buff.append(" ORDER BY ");
-                        isFirst = false;
-                    } else {
-                        buff.append(",");
-                    }
-                    buff.append(tmpBuf);
-                    String order = ordering.getOrder();
-                    if (QueryObjectModelConstants.JCR_ORDER_ASCENDING.equals(order)) {
-                        buff.append(' ').append("ASC");
-                    } else if (QueryObjectModelConstants.JCR_ORDER_DESCENDING.equals(order)) {
-                        buff.append(' ').append("DESC");
-                    }
-                    if (tmpBuf.toString().equals(" myscore ")) {
-                        buff.insert(buff.indexOf(" FROM"), ", SCORE() as myscore ");
-                    }
-                } catch (NotMappedCmisProperty ignore) { //ignore ordering by not mapped properties
-                }
+                //If the property is not mapped we don't do anything
+                return FALSE;
             }
         }
-        return buff.toString();
+        return buff;
     }
 }

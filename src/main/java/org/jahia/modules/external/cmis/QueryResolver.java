@@ -77,12 +77,7 @@ public class QueryResolver {
             return null;
         }
         Selector selector = (Selector) source;
-        String nodeTypeName = selector.getNodeTypeName();
-
-        // Supports queries on hierarchyNode as file queries
-        if (nodeTypeName.equals("nt:hierarchyNode") || nodeTypeName.equals("jmix:searchable") || nodeTypeName.equals("jnt:file") || nodeTypeName.equals("nt:file")) {
-            nodeTypeName = "cmis:file";
-        }
+        String nodeTypeName = getNodeTypeName(selector.getNodeTypeName());
         cmisType = conf.getTypeByJCR(nodeTypeName);
         if (cmisType == null) {
             log.info("Unmapped types not supported in CMIS queries");
@@ -120,6 +115,11 @@ public class QueryResolver {
                 tmpBuf.setLength(0);
                 try {
                     addOperand(tmpBuf, ordering.getOperand());
+                    //In CMIS the score can only be used when using fulltext search
+                    if (tmpBuf.toString().equals(" myscore ") && (!buff.toString().contains("contains("))) {
+                        return buff.toString();
+                    }
+
                     if (isFirst) {
                         buff.append(" ORDER BY ");
                         isFirst = false;
@@ -179,31 +179,8 @@ public class QueryResolver {
                 return FALSE;
             }
         } else if (constraint instanceof FullTextSearch) {
-            buff = getFullTextSearchConstraint((FullTextSearch) constraint);
-        }
-        return buff;
-    }
-
-    protected StringBuffer getFullTextSearchConstraint(FullTextSearch c) throws RepositoryException{
-        StringBuffer buff = new StringBuffer();
-        //If fulltext search is done on jcr:content then executing fulltext search
-        if (c.getPropertyName().equals("jcr:content")) {
-            buff.append(" contains(");
-            addOperand(buff, c.getFullTextSearchExpression());
-            buff.append(") ");
-        }
-        //If fulltext search is done on another property then checking the property mapping
-        else {
-            CmisPropertyMapping propertyByJCR = cmisType.getPropertyByJCR(c.getPropertyName());
-            //If the property is mapped then use like operator to avoid "contains" repetition
-            if (propertyByJCR != null) {
-                String searchTerm = c.getFullTextSearchExpression().toString();
-                searchTerm = searchTerm.substring(1, searchTerm.length() - 1);
-                buff.append(propertyByJCR.getCmisName() + "  like '%" + searchTerm + "%' ");
-            } else {
-                //If the property is not mapped we don't do anything
-                return FALSE;
-            }
+            FullTextSearch c = (FullTextSearch) constraint;
+            buff = getFullTextSearchConstraint(c);
         }
         return buff;
     }
@@ -326,6 +303,20 @@ public class QueryResolver {
         return buff;
     }
 
+    /**
+     * Externalize the fulltext search treatment for overrides
+     * @param c
+     * @return
+     * @throws RepositoryException
+     */
+    protected StringBuffer getFullTextSearchConstraint(FullTextSearch c) throws RepositoryException {
+        StringBuffer buff = new StringBuffer();
+        buff.append(" contains(");
+        addOperand(buff, c.getFullTextSearchExpression());
+        buff.append(") ");
+        return buff;
+    }
+
     protected void addOperand(StringBuffer buff, DynamicOperand operand) throws RepositoryException {
         if (operand instanceof LowerCase) {
             throw new UnsupportedRepositoryOperationException("Unsupported operand type LowerCase");
@@ -384,5 +375,18 @@ public class QueryResolver {
     protected String escapeString(String string) {
         return string.replace("\\", "\\\\").replace("'", "\\'");
 
+    }
+
+    /**
+     * This function returns the node type name to search
+     * @param nodeTypeName
+     * @return
+     */
+    protected String getNodeTypeName (String nodeTypeName){
+        // Supports queries on nt:hierarchyNode or jmix:searchable as file queries
+        if (nodeTypeName.equals("nt:hierarchyNode") || nodeTypeName.equals("jmix:searchable")) {
+            nodeTypeName = "jnt:file";
+        }
+        return nodeTypeName;
     }
 }
