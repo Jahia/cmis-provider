@@ -34,6 +34,7 @@ import java.util.*;
  */
 public class CmisTypeMapping implements Cloneable {
     private String jcrName;
+    private Set<String> additionalSupportedMixins;
     private List<String> jcrMixins;
     private String cmisName;
     private String queryName;
@@ -66,6 +67,14 @@ public class CmisTypeMapping implements Cloneable {
 
     public void setJcrMixins(String jcrName) {
         this.jcrMixins = Arrays.asList(jcrName.split(" "));
+    }
+
+    public Set<String> getAdditionalSupportedMixins() {
+        return additionalSupportedMixins;
+    }
+
+    public void setAdditionalSupportedMixins(String additionalSupportedMixins) {
+        this.additionalSupportedMixins = new HashSet<>(Arrays.asList(additionalSupportedMixins.split(" ")));
     }
 
     public String getCmisName() {
