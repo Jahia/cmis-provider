@@ -77,7 +77,12 @@ public class QueryResolver {
             return null;
         }
         Selector selector = (Selector) source;
-        String nodeTypeName = getNodeTypeName(selector.getNodeTypeName());
+        String nodeTypeName = selector.getNodeTypeName();
+
+        // Supports queries on hierarchyNode as file queries
+        if (nodeTypeName.equals("nt:hierarchyNode") || nodeTypeName.equals("jmix:searchable")) {
+            nodeTypeName = "cmis:file";
+        }
         cmisType = conf.getTypeByJCR(nodeTypeName);
         if (cmisType == null) {
             log.info("Unmapped types not supported in CMIS queries");
@@ -375,18 +380,5 @@ public class QueryResolver {
     protected String escapeString(String string) {
         return string.replace("\\", "\\\\").replace("'", "\\'");
 
-    }
-
-    /**
-     * This function returns the node type name to search
-     * @param nodeTypeName
-     * @return
-     */
-    protected String getNodeTypeName (String nodeTypeName){
-        // Supports queries on nt:hierarchyNode or jmix:searchable as file queries
-        if (nodeTypeName.equals("nt:hierarchyNode") || nodeTypeName.equals("jmix:searchable")) {
-            nodeTypeName = "jnt:file";
-        }
-        return nodeTypeName;
     }
 }

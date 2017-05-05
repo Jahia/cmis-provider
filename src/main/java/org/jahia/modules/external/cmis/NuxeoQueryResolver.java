@@ -26,9 +26,7 @@ package org.jahia.modules.external.cmis;
 
 import org.jahia.api.Constants;
 import org.jahia.modules.external.ExternalQuery;
-import org.jahia.services.content.nodetypes.NodeTypeRegistry;
 import javax.jcr.RepositoryException;
-import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.query.qom.*;
 
 /**
@@ -40,26 +38,6 @@ public class NuxeoQueryResolver extends QueryResolver{
         this.dataSource = dataSource;
         this.query = query;
         conf = dataSource.conf;
-    }
-
-
-    /**
-     * This function returns the node type name to search
-     * @param nodeTypeName
-     * @return
-     */
-    @Override
-    protected String getNodeTypeName (String nodeTypeName){
-        NodeTypeRegistry ntregistry = NodeTypeRegistry.getInstance();
-        try {
-            // Supports queries on nt:hierarchyNode or jmix:searchable as file queries
-            if (ntregistry.getNodeType(Constants.NT_HIERARCHYNODE).isNodeType(nodeTypeName) || ntregistry.getNodeType(Constants.JAHIAMIX_SEARCHABLE).isNodeType(nodeTypeName) || ntregistry.getNodeType(Constants.JAHIAMIX_IMAGE).isNodeType(nodeTypeName)) {
-                nodeTypeName = Constants.JAHIANT_FILE;
-            }
-        } catch(NoSuchNodeTypeException e){
-            log.error("Did not found nodeType while trying to perform a search in Nuxeo Repository !");
-        }
-        return nodeTypeName;
     }
 
     /**

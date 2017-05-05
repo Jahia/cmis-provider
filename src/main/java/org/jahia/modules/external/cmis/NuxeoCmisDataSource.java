@@ -189,14 +189,4 @@ public class NuxeoCmisDataSource extends CmisDataSource implements ExternalDataS
         });
     }
 
-    @Override
-    public Set<String> getSupportedNodeTypes() {
-        //Create a NodeType names set from the configuration Set
-        Set<String> supportedNodeTypes = new HashSet<String>();
-        supportedNodeTypes.addAll(conf.getSupportedNodeTypes());
-        //Add jmix:image in the supportedNodeTypes set to avoid allow image picker search to use Nuxeo
-        supportedNodeTypes.add(Constants.JAHIAMIX_IMAGE);
-        return supportedNodeTypes;
-    }
-
 }
