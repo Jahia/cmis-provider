@@ -75,11 +75,11 @@ public class QueryResolver {
         Selector selector = (Selector) source;
         String nodeTypeName = selector.getNodeTypeName();
 
-        // Supports queries on nt:hierarchyNode or jmix:searchable as file queries
-        if (nodeTypeName.equals("nt:hierarchyNode") || nodeTypeName.equals("jmix:searchable")) {
-            nodeTypeName = "jnt:file";
-        }
-        cmisType = conf.getTypeByJCR(nodeTypeName);
+        // Supports queries on nt:hierarchyNode or jmix:searchable or jmix:image as file queries
+        String queryNodeTypeName = (nodeTypeName.equals("nt:hierarchyNode") || nodeTypeName.equals("jmix:searchable") || nodeTypeName.equals("jmix:image")) ?
+                "jnt:file" : nodeTypeName;
+
+        cmisType = conf.getTypeByJCR(queryNodeTypeName);
         if (cmisType == null) {
             log.debug("Unmapped types not supported in CMIS queries");
             return null;
@@ -107,6 +107,16 @@ public class QueryResolver {
             buff.append( " IN_TREE('");
             buff.append( dataSource.getObjectByPath("/").getId() );
             buff.append("')");
+        }
+
+        // add constraint on mime type to get only images
+        if (nodeTypeName.equals("jmix:image")) {
+            if (hasConstraint) {
+                buff.append(" AND");
+            } else {
+                buff.append(" WHERE ");
+            }
+            buff.append( " (cmis:contentStreamMimeType like 'image/%')");
         }
 
         if (query.getOrderings() != null) {
