@@ -6,8 +6,6 @@
 
 [nuxeo:file] > jnt:file
 
-[cmis:file] > jnt:file
-
 [cmis:cmisMountPoint] > jnt:mountPoint
     - repositoryId (string)
     - user (string)
