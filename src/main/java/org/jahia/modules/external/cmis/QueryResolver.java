@@ -81,7 +81,7 @@ public class QueryResolver {
 
         // Supports queries on hierarchyNode as file queries
         if (nodeTypeName.equals("nt:hierarchyNode") || nodeTypeName.equals("jmix:searchable")) {
-            nodeTypeName = "cmis:file";
+            nodeTypeName = "jnt:file";
         }
         cmisType = conf.getTypeByJCR(nodeTypeName);
         if (cmisType == null) {

@@ -63,7 +63,7 @@
         <property name="typeMapping">
             <list>
                 <bean class="org.jahia.modules.external.cmis.CmisTypeMapping" parent="cmis_base" id="cmis_document"
-                      p:jcrName="cmis:file"
+                      p:jcrName="jnt:file"
                       p:jcrMixins="cmismix:document"
                       p:cmisName="cmis:document">
                     <property name="properties">
