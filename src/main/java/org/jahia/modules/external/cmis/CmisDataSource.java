@@ -828,10 +828,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     public <X> X executeWithCMISSession(String user, ExecuteCallback<X> callback) throws RepositoryException {
         try {
             Session cmisSession = getCmisSession(user);
-            if (maxChildNodes > 0) {
-                cmisSession.getDefaultContext().setMaxItemsPerPage(maxChildNodes);
-                cmisSession.getDefaultContext().setOrderBy("cmis:name");
-            }
+            setSessionProperties(cmisSession);
             return callback.execute(cmisSession);
         } catch (CmisUnauthorizedException e) {
             // flush caches
@@ -866,6 +863,13 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             }
 
             throw e;
+        }
+    }
+
+    protected void setSessionProperties(Session cmisSession){
+        if (maxChildNodes > 0) {
+            cmisSession.getDefaultContext().setMaxItemsPerPage(maxChildNodes);
+            cmisSession.getDefaultContext().setOrderBy("cmis:name");
         }
     }
 

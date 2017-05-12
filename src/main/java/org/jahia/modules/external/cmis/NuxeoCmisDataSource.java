@@ -25,6 +25,7 @@ package org.jahia.modules.external.cmis;
 
 import org.apache.chemistry.opencmis.client.api.*;
 import org.apache.chemistry.opencmis.commons.enums.BaseTypeId;
+import org.apache.chemistry.opencmis.commons.enums.IncludeRelationships;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisObjectNotFoundException;
 import org.jahia.api.Constants;
 import org.jahia.modules.external.ExternalData;
@@ -45,6 +46,31 @@ public class NuxeoCmisDataSource extends CmisDataSource implements ExternalDataS
     * The logger instance for this class
      */
     private static final Logger log = LoggerFactory.getLogger(NuxeoCmisDataSource.class);
+
+
+    protected void setSessionProperties(Session cmisSession){
+        super.setSessionProperties(cmisSession);
+        //Get CMIS folder maps properties into string
+        CmisTypeMapping folderTypeMapping = conf.getTypeByJCR("jnt:folder");
+        String folderPropertiesList = folderTypeMapping.getPropertiesMapCMIS().keySet().toString().replaceAll("\\[","").replaceAll("]","");
+
+        //Get CMIS files mapped properties into string
+        CmisTypeMapping fileTypeMapping = conf.getTypeByJCR("jnt:file");
+        String filePropertiesList = fileTypeMapping.getPropertiesMapCMIS().keySet().toString().replaceAll("\\[","").replaceAll("]","");
+        filePropertiesList += ", nuxeo:pathSegment";
+
+        //Set filter on the mapped properties properties
+        cmisSession.getDefaultContext().setFilterString(folderPropertiesList+", "+filePropertiesList);
+        //cmisSession.getDefaultContext().setFilterString("cmis:baseTypeId, cmis:contentStreamFileName, cmis:contentStreamLength, cmis:contentStreamMimeType, cmis:createdBy, cmis:creationDate, cmis:description, cmis:isVersionSeriesCheckedOut, cmis:lastModificationDate, cmis:lastModifiedBy, cmis:name, cmis:path, cmis:objectId, cmis:objectTypeId, cmis:versionSeriesCheckedOutId, nuxeo:pathSegment, cmis:cmisMountPoint");
+        //Set other request parameters
+        cmisSession.getDefaultContext().setCacheEnabled(true);
+        cmisSession.getDefaultContext().setIncludeAllowableActions(true);
+        cmisSession.getDefaultContext().setIncludeAcls(false);
+        cmisSession.getDefaultContext().setIncludePolicies(false);
+        cmisSession.getDefaultContext().setIncludeRelationships(IncludeRelationships.NONE);
+        cmisSession.getDefaultContext().setLoadSecondaryTypeProperties(false);
+        cmisSession.getDefaultContext().setRenditionFilterString("cmis:none");
+    }
 
     @Override
     public List<ExternalData> getChildrenNodes(final String path) throws RepositoryException {
