@@ -27,7 +27,6 @@ import org.apache.chemistry.opencmis.client.api.CmisObject;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisObjectNotFoundException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.commons.query.qom.Operator;
-import org.apache.jackrabbit.core.query.lucene.constraint.FullTextConstraint;
 import org.jahia.modules.external.ExternalQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,12 +76,8 @@ public class QueryResolver {
             return null;
         }
         Selector selector = (Selector) source;
-        String nodeTypeName = selector.getNodeTypeName();
+        String nodeTypeName = getNodeTypeName(selector.getNodeTypeName());
 
-        // Supports queries on hierarchyNode as file queries
-        if (nodeTypeName.equals("nt:hierarchyNode") || nodeTypeName.equals("jmix:searchable")) {
-            nodeTypeName = "jnt:file";
-        }
         cmisType = conf.getTypeByJCR(nodeTypeName);
         if (cmisType == null) {
             log.info("Unmapped types not supported in CMIS queries");
@@ -380,5 +375,13 @@ public class QueryResolver {
     protected String escapeString(String string) {
         return string.replace("\\", "\\\\").replace("'", "\\'");
 
+    }
+
+    protected String getNodeTypeName(String name){
+        // Supports queries on hierarchyNode as file queries
+        if (name.equals("nt:hierarchyNode") || name.equals("jmix:searchable")) {
+            return "jnt:file";
+        }
+        return name;
     }
 }

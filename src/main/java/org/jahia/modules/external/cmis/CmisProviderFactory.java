@@ -69,7 +69,7 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
         provider.setKey(mountPoint.getIdentifier());
         provider.setMountPoint(mountPoint.getPath());
         CmisDataSource dataSource;
-        CmisConfiguration conf = (CmisConfiguration) applicationContext.getBean("CmisConfiguration");
+        CmisConfiguration conf = null;
         String cmisUrl = mountPoint.getProperty("url").getString();
         cmisUrl = StringUtils.endsWith(cmisUrl, "/") ? StringUtils.substring(cmisUrl, 0, cmisUrl.length() - 1) : cmisUrl;
         String type = "";
@@ -77,6 +77,7 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
             type = mountPoint.getProperty(CMISMountPointFactory.TYPE).getString();
         }
         if (TYPE_ALFRESCO.equals(type)) {
+            conf = (CmisConfiguration) applicationContext.getBean("CmisConfiguration");
             dataSource = new AlfrescoCmisDataSource();
             conf.getRepositoryPropertiesMap().put(ALFRESCO_URL, cmisUrl);
             if (BindingType.BROWSER.value().equals(conf.getRepositoryPropertiesMap().get(SessionParameter.BINDING_TYPE))) {
@@ -88,14 +89,8 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
                 ((AlfrescoCmisDataSource) dataSource).setPublicUser(mountPoint.getProperty(CMISMountPointFactory.PUBLIC_USER).getString());
             }
         } else if (TYPE_NUXEO.equals(type)) {
-            List<CmisTypeMapping> typeMappingList = conf.getTypeMapping();
-            for(CmisTypeMapping cmisTypeMapping: typeMappingList){
-                if(cmisTypeMapping.getJcrName().equals("jnt:file")){
-                    //Change jnt:file typeMapping by nuxeo:file only for Nuxeo mount points
-                    cmisTypeMapping.setJcrName("nuxeo:file");
-                }
-            }
-            conf.setTypeMapping(typeMappingList);
+            //Get Nuxeo conf for type Mapping
+            conf = (CmisConfiguration) applicationContext.getBean("NuxeoConfiguration");
 
             //Change file decorator to use the nuxeo one (Display only title instead of fileName and title in gwt
             if (!jcrStoreService.getDecorators().containsKey("nuxeo:file")) {
@@ -108,6 +103,7 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
             conf.getRepositoryPropertiesMap().put(SessionParameter.BINDING_TYPE, BindingType.ATOMPUB.value());
             conf.getRepositoryPropertiesMap().put(SessionParameter.ATOMPUB_URL, cmisUrl + NUXEO_ENDPOINT_ATOM);
         } else {
+            conf = (CmisConfiguration) applicationContext.getBean("CmisConfiguration");
             // legacy support
             dataSource = new CmisDataSource();
             conf.getRepositoryPropertiesMap().put(SessionParameter.BINDING_TYPE, BindingType.ATOMPUB.value());

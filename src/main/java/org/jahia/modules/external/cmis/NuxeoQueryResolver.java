@@ -40,6 +40,16 @@ public class NuxeoQueryResolver extends QueryResolver{
         conf = dataSource.conf;
     }
 
+
+    protected String getNodeTypeName(String name){
+        // Supports queries on hierarchyNode as file queries
+        if (name.equals("nt:hierarchyNode") || name.equals("jmix:searchable") || name.equals("jnt:file") || name.equals("nt:file")) {
+            return "nuxeo:file";
+        }
+        return name;
+    }
+
+
     /**
      * Use contains only for jcr:content fulltextSearch, if the property is different we use like operator
      * @param c

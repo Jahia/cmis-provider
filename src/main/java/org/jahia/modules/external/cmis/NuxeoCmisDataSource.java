@@ -27,6 +27,7 @@ import org.apache.chemistry.opencmis.client.api.*;
 import org.apache.chemistry.opencmis.commons.enums.BaseTypeId;
 import org.apache.chemistry.opencmis.commons.enums.IncludeRelationships;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisObjectNotFoundException;
+import org.codehaus.plexus.util.StringUtils;
 import org.jahia.api.Constants;
 import org.jahia.modules.external.ExternalData;
 import org.jahia.modules.external.ExternalDataSource;
@@ -55,13 +56,12 @@ public class NuxeoCmisDataSource extends CmisDataSource implements ExternalDataS
         String folderPropertiesList = folderTypeMapping.getPropertiesMapCMIS().keySet().toString().replaceAll("\\[","").replaceAll("]","");
 
         //Get CMIS files mapped properties into string
-        CmisTypeMapping fileTypeMapping = conf.getTypeByJCR("jnt:file");
+        CmisTypeMapping fileTypeMapping = conf.getTypeByJCR("nuxeo:file");
         String filePropertiesList = fileTypeMapping.getPropertiesMapCMIS().keySet().toString().replaceAll("\\[","").replaceAll("]","");
         filePropertiesList += ", nuxeo:pathSegment";
 
         //Set filter on the mapped properties properties
         cmisSession.getDefaultContext().setFilterString(folderPropertiesList+", "+filePropertiesList);
-        //cmisSession.getDefaultContext().setFilterString("cmis:baseTypeId, cmis:contentStreamFileName, cmis:contentStreamLength, cmis:contentStreamMimeType, cmis:createdBy, cmis:creationDate, cmis:description, cmis:isVersionSeriesCheckedOut, cmis:lastModificationDate, cmis:lastModifiedBy, cmis:name, cmis:path, cmis:objectId, cmis:objectTypeId, cmis:versionSeriesCheckedOutId, nuxeo:pathSegment, cmis:cmisMountPoint");
         //Set other request parameters
         cmisSession.getDefaultContext().setCacheEnabled(true);
         cmisSession.getDefaultContext().setIncludeAllowableActions(true);
@@ -70,6 +70,47 @@ public class NuxeoCmisDataSource extends CmisDataSource implements ExternalDataS
         cmisSession.getDefaultContext().setIncludeRelationships(IncludeRelationships.NONE);
         cmisSession.getDefaultContext().setLoadSecondaryTypeProperties(false);
         cmisSession.getDefaultContext().setRenditionFilterString("cmis:none");
+    }
+
+    /**
+     * Overriding the default function in order to add jmix:exif if at least one exif property value is set on the document
+     * @param doc
+     * @return The list of mixins to add to the document node
+     */
+    protected List<String> setAdditionalMixins(Document doc){
+        List<String> mixins = super.setAdditionalMixins(doc);
+        //If the document is an image we look for Exif properties
+        if(mixins.contains(Constants.JAHIAMIX_IMAGE)){
+            if(isExif(doc)){
+                mixins.add("jmix:exif");
+            }
+        }
+        return mixins;
+    }
+
+    /**
+     * If at least one exif property is not empty on the document then we considerate it is an Exif document
+     * To know if a document property is Exif we test the corresponding propertyMapping class looking for ExifPropertyMapping class
+     * @param doc
+     * @return
+     */
+    private boolean isExif(Document doc){
+        CmisTypeMapping docTypeMapping = conf.getTypeByCMIS(doc.getBaseType().getId());
+        if(docTypeMapping != null) {
+            List<Property<?>> properties = doc.getProperties();
+            //We get mapped exif properties values
+            for (Property property : properties) {
+                //Get the property mapping corresponding to the property
+                CmisPropertyMapping mappedProperty = docTypeMapping.getPropertyByCMIS(property.getId());
+                //Set exif mixin if at least one exif property is not empty
+                if(mappedProperty != null){
+                    if (mappedProperty instanceof ExifPropertyMapping && StringUtils.isNotEmpty(property.getValueAsString())) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     @Override

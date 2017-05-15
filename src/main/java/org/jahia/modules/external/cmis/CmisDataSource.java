@@ -48,6 +48,7 @@ import org.apache.chemistry.opencmis.commons.impl.dataobjects.ContentStreamImpl;
 import org.apache.chemistry.opencmis.commons.impl.json.JSONObject;
 import org.apache.chemistry.opencmis.commons.impl.json.parser.JSONParseException;
 import org.apache.chemistry.opencmis.commons.impl.json.parser.JSONParser;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.util.ISO8601;
 import org.apache.jackrabbit.util.Text;
@@ -304,14 +305,11 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     protected ExternalData getObject(CmisObject object, String path) throws PathNotFoundException {
         CmisTypeMapping typeMapping = getTypeMapping(object);
         Map<String, String[]> properties = new HashMap<>();
-        String additionalMixin = null;
+        List <String> additionalMixins = new ArrayList<>();
         if (object instanceof Document) {
             Document doc = ((Document) object);
             object = doc;
-            // set image mixin if mymetype match
-            if (doc.getContentStreamMimeType() != null && doc.getContentStreamMimeType().matches("image/(.*)")) {
-                additionalMixin = Constants.JAHIAMIX_IMAGE;
-            }
+            additionalMixins = setAdditionalMixins(doc);
 
             if (path == null) {
                 if (doc.getPaths().isEmpty()) {
@@ -331,11 +329,20 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         mapProperties(properties, object, typeMapping, 'r');
         ExternalData externalData = new ExternalData(stripVersionFromId(object.getId()), path, typeMapping.getJcrName(), properties);
         Set<String> mixins = new HashSet<>(typeMapping.getJcrMixins());
-        if (additionalMixin != null) {
-            mixins.add(additionalMixin);
+        if (CollectionUtils.isNotEmpty(additionalMixins)) {
+            mixins.addAll(additionalMixins);
         }
         externalData.setMixin(new ArrayList<String>(mixins));
         return externalData;
+    }
+
+    protected List<String> setAdditionalMixins(Document doc){
+        List<String> mixins = new ArrayList<>();
+        // set image mixin if mymetype match
+        if (doc.getContentStreamMimeType() != null && doc.getContentStreamMimeType().matches("image/(.*)")) {
+            mixins.add(Constants.JAHIAMIX_IMAGE);
+        }
+        return mixins;
     }
 
     protected String removeRemotePath(String path) {
