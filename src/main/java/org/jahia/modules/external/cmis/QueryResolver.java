@@ -247,13 +247,9 @@ public class QueryResolver {
         addOperand(buff, c.getOperand2());
         String op2 = buff.substring(pos);
         buff.setLength(pos);
-        //Handling Dates comparison case :
-        //Need to prefixe the String with DATE or TIMESTAMP in order for the server to process it like a date
-        if (op1.equals("cmis:creationDate") || op1.equals("cmis:lastModificationDate")) {
-            date = true;
-        }
+
         Operator operator = Operator.getOperatorByName(c.getOperator());
-        buff.append(operator.formatSql(op1, date ? "TIMESTAMP " + op2 : op2));
+        buff.append(operator.formatSql(op1, op2));
         buff.append(") ");
         return buff;
     }
@@ -285,9 +281,6 @@ public class QueryResolver {
         StringBuffer constraint2 = addConstraint(c.getConstraint2());
         if (constraint1 == TRUE || constraint2 == TRUE) {
             return TRUE;
-        }
-        if (constraint1 == FALSE && constraint2 == FALSE) {
-            return FALSE;
         }
         if (constraint1 == FALSE) {
             return constraint2;
