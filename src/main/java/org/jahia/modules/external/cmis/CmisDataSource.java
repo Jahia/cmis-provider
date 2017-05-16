@@ -382,7 +382,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         } else if (BaseTypeId.CMIS_FOLDER == baseTypeId) {
             return conf.getDefaultFolderType();
         } else {
-            throw new UnsupportedOperationException("Unsupported object type " + type.getBaseType());
+            throw new UnsupportedOperationException("Unsupported object type " + object.getType().getBaseType());
         }
     }
 
@@ -414,7 +414,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     @Override
     public void start() {
         // cache config
-        HashMap<String, String> repositoryPropertiesMap = getConf().getRepositoryPropertiesMap();
+        Map<String, String> repositoryPropertiesMap = getConf().getRepositoryPropertiesMap();
 
         int concurrencyLevel = parseInt(repositoryPropertiesMap, CONF_SESSION_CACHE_CONCURRENCY_LEVEL);
         int size = parseInt(repositoryPropertiesMap, CONF_SESSION_CACHE_MAXIMUM_SIZE);
@@ -427,7 +427,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         buildActiveConnections();
     }
 
-    private int parseInt(HashMap<String, String> repositoryPropertiesMap, String propertyName) {
+    private int parseInt(Map<String, String> repositoryPropertiesMap, String propertyName) {
         int value;
         try {
             value = Integer.parseInt(repositoryPropertiesMap.get(propertyName));
@@ -516,7 +516,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                     // even if they are really removed
                     for (String id : failedToDelete) {
                         try {
-                            CmisObject doc = getObjectById(resolveUser(), id);
+                            getObjectById(resolveUser(), id);
                             // doc still available, send error
                             hasError = true;
                             break;
@@ -799,7 +799,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     public synchronized Session getCmisSession(String user) throws CantConnectCmis {
         try {
             // get or create session
-            final HashMap<String, String> repositoryPropertiesMap = getConf().getRepositoryPropertiesMap();
+            final Map<String, String> repositoryPropertiesMap = getConf().getRepositoryPropertiesMap();
             Session cmisSession = activeConnections.get(repositoryPropertiesMap.get(SessionParameter.USER), new Callable<Session>() {
                 @Override
                 public Session call() throws ExecutionException {

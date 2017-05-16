@@ -41,7 +41,6 @@ import org.springframework.context.ApplicationContextAware;
 
 import javax.jcr.RepositoryException;
 import java.util.Arrays;
-import java.util.List;
 
 public class CmisProviderFactory implements ProviderFactory, ApplicationContextAware, InitializingBean {
 

@@ -44,6 +44,7 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
@@ -60,12 +61,13 @@ public class AlfrescoCmisDataSource extends CmisDataSource implements ExternalDa
     private String publicUser;
 
     public AlfrescoCmisDataSource() {
+        super();
     }
 
     @Override
     public void start() {
         super.start();
-        HashMap<String, String> repositoryPropertiesMap = getConf().getRepositoryPropertiesMap();
+        Map<String, String> repositoryPropertiesMap = getConf().getRepositoryPropertiesMap();
         client = ClientBuilder.newBuilder()
                 .register(HttpAuthenticationFeature.basic(repositoryPropertiesMap.get(SessionParameter.USER),
                         repositoryPropertiesMap.get(SessionParameter.PASSWORD)))
@@ -84,14 +86,14 @@ public class AlfrescoCmisDataSource extends CmisDataSource implements ExternalDa
             return activeConnections.get(user, new Callable<Session>() {
                 @Override
                 public Session call() throws Exception {
-                    HashMap<String, String> repositoryPropertiesMap = getConf().getRepositoryPropertiesMap();
+                    Map<String, String> repositoryPropertiesMap = getConf().getRepositoryPropertiesMap();
                     SessionFactoryImpl factory = SessionFactoryImpl.newInstance();
                     // create session
 
-                    HashMap<String, String> propertiesMap = new HashMap<>(repositoryPropertiesMap);
+                    Map<String, String> propertiesMap = new HashMap<>(repositoryPropertiesMap);
                     try {
                         if (!user.startsWith(" system ") &&
-                                !user.equals("root")) {
+                                !"root".equals(user)) {
                             if (user.trim().equals(Constants.GUEST_USERNAME)) {
                                 // guest user is not authorize to browse cmis repo, public user should be use if set
                                 throw new CmisUnauthorizedException();
@@ -110,7 +112,7 @@ public class AlfrescoCmisDataSource extends CmisDataSource implements ExternalDa
                     }
                 }
 
-                private void setConnectionProperties(HashMap<String, String> propertiesMap, String user) throws JSONException {
+                private void setConnectionProperties(Map<String, String> propertiesMap, String user) throws JSONException {
                     WebTarget target = client.target(getConf().getRepositoryPropertiesMap().get(CmisProviderFactory.ALFRESCO_URL)).
                             path("service/impersonateLogin").
                             queryParam("format", "json").

@@ -35,15 +35,14 @@ import javax.jcr.query.qom.*;
  */
 public class NuxeoQueryResolver extends QueryResolver{
     public NuxeoQueryResolver(CmisDataSource dataSource, ExternalQuery query) {
-        this.dataSource = dataSource;
-        this.query = query;
-        conf = dataSource.conf;
+        super(dataSource, query);
     }
 
-
+    @Override
     protected String getNodeTypeName(String name){
         // Supports queries on hierarchyNode as file queries
-        if (name.equals("nt:hierarchyNode") || name.equals("jmix:searchable") || name.equals("jnt:file") || name.equals("nt:file") || name.equals("jmix:image")) {
+        if ("nt:hierarchyNode".equals(name) || "jmix:searchable".equals(name) || "jnt:file".equals(name) || "nt:file".equals(name)
+                || "jmix:image".equals(name)) {
             return "nuxeo:file";
         }
         return name;
@@ -56,6 +55,7 @@ public class NuxeoQueryResolver extends QueryResolver{
      * @return
      * @throws RepositoryException
      */
+    @Override
     protected StringBuffer getFullTextSearchConstraint(FullTextSearch c) throws RepositoryException{
         StringBuffer buff = new StringBuffer();
         //If fulltext search is done on jcr:content then executing fulltext search

@@ -40,7 +40,7 @@ import javax.jcr.RepositoryException;
  * This way cmis document titles will be displayed on the site instead of nuxeo specific name
  */
 public class NuxeoFileNode extends JCRFileNode {
-    protected static final Logger logger = org.slf4j.LoggerFactory.getLogger(NuxeoFileNode.class);
+    private static final Logger logger = org.slf4j.LoggerFactory.getLogger(NuxeoFileNode.class);
 
     public NuxeoFileNode(JCRNodeWrapper node) throws RepositoryException {
         super(node);
@@ -63,7 +63,7 @@ public class NuxeoFileNode extends JCRFileNode {
         try {
             return getProperty(Constants.JCR_TITLE).getValue().getString();
         } catch (RepositoryException e) {
-            logger.debug("could not retrieve jcr:title of " + this.getPath());
+            logger.debug("could not retrieve jcr:title of " + this.getPath(), e);
         }
         return super.getName();
     }

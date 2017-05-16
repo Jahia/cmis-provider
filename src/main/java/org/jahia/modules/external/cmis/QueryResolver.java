@@ -2,25 +2,11 @@
  * ==========================================================================================
  * =                            JAHIA'S ENTERPRISE DISTRIBUTION                             =
  * ==========================================================================================
- * <p/>
- * http://www.jahia.com
- * <p/>
+ *
+ *                                  http://www.jahia.com
+ *
  * JAHIA'S ENTERPRISE DISTRIBUTIONS LICENSING - IMPORTANT INFORMATION
  * ==========================================================================================
-<<<<<<< HEAD
- * <p/>
- * Copyright (C) 2002-2016 Jahia Solutions Group. All rights reserved.
- * <p/>
- * This file is part of a Jahia's Enterprise Distribution.
- * <p/>
- * Jahia's Enterprise Distributions must be used in accordance with the terms
- * contained in the Jahia Solutions Group Terms & Conditions as well as
- * the Jahia Sustainable Enterprise License (JSEL).
- * <p/>
- * For questions regarding licensing, support, production usage...
- * please contact our team at sales@jahia.com or go to http://www.jahia.com/license.
- * <p/>
-=======
  *
  *     Copyright (C) 2002-2017 Jahia Solutions Group. All rights reserved.
  *
@@ -33,7 +19,6 @@
  *     For questions regarding licensing, support, production usage...
  *     please contact our team at sales@jahia.com or go to http://www.jahia.com/license.
  *
->>>>>>> refs/remotes/origin/2_x
  * ==========================================================================================
  */
 package org.jahia.modules.external.cmis;
@@ -43,7 +28,6 @@ import org.apache.chemistry.opencmis.commons.exceptions.CmisObjectNotFoundExcept
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.commons.query.qom.Operator;
 import org.jahia.modules.external.ExternalQuery;
-import org.jahia.services.content.nodetypes.NodeTypeRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,9 +49,9 @@ public class QueryResolver {
     /*
     * The logger instance for this class
     */
-    protected static final Logger log = LoggerFactory.getLogger(CmisDataSource.class);
+    private static final Logger log = LoggerFactory.getLogger(CmisDataSource.class);
     
-    private static Pattern ISO8601_TIMESTAMP = Pattern.compile("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}\\+\\d{2}:\\d{2}");
+    private static final Pattern ISO8601_TIMESTAMP = Pattern.compile("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}\\+\\d{2}:\\d{2}");
 
     protected final StringBuffer TRUE = new StringBuffer("true");
     protected final StringBuffer FALSE = new StringBuffer("false");
@@ -76,10 +60,6 @@ public class QueryResolver {
     ExternalQuery query;
     CmisConfiguration conf;
     CmisTypeMapping cmisType;
-
-    public QueryResolver(){
-        //Default constructor for the children classes
-    }
 
     public QueryResolver(CmisDataSource dataSource, ExternalQuery query) {
         this.dataSource = dataSource;
@@ -100,7 +80,7 @@ public class QueryResolver {
 
         cmisType = conf.getTypeByJCR(nodeTypeName);
         if (cmisType == null) {
-            log.info("Unmapped types not supported in CMIS queries");
+            log.info("Unmapped types not supported in CMIS queries: {}", nodeTypeName);
             return null;
         }
         buff.append(cmisType.getQueryName());
@@ -129,7 +109,7 @@ public class QueryResolver {
         }
 
         // add constraint on mime type to get only images
-        if (nodeTypeName.equals("jmix:image")) {
+        if ("jmix:image".equals(nodeTypeName)) {
             if (hasConstraint) {
                 buff.append(" AND");
             } else {
@@ -146,7 +126,7 @@ public class QueryResolver {
                 try {
                     addOperand(tmpBuf, ordering.getOperand());
                     //In CMIS the score can only be used when using fulltext search
-                    if (tmpBuf.toString().equals(" myscore ") && (!buff.toString().contains("contains("))) {
+                    if (" myscore ".equals(tmpBuf.toString()) && (!"contains(".contains(buff.toString()))) {
                         return buff.toString();
                     }
 
@@ -163,7 +143,7 @@ public class QueryResolver {
                     } else if (QueryObjectModelConstants.JCR_ORDER_DESCENDING.equals(order)) {
                         buff.append(' ').append("DESC");
                     }
-                    if (tmpBuf.toString().equals(" myscore ")) {
+                    if (" myscore ".equals(tmpBuf.toString())) {
                         buff.insert(buff.indexOf(" FROM"), ", SCORE() as myscore ");
                     }
                 } catch (NotMappedCmisProperty ignore) { //ignore ordering by not mapped properties
@@ -266,7 +246,6 @@ public class QueryResolver {
 
     protected StringBuffer getComparisonConstraint(Comparison c) throws NotMappedCmisProperty, RepositoryException{
         StringBuffer buff = new StringBuffer();
-        boolean date = false;
         buff.append(" (");
         int pos = buff.length();
         addOperand(buff, c.getOperand1());
@@ -347,9 +326,7 @@ public class QueryResolver {
             throw new UnsupportedRepositoryOperationException("Unsupported operand type UpperCase");
         } else if (operand instanceof Length) {
             throw new UnsupportedRepositoryOperationException("Unsupported operand type Length");
-        } else if (operand instanceof NodeName) {
-            buff.append("cmis:name");
-        } else if (operand instanceof NodeLocalName) {
+        } else if (operand instanceof NodeName || operand instanceof NodeLocalName) {
             buff.append("cmis:name");
         } else if (operand instanceof PropertyValue) {
             PropertyValue o = (PropertyValue) operand;
@@ -406,7 +383,7 @@ public class QueryResolver {
 
     protected String getNodeTypeName(String name){
         // Supports queries on hierarchyNode as file queries
-        if (name.equals("nt:hierarchyNode") || name.equals("jmix:searchable") || name.equals("jmix:image")) {
+        if ("nt:hierarchyNode".equals(name) || "jmix:searchable".equals(name) || "jmix:image".equals(name)) {
             return "jnt:file";
         }
         return name;

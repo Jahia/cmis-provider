@@ -48,7 +48,7 @@ public class NuxeoCmisDataSource extends CmisDataSource implements ExternalDataS
      */
     private static final Logger log = LoggerFactory.getLogger(NuxeoCmisDataSource.class);
 
-
+    @Override
     protected void setSessionProperties(Session cmisSession){
         super.setSessionProperties(cmisSession);
         //Get CMIS folder maps properties into string
@@ -77,13 +77,12 @@ public class NuxeoCmisDataSource extends CmisDataSource implements ExternalDataS
      * @param doc
      * @return The list of mixins to add to the document node
      */
+    @Override
     protected List<String> getMixinsToAdd(Document doc){
         List<String> mixins = super.getMixinsToAdd(doc);
         //If the document is an image we look for Exif properties
-        if(mixins.contains(Constants.JAHIAMIX_IMAGE)){
-            if(isExif(doc)){
-                mixins.add("jmix:exif");
-            }
+        if(mixins.contains(Constants.JAHIAMIX_IMAGE) && isExif(doc)){
+            mixins.add("jmix:exif");
         }
         return mixins;
     }
@@ -103,10 +102,9 @@ public class NuxeoCmisDataSource extends CmisDataSource implements ExternalDataS
                 //Get the property mapping corresponding to the property
                 CmisPropertyMapping mappedProperty = docTypeMapping.getPropertyByCMIS(property.getId());
                 //Set exif mixin if at least one exif property is not empty
-                if(mappedProperty != null){
-                    if (mappedProperty instanceof ExifPropertyMapping && StringUtils.isNotEmpty(property.getValueAsString())) {
-                        return true;
-                    }
+                if (mappedProperty != null && mappedProperty instanceof ExifPropertyMapping
+                        && StringUtils.isNotEmpty(property.getValueAsString())) {
+                    return true;
                 }
             }
         }
@@ -128,7 +126,7 @@ public class NuxeoCmisDataSource extends CmisDataSource implements ExternalDataS
                             if (hasContent(object)) {
                                 return Collections.singletonList(getObjectContent((Document) object, path + JCR_CONTENT_SUFFIX));
                             } else {
-                                return new ArrayList<ExternalData>();
+                                return new ArrayList<>();
                             }
                         } else if (object instanceof Folder) {
                             Folder folder = (Folder) object;
@@ -198,11 +196,7 @@ public class NuxeoCmisDataSource extends CmisDataSource implements ExternalDataS
         //Get the content stream size property of the cmis object
         Property contentStreamLength = object.getProperty("cmis:contentStreamLength");
         //Check if the size property exists and if its value is greater than 0
-        if (contentStreamLength != null && contentStreamLength.getValues().size() > 0) {
-            return true;
-        } else {
-            return false;
-        }
+        return (contentStreamLength != null && contentStreamLength.getValues().size() > 0);
     }
 
     @Override

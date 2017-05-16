@@ -45,12 +45,12 @@ public class CmisConfiguration {
     private HashMap<String, String> repositoryPropertiesMap;
 
     public void onStart() {
-        cmisTypes = new HashMap<String, CmisTypeMapping>();
-        jcrTypes = new HashMap<String, CmisTypeMapping>();
-        Set<String> supported = new HashSet<String>();
+        cmisTypes = new HashMap<>();
+        jcrTypes = new HashMap<>();
+        Set<String> supported = new HashSet<>();
 
         if (typeMapping != null) {
-            Queue<CmisTypeMapping> list = new LinkedList<CmisTypeMapping>(typeMapping);
+            Queue<CmisTypeMapping> list = new LinkedList<>(typeMapping);
             while (!list.isEmpty()) {
                 CmisTypeMapping type = list.remove();
                 cmisTypes.put(type.getCmisName(), type);
@@ -78,7 +78,7 @@ public class CmisConfiguration {
 
     }
 
-    public List getTypeMapping() {
+    public List<CmisTypeMapping> getTypeMapping() {
         return typeMapping;
     }
 
@@ -143,7 +143,7 @@ public class CmisConfiguration {
      * Use getRepositoryPropertiesMap for getting properties
      */
     public void setRepositoryProperties(Properties repositoryProperties) {
-        repositoryPropertiesMap = new HashMap<String, String>();
+        repositoryPropertiesMap = new HashMap<>();
         for (String name : repositoryProperties.stringPropertyNames()) {
             if (name.startsWith("org.apache.chemistry.") || name.startsWith("org.jahia.cmis.")) {
                 repositoryPropertiesMap.put(name, repositoryProperties.getProperty(name));
@@ -154,7 +154,7 @@ public class CmisConfiguration {
     /**
      * @return
      */
-    public HashMap<String, String> getRepositoryPropertiesMap() {
+    public Map<String, String> getRepositoryPropertiesMap() {
         return repositoryPropertiesMap;
     }
 }

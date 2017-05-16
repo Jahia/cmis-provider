@@ -72,7 +72,7 @@ public class CmisBinaryImpl implements Binary, FileServlet.BinaryRangesSupport {
     public InputStream getStream() throws RepositoryException {
         InputStream stream = null;
         if (listOfStreamsForClose == null) {
-            listOfStreamsForClose = new ArrayList<InputStream>();
+            listOfStreamsForClose = new ArrayList<>();
         }
         if (doc == null) {
             throw new IllegalStateException();
@@ -128,8 +128,7 @@ public class CmisBinaryImpl implements Binary, FileServlet.BinaryRangesSupport {
     public long getSize() throws RepositoryException {
         if (doc == null)
             throw new IllegalStateException();
-        long size = this.doc.getContentStreamLength();
-        return size;
+        return this.doc.getContentStreamLength();
 //        return contentStream.getLength();
     }
 

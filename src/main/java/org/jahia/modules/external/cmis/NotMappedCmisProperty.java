@@ -34,6 +34,8 @@ import javax.jcr.RepositoryException;
  * Time: 4:58 PM
  */
 public class NotMappedCmisProperty extends RepositoryException {
+    private static final long serialVersionUID = 404316619871182597L;
+
     public NotMappedCmisProperty() {
     }
 
