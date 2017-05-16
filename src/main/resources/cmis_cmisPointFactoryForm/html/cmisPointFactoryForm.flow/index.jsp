@@ -35,7 +35,7 @@
     <c:set var="i18NSelectTarget" value="${functions:escapeJavaScript(selectTarget)}"/>
     <div class="box-1" ng-controller="cmisMountEditCtrl"
          cmis-initiator="{'type': '${cmisFactory.type}', 'repositoryId' : '${cmisFactory.repositoryId}'}" cmis-type="cmisType" cmis-repositoryId="repositoryId"
-         ng-init='init(${localFolders}, "${cmisFactory.localPath}", "localPath", true,"${i18NSelectTarget}")'>
+         ng-init='init(${localFolders}, "${fn:escapeXml(cmisFactory.localPath)}", "localPath", true,"${i18NSelectTarget}")'>
         <form:form modelAttribute="cmisFactory" method="post">
             <fieldset title="type">
                 <div class="container-fluid">

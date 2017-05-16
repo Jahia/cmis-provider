@@ -7,6 +7,7 @@
  * <p/>
  * JAHIA'S ENTERPRISE DISTRIBUTIONS LICENSING - IMPORTANT INFORMATION
  * ==========================================================================================
+<<<<<<< HEAD
  * <p/>
  * Copyright (C) 2002-2016 Jahia Solutions Group. All rights reserved.
  * <p/>
@@ -19,6 +20,20 @@
  * For questions regarding licensing, support, production usage...
  * please contact our team at sales@jahia.com or go to http://www.jahia.com/license.
  * <p/>
+=======
+ *
+ *     Copyright (C) 2002-2017 Jahia Solutions Group. All rights reserved.
+ *
+ *     This file is part of a Jahia's Enterprise Distribution.
+ *
+ *     Jahia's Enterprise Distributions must be used in accordance with the terms
+ *     contained in the Jahia Solutions Group Terms & Conditions as well as
+ *     the Jahia Sustainable Enterprise License (JSEL).
+ *
+ *     For questions regarding licensing, support, production usage...
+ *     please contact our team at sales@jahia.com or go to http://www.jahia.com/license.
+ *
+>>>>>>> refs/remotes/origin/2_x
  * ==========================================================================================
  */
 package org.jahia.modules.external.cmis;
@@ -28,6 +43,7 @@ import org.apache.chemistry.opencmis.commons.exceptions.CmisObjectNotFoundExcept
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.commons.query.qom.Operator;
 import org.jahia.modules.external.ExternalQuery;
+import org.jahia.services.content.nodetypes.NodeTypeRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -110,6 +126,16 @@ public class QueryResolver {
             buff.append(" IN_TREE('");
             buff.append(dataSource.getObjectByPath("/").getId());
             buff.append("')");
+        }
+
+        // add constraint on mime type to get only images
+        if (nodeTypeName.equals("jmix:image")) {
+            if (hasConstraint) {
+                buff.append(" AND");
+            } else {
+                buff.append(" WHERE ");
+            }
+            buff.append( " (cmis:contentStreamMimeType like 'image/%')");
         }
 
         if (query.getOrderings() != null) {
@@ -380,7 +406,7 @@ public class QueryResolver {
 
     protected String getNodeTypeName(String name){
         // Supports queries on hierarchyNode as file queries
-        if (name.equals("nt:hierarchyNode") || name.equals("jmix:searchable")) {
+        if (name.equals("nt:hierarchyNode") || name.equals("jmix:searchable") || name.equals("jmix:image")) {
             return "jnt:file";
         }
         return name;

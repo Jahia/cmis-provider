@@ -10,7 +10,7 @@
     JAHIA'S ENTERPRISE DISTRIBUTIONS LICENSING - IMPORTANT INFORMATION
     ==========================================================================================
 
-        Copyright (C) 2002-2016 Jahia Solutions Group. All rights reserved.
+        Copyright (C) 2002-2017 Jahia Solutions Group. All rights reserved.
 
         This file is part of a Jahia's Enterprise Distribution.
 
@@ -29,7 +29,7 @@
     <parent>
         <artifactId>jahia-modules</artifactId>
         <groupId>org.jahia.modules</groupId>
-        <version>7.1.2.0</version>
+        <version>7.1.2.2-SNAPSHOT</version>
     </parent>
     <artifactId>cmis-provider</artifactId>
     <name>Portal factory - CMIS provider</name>

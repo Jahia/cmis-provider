@@ -58,6 +58,7 @@
     <bean class="org.jahia.modules.external.cmis.CmisTypeMapping" parent="cmis_base" id="cmis_document"
           p:jcrName="jnt:file"
           p:jcrMixins="cmismix:document"
+          p:additionalSupportedMixins="jmix:image"
           p:cmisName="cmis:document">
         <property name="properties">
             <list merge="true">
@@ -127,6 +128,7 @@
     <bean class="org.jahia.modules.external.cmis.CmisTypeMapping" parent="cmis_document" id="nuxeo_document"
           p:jcrName="nuxeo:file"
           p:jcrMixins="cmismix:document"
+          p:additionalSupportedMixins="jmix:image"
           p:cmisName="cmis:document">
         <property name="properties">
             <list merge="true">
