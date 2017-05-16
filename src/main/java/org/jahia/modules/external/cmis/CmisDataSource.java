@@ -309,7 +309,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         if (object instanceof Document) {
             Document doc = ((Document) object);
             object = doc;
-            additionalMixins = setAdditionalMixins(doc);
+            additionalMixins = getMixinsToAdd(doc);
 
             if (path == null) {
                 if (doc.getPaths().isEmpty()) {
@@ -336,7 +336,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         return externalData;
     }
 
-    protected List<String> setAdditionalMixins(Document doc){
+    protected List<String> getMixinsToAdd(Document doc){
         List<String> mixins = new ArrayList<>();
         // set image mixin if mymetype match
         if (doc.getContentStreamMimeType() != null && doc.getContentStreamMimeType().matches("image/(.*)")) {

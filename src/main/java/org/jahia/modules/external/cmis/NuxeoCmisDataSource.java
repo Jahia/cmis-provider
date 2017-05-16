@@ -77,8 +77,8 @@ public class NuxeoCmisDataSource extends CmisDataSource implements ExternalDataS
      * @param doc
      * @return The list of mixins to add to the document node
      */
-    protected List<String> setAdditionalMixins(Document doc){
-        List<String> mixins = super.setAdditionalMixins(doc);
+    protected List<String> getMixinsToAdd(Document doc){
+        List<String> mixins = super.getMixinsToAdd(doc);
         //If the document is an image we look for Exif properties
         if(mixins.contains(Constants.JAHIAMIX_IMAGE)){
             if(isExif(doc)){
