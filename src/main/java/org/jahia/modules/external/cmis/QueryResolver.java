@@ -31,6 +31,8 @@ import org.jahia.modules.external.ExternalQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.regex.Pattern;
+
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
@@ -48,6 +50,8 @@ public class QueryResolver {
     * The logger instance for this class
     */
     protected static final Logger log = LoggerFactory.getLogger(CmisDataSource.class);
+    
+    private static Pattern ISO8601_TIMESTAMP = Pattern.compile("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}\\+\\d{2}:\\d{2}");
 
     protected final StringBuffer TRUE = new StringBuffer("true");
     protected final StringBuffer FALSE = new StringBuffer("false");
@@ -344,7 +348,11 @@ public class QueryResolver {
                     buff.append(val.getString());
                     break;
                 case PropertyType.STRING:
-                    buff.append("'").append(escapeString(val.getString())).append("'");
+                    String escapedValue = escapeString(val.getString());
+                    if (ISO8601_TIMESTAMP.matcher(escapedValue).matches()) {
+                        buff.append(" TIMESTAMP ");
+                    }
+                    buff.append("'").append(escapedValue).append("'");
                     break;
                 case PropertyType.DATE:
                     buff.append(" TIMESTAMP '").append(val.getString()).append("'");
