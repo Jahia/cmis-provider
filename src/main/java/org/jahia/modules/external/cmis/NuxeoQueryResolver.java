@@ -43,7 +43,7 @@ public class NuxeoQueryResolver extends QueryResolver{
 
     protected String getNodeTypeName(String name){
         // Supports queries on hierarchyNode as file queries
-        if (name.equals("nt:hierarchyNode") || name.equals("jmix:searchable") || name.equals("jnt:file") || name.equals("nt:file")) {
+        if (name.equals("nt:hierarchyNode") || name.equals("jmix:searchable") || name.equals("jnt:file") || name.equals("nt:file") || name.equals("jmix:image")) {
             return "nuxeo:file";
         }
         return name;
