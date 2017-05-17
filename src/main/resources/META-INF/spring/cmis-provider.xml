@@ -57,6 +57,7 @@
 
     <bean id="CmisConfiguration" class="org.jahia.modules.external.cmis.CmisConfiguration" init-method="onStart"
           scope="prototype">
+		<property name="operationContontext_maxItemsPerPage" value="${jahia.cmis_provider.operationContext.maxItemsPerPage:100}" /> 
         <property name="repositoryProperties">
             <ref bean="CmisRepositoryProperties"/>
         </property>
