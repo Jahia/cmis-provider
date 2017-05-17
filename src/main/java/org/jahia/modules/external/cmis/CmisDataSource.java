@@ -85,7 +85,7 @@ import static org.jahia.api.Constants.LIVE_WORKSPACE;
  */
 public class CmisDataSource implements ExternalDataSource, ExternalDataSource.Initializable, ExternalDataSource.Writable,
         ExternalDataSource.Searchable, ExternalDataSource.CanLoadChildrenInBatch, ExternalDataSource.CanCheckAvailability,
-        ExternalDataSource.SupportPrivileges {
+        ExternalDataSource.AccessControllable {
 
     private static final String CONF_SESSION_CACHE_CONCURRENCY_LEVEL = "org.jahia.cmis.session.cache.concurrencyLevel";
     private static final String CONF_SESSION_CACHE_MAXIMUM_SIZE = "org.jahia.cmis.session.cache.maximumSize";
@@ -744,6 +744,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                     }
                     OperationContext operationContext = session.createOperationContext();
                     operationContext.setIncludePathSegments(true);
+                    operationContext.setMaxItemsPerPage(getConf().getOperationContontext_maxItemsPerPage());
                     ItemIterable<QueryResult> results = session.query(sql, false, operationContext);
                     if (query.getLimit() > 0 && query.getLimit() < Integer.MAX_VALUE) {
                         results = results.getPage((int) query.getLimit());
@@ -901,8 +902,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         Set<String> privileges = new HashSet<>();
 
         try {
-            AllowableActions allowable = getObjectByPath(path.endsWith(JCR_CONTENT_SUFFIX) ? removeContentSufix(path) : path)
-                    .getAllowableActions();
+            AllowableActions allowable = getObjectByPath(path).getAllowableActions();
             for (Action action : allowable.getAllowableActions()) {
                 switch (action) {
                     case CAN_GET_FOLDER_TREE:
