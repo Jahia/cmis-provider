@@ -35,7 +35,9 @@ import java.math.BigInteger;
  * Time: 9:02 PM
  */
 public class ContentStreamBinaryImpl extends ContentStreamImpl {
-    Binary binary;
+    private static final long serialVersionUID = 5183491474411250965L;
+    
+    transient Binary binary;
 
     public ContentStreamBinaryImpl(Binary binary, String fileName, String mimeType) throws RepositoryException {
         setLength(BigInteger.valueOf(binary.getSize()));

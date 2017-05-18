@@ -127,17 +127,17 @@ public class CmisTypeMapping implements Cloneable {
         this.properties = properties;
     }
 
-    protected Map getPropertiesMapJCR() {
+    protected Map<String, CmisPropertyMapping> getPropertiesMapJCR() {
         return propertiesMapJCR;
     }
 
-    protected Map getPropertiesMapCMIS() {
+    protected Map<String, CmisPropertyMapping> getPropertiesMapCMIS() {
         return propertiesMapCMIS;
     }
 
     protected void initProperties() {
-        HashMap<String, CmisPropertyMapping> mapJCR = new HashMap<String, CmisPropertyMapping>();
-        HashMap<String, CmisPropertyMapping> mapCMIS = new HashMap<String, CmisPropertyMapping>();
+        HashMap<String, CmisPropertyMapping> mapJCR = new HashMap<>();
+        HashMap<String, CmisPropertyMapping> mapCMIS = new HashMap<>();
         if (parent != null) {
             mapJCR.putAll(parent.getPropertiesMapJCR());
             mapCMIS.putAll(parent.getPropertiesMapCMIS());

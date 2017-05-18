@@ -48,6 +48,7 @@ import org.apache.chemistry.opencmis.commons.impl.dataobjects.ContentStreamImpl;
 import org.apache.chemistry.opencmis.commons.impl.json.JSONObject;
 import org.apache.chemistry.opencmis.commons.impl.json.parser.JSONParseException;
 import org.apache.chemistry.opencmis.commons.impl.json.parser.JSONParser;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.util.ISO8601;
 import org.apache.jackrabbit.util.Text;
@@ -95,16 +96,16 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
     private static final String DEFAULT_MIMETYPE = "binary/octet-stream";
     private static final List<String> JCR_CONTENT_LIST = Collections.singletonList(Constants.JCR_CONTENT);
-    private static final String JCR_CONTENT_SUFFIX = "/" + Constants.JCR_CONTENT;
+    protected static final String JCR_CONTENT_SUFFIX = "/" + Constants.JCR_CONTENT;
 
     private boolean firstConnectFailure = true;
     protected Cache<String, Session> activeConnections;
     private boolean recordingConnectionsStats;
     private ExternalContentStoreProvider provider;
 
-    private enum Operation { ENCODE, DECODE, URLENCODE }
+    protected enum Operation { ENCODE, DECODE, URLENCODE }
 
-    private int maxChildNodes = 0;
+    protected int maxChildNodes = 0;
 
     private String remotePath;
 
@@ -273,7 +274,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         }
     }
 
-    private ExternalData getObjectContent(Document doc, String jcrContentPath) throws PathNotFoundException {
+    protected ExternalData getObjectContent(Document doc, String jcrContentPath) throws PathNotFoundException {
         if (jcrContentPath == null) {
             if (doc.getPaths().isEmpty() || doc.getContentStreamLength() < 0) {
                 throw new PathNotFoundException("No path found for CMIS document: " + doc.getId());
@@ -301,17 +302,14 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         return id.contains(";") ? StringUtils.substringBeforeLast(id, ";") : id;
     }
 
-    private ExternalData getObject(CmisObject object, String path) throws PathNotFoundException {
+    protected ExternalData getObject(CmisObject object, String path) throws PathNotFoundException {
         CmisTypeMapping typeMapping = getTypeMapping(object);
         Map<String, String[]> properties = new HashMap<>();
-        String additionalMixin = null;
+        List <String> additionalMixins = new ArrayList<>();
         if (object instanceof Document) {
             Document doc = ((Document) object);
             object = doc;
-            // set image mixin if mymetype match
-            if (doc.getContentStreamMimeType() != null && doc.getContentStreamMimeType().matches("image/(.*)")) {
-                additionalMixin = Constants.JAHIAMIX_IMAGE;
-            }
+            additionalMixins = getMixinsToAdd(doc);
 
             if (path == null) {
                 if (doc.getPaths().isEmpty()) {
@@ -331,18 +329,27 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         mapProperties(properties, object, typeMapping, 'r');
         ExternalData externalData = new ExternalData(stripVersionFromId(object.getId()), path, typeMapping.getJcrName(), properties);
         Set<String> mixins = new HashSet<>(typeMapping.getJcrMixins());
-        if (additionalMixin != null) {
-            mixins.add(additionalMixin);
+        if (CollectionUtils.isNotEmpty(additionalMixins)) {
+            mixins.addAll(additionalMixins);
         }
         externalData.setMixin(new ArrayList<String>(mixins));
         return externalData;
     }
 
-    private String removeRemotePath(String path) {
+    protected List<String> getMixinsToAdd(Document doc){
+        List<String> mixins = new ArrayList<>();
+        // set image mixin if mymetype match
+        if (doc.getContentStreamMimeType() != null && doc.getContentStreamMimeType().matches("image/(.*)")) {
+            mixins.add(Constants.JAHIAMIX_IMAGE);
+        }
+        return mixins;
+    }
+
+    protected String removeRemotePath(String path) {
         return StringUtils.startsWith(path, remotePath) ? (StringUtils.equals(path, remotePath) ? "/" : StringUtils.substringAfter(path, remotePath)) : path;
     }
 
-    private String addRemotePath(String path) {
+    protected String addRemotePath(String path) {
         return remotePath + path;
     }
 
@@ -375,7 +382,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         } else if (BaseTypeId.CMIS_FOLDER == baseTypeId) {
             return conf.getDefaultFolderType();
         } else {
-            throw new UnsupportedOperationException("Unsupported object type " + type.getBaseType());
+            throw new UnsupportedOperationException("Unsupported object type " + object.getType().getBaseType());
         }
     }
 
@@ -407,7 +414,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     @Override
     public void start() {
         // cache config
-        HashMap<String, String> repositoryPropertiesMap = getConf().getRepositoryPropertiesMap();
+        Map<String, String> repositoryPropertiesMap = getConf().getRepositoryPropertiesMap();
 
         int concurrencyLevel = parseInt(repositoryPropertiesMap, CONF_SESSION_CACHE_CONCURRENCY_LEVEL);
         int size = parseInt(repositoryPropertiesMap, CONF_SESSION_CACHE_MAXIMUM_SIZE);
@@ -420,7 +427,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         buildActiveConnections();
     }
 
-    private int parseInt(HashMap<String, String> repositoryPropertiesMap, String propertyName) {
+    private int parseInt(Map<String, String> repositoryPropertiesMap, String propertyName) {
         int value;
         try {
             value = Integer.parseInt(repositoryPropertiesMap.get(propertyName));
@@ -509,7 +516,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                     // even if they are really removed
                     for (String id : failedToDelete) {
                         try {
-                            CmisObject doc = getObjectById(resolveUser(), id);
+                            getObjectById(resolveUser(), id);
                             // doc still available, send error
                             hasError = true;
                             break;
@@ -753,15 +760,12 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                     }
                     ArrayList<String> res = new ArrayList<>();
                     for (QueryResult hit : results) {
-                        String path;
-                        if (isFolder) {
-                            path = removeRemotePath(hit.getPropertyValueByQueryName("id").toString());
-                        } else {
-                            String id = hit.getPropertyValueByQueryName("id").toString();
-                            CmisObject object = session.getObject(id);
-                            path = removeRemotePath(((FileableCmisObject) object).getPaths().get(0));
+                        String remotePath = hit.getPropertyValueByQueryName("id").toString();
+                        if (!isFolder) {
+                            CmisObject object = session.getObject(remotePath);
+                            remotePath = ((FileableCmisObject) object).getPaths().get(0);
                         }
-                        res.add(path);
+                        res.add(removeRemotePath(remotePath));
                     }
                     return res;
                 } catch (RepositoryException | CmisObjectNotFoundException e) {
@@ -773,7 +777,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         });
     }
 
-    private String removeContentSufix(String identifier) {
+    protected String removeContentSufix(String identifier) {
         return identifier.substring(0, identifier.length() - JCR_CONTENT_SUFFIX.length());
     }
 
@@ -795,7 +799,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     public synchronized Session getCmisSession(String user) throws CantConnectCmis {
         try {
             // get or create session
-            final HashMap<String, String> repositoryPropertiesMap = getConf().getRepositoryPropertiesMap();
+            final Map<String, String> repositoryPropertiesMap = getConf().getRepositoryPropertiesMap();
             Session cmisSession = activeConnections.get(repositoryPropertiesMap.get(SessionParameter.USER), new Callable<Session>() {
                 @Override
                 public Session call() throws ExecutionException {
@@ -831,10 +835,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     public <X> X executeWithCMISSession(String user, ExecuteCallback<X> callback) throws RepositoryException {
         try {
             Session cmisSession = getCmisSession(user);
-            if (maxChildNodes > 0) {
-                cmisSession.getDefaultContext().setMaxItemsPerPage(maxChildNodes);
-                cmisSession.getDefaultContext().setOrderBy("cmis:name");
-            }
+            setSessionProperties(cmisSession);
             return callback.execute(cmisSession);
         } catch (CmisUnauthorizedException e) {
             // flush caches
@@ -869,6 +870,13 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             }
 
             throw e;
+        }
+    }
+
+    protected void setSessionProperties(Session cmisSession){
+        if (maxChildNodes > 0) {
+            cmisSession.getDefaultContext().setMaxItemsPerPage(maxChildNodes);
+            cmisSession.getDefaultContext().setOrderBy("cmis:name");
         }
     }
 
@@ -991,7 +999,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         this.provider = provider;
     }
 
-    private String transformPath(String path, Operation operation) throws PathNotFoundException {
+    protected String transformPath(String path, Operation operation) throws PathNotFoundException {
         if (StringUtils.equals(path, "/")) {
             return path;
         }

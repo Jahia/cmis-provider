@@ -32,6 +32,8 @@ import javax.jcr.RepositoryException;
  * Time: 10:20 PM
  */
 public class CantConnectCmis extends RepositoryException {
+    private static final long serialVersionUID = -5743988716006574710L;
+
     public CantConnectCmis(Throwable rootCause) {
         super(rootCause);
     }

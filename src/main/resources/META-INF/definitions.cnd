@@ -2,6 +2,9 @@
 <jmix = 'http://www.jahia.org/jahia/mix/1.0'>
 <cmis = 'http://www.jahia.org/jahia/cmis/1.0'>
 <cmismix = 'http://www.jahia.org/jahia/cmis/mix/1.0'>
+<nuxeo = 'http://www.jahia.org/jahia/nuxeo/1.0'>
+
+[nuxeo:file] > jnt:file
 
 [cmis:cmisMountPoint] > jnt:mountPoint
     - repositoryId (string)
