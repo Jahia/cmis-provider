@@ -41,7 +41,7 @@
         <connection>scm:git:git@github.com:Jahia/cmis-provider.git</connection>
         <url>scm:git:git@github.com:Jahia/cmis-provider.git</url>
         <developerConnection>scm:git:git@github.com:Jahia/cmis-provider.git</developerConnection>
-      <tag>HEAD</tag>
+      <tag>2_x</tag>
   </scm>
 
     <properties>
