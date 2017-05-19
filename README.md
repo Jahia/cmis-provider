@@ -63,6 +63,10 @@ https://doc.nuxeo.com/display/NXDOC/CMIS
 ####Nuxeo mount point limitations
 In the case of Nuxeo mount points the move, copy and rename operations are not supported due to Nuxeo path management.
 
+####The images management
+The images are mapped adding the image mixin and their exif properties are also mapped.
+If an image has at least one exif property set, then the exif mixin will also be added to it.
+
 ### Implementation tips
 
 As implementation CMIS protocol used Apache Chemistry.
