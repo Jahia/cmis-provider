@@ -45,7 +45,7 @@
   </scm>
 
     <properties>
-        <jahia-depends>assets,external-provider</jahia-depends>
+        <jahia-depends>external-provider</jahia-depends>
         <jahia-module-type>system</jahia-module-type>
         <export-package>org.jahia.modules.external.cmis</export-package>
     </properties>
