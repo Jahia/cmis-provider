@@ -321,9 +321,11 @@ public class QueryResolver {
 
     protected void addOperand(StringBuffer buff, DynamicOperand operand) throws RepositoryException {
         if (operand instanceof LowerCase) {
-            throw new UnsupportedRepositoryOperationException("Unsupported operand type LowerCase");
+            // ignore lowerCase keyword as it's not supported by cmis
+            addOperand(buff, ((LowerCase) operand).getOperand());
         } else if (operand instanceof UpperCase) {
-            throw new UnsupportedRepositoryOperationException("Unsupported operand type UpperCase");
+            // ignore upperCase keyword as it's not supported by cmis
+            addOperand(buff, ((UpperCase) operand).getOperand());
         } else if (operand instanceof Length) {
             throw new UnsupportedRepositoryOperationException("Unsupported operand type Length");
         } else if (operand instanceof NodeName || operand instanceof NodeLocalName) {
