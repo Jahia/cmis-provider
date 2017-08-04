@@ -751,7 +751,6 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                     }
                     OperationContext operationContext = session.createOperationContext();
                     operationContext.setIncludePathSegments(true);
-                    operationContext.setMaxItemsPerPage(getConf().getOperationContontext_maxItemsPerPage());
                     ItemIterable<QueryResult> results = session.query(sql, false, operationContext);
                     if (query.getLimit() > 0 && query.getLimit() < Integer.MAX_VALUE) {
                         results = results.getPage((int) query.getLimit());
