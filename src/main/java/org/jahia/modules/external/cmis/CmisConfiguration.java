@@ -44,17 +44,7 @@ public class CmisConfiguration {
     //    private Properties repositoryProperties;
     private HashMap<String, String> repositoryPropertiesMap;
     
-    private int operationContontext_maxItemsPerPage = 100;
-
-    public int getOperationContontext_maxItemsPerPage() {
-		return operationContontext_maxItemsPerPage;
-	}
-
-	public void setOperationContontext_maxItemsPerPage(int operationContontext_maxItemsPerPage) {
-		this.operationContontext_maxItemsPerPage = operationContontext_maxItemsPerPage;
-	}
-
-	public void onStart() {
+    public void onStart() {
         cmisTypes = new HashMap<String, CmisTypeMapping>();
         jcrTypes = new HashMap<String, CmisTypeMapping>();
         Set<String> supported = new HashSet<String>();
