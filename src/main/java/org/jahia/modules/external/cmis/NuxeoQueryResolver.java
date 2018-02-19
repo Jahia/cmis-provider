@@ -24,9 +24,11 @@
 package org.jahia.modules.external.cmis;
 
 
+import javax.jcr.PropertyType;
 import org.jahia.api.Constants;
 import org.jahia.modules.external.ExternalQuery;
 import javax.jcr.RepositoryException;
+import javax.jcr.Value;
 import javax.jcr.query.qom.*;
 
 /**
@@ -71,8 +73,8 @@ public class NuxeoQueryResolver extends QueryResolver{
             //If the property is mapped then use like operator to avoid "contains" repetition
             if (propertyByJCR != null) {
                 String searchTerm = c.getFullTextSearchExpression().toString();
-                searchTerm = searchTerm.substring(1, searchTerm.length() - 1);
-                buff.append(propertyByJCR.getCmisName() + "  like '%" + searchTerm + "%' ");
+                searchTerm = escapeString(searchTerm.substring(1, searchTerm.length() - 1));
+                buff.append(propertyByJCR.getCmisName()).append("  like '%").append(searchTerm).append("%' ");
             } else {
                 //If the property is not mapped we don't do anything
                 return FALSE;
