@@ -24,11 +24,9 @@
 package org.jahia.modules.external.cmis;
 
 
-import javax.jcr.PropertyType;
 import org.jahia.api.Constants;
 import org.jahia.modules.external.ExternalQuery;
 import javax.jcr.RepositoryException;
-import javax.jcr.Value;
 import javax.jcr.query.qom.*;
 
 /**
