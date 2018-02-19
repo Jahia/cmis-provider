@@ -37,6 +37,8 @@
                       class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
                 <bean p:cmisName="cmis:lastModificationDate" p:jcrName="jcr:lastModified"
                       class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
+                <bean p:cmisName="cmis:lastModificationDate" p:jcrName="j:lastPublished"
+                      class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
                 <bean p:cmisName="cmis:description" p:jcrName="cmis:description"
                       class="org.jahia.modules.external.cmis.CmisPropertyMapping" p:mode="rwc"/>
             </list>
