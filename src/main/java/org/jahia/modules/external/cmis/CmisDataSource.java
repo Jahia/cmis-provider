@@ -87,7 +87,11 @@ import static org.jahia.api.Constants.LIVE_WORKSPACE;
 public class CmisDataSource implements ExternalDataSource, ExternalDataSource.Initializable, ExternalDataSource.Writable,
         ExternalDataSource.Searchable, ExternalDataSource.CanLoadChildrenInBatch, ExternalDataSource.CanCheckAvailability,
         ExternalDataSource.SupportPrivileges {
-
+   /*
+    * The logger instance for this class
+    */
+    private static final Logger log = LoggerFactory.getLogger(CmisDataSource.class);
+    
     private static final String CONF_SESSION_CACHE_CONCURRENCY_LEVEL = "org.jahia.cmis.session.cache.concurrencyLevel";
     private static final String CONF_SESSION_CACHE_MAXIMUM_SIZE = "org.jahia.cmis.session.cache.maximumSize";
     private static final String CONF_SESSION_CACHE_EXPIRE_AFTER_ACCESS = "org.jahia.cmis.session.cache.expireAfterAccess";
@@ -119,11 +123,6 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     };
 
     private CacheBuilder<String, Session> cacheBuilder;
-
-    /*
-    * The logger instance for this class
-     */
-    private static final Logger log = LoggerFactory.getLogger(CmisDataSource.class);
 
     /**
      * Configuration
@@ -520,11 +519,13 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                         try {
                             getObjectById(resolveUser(), id);
                             // doc still available, send error
+                            log.warn("Document is still available, although it should have been deleted: {}", id);
                             hasError = true;
                             break;
                         } catch (CmisObjectNotFoundException e) {
                             // this is the excpected behavior
                         } catch (Exception e1) {
+                            log.warn("Unexpected error while checking failed deletion on document: " + id, e1);
                             hasError = true;
                             break;
                         }
