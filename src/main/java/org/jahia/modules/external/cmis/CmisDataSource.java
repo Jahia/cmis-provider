@@ -327,6 +327,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         properties.put(Constants.JCR_CREATED, formatDate(createdDate == null ? new GregorianCalendar() : createdDate));
         final GregorianCalendar lastModificationDate = object.getLastModificationDate();
         properties.put(Constants.JCR_LASTMODIFIED, formatDate(lastModificationDate == null ? new GregorianCalendar() : lastModificationDate));
+        properties.put(Constants.LASTPUBLISHED, formatDate(lastModificationDate == null ? new GregorianCalendar() : lastModificationDate));
         mapProperties(properties, object, typeMapping, 'r');
         ExternalData externalData = new ExternalData(stripVersionFromId(object.getId()), path, typeMapping.getJcrName(), properties);
         Set<String> mixins = new HashSet<>(typeMapping.getJcrMixins());
