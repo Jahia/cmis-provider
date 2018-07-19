@@ -24,16 +24,21 @@
 package org.jahia.modules.external.cmis;
 
 
+import java.text.ParseException;
 import org.jahia.api.Constants;
 import org.jahia.modules.external.ExternalQuery;
 import javax.jcr.RepositoryException;
 import javax.jcr.query.qom.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by rizak on 17/06/16.
  * This class is based on the CMIS QueryResolver but implements Nuxeo Query building specificities
  */
 public class NuxeoQueryResolver extends QueryResolver{
+    private static final Logger LOGGER = LoggerFactory.getLogger(NuxeoQueryResolver.class);
+
     public NuxeoQueryResolver(CmisDataSource dataSource, ExternalQuery query) {
         super(dataSource, query);
     }
@@ -70,8 +75,14 @@ public class NuxeoQueryResolver extends QueryResolver{
             CmisPropertyMapping propertyByJCR = cmisType.getPropertyByJCR(c.getPropertyName());
             //If the property is mapped then use like operator to avoid "contains" repetition
             if (propertyByJCR != null) {
-                String searchTerm = c.getFullTextSearchExpression().toString();
-                searchTerm = escapeString(searchTerm.substring(1, searchTerm.length() - 1));
+                String searchTerm; 
+                try {
+                    searchTerm = discardEscapeChar(c.getFullTextSearchExpression().toString());
+                } catch (ParseException ex) {
+                    LOGGER.warn("Impossible to escape the full text search expression", ex);
+                    searchTerm = escapeString(c.getFullTextSearchExpression().toString());
+                }
+                searchTerm = searchTerm.substring(1, searchTerm.length() - 1);
                 buff.append(propertyByJCR.getCmisName()).append("  like '%").append(searchTerm).append("%' ");
             } else {
                 //If the property is not mapped we don't do anything

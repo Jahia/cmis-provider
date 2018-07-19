@@ -23,6 +23,8 @@
  */
 package org.jahia.modules.external.cmis;
 
+import java.text.ParseException;
+import java.util.logging.Level;
 import org.apache.chemistry.opencmis.client.api.CmisObject;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisObjectNotFoundException;
 import org.apache.commons.lang.StringUtils;
@@ -343,35 +345,40 @@ public class QueryResolver {
 
     protected void addOperand(StringBuffer buff, StaticOperand operand) throws RepositoryException {
         if (operand instanceof Literal) {
-            Value val = ((Literal) operand).getLiteralValue();
-            switch (val.getType()) {
-                case PropertyType.BINARY:
-                case PropertyType.DOUBLE:
-                case PropertyType.DECIMAL:
-                case PropertyType.LONG:
-                case PropertyType.BOOLEAN:
-                    buff.append(val.getString());
-                    break;
-                case PropertyType.STRING:
-                    String escapedValue = escapeString(val.getString());
-                    if (ISO8601_TIMESTAMP.matcher(escapedValue).matches()) {
-                        buff.append(" TIMESTAMP ");
-                    }
-                    buff.append("'").append(escapedValue).append("'");
-                    break;
-                case PropertyType.DATE:
-                    buff.append(" TIMESTAMP '").append(val.getString()).append("'");
-                    break;
-                case PropertyType.NAME:
-                case PropertyType.PATH:
-                case PropertyType.REFERENCE:
-                case PropertyType.WEAKREFERENCE:
-                case PropertyType.URI:
-                    // TODO implement valid support for this operand types
-                    buff.append("'").append(val.getString()).append("'");
-                    break;
-                default:
-                    throw new UnsupportedRepositoryOperationException("Unsupported operand value type " + val.getType());
+            try {
+                final Value val = ((Literal) operand).getLiteralValue();
+                final String valStr = discardEscapeChar(val.getString());
+                switch (val.getType()) {
+                    case PropertyType.BINARY:
+                    case PropertyType.DOUBLE:
+                    case PropertyType.DECIMAL:
+                    case PropertyType.LONG:
+                    case PropertyType.BOOLEAN:
+                        buff.append(val.getString());
+                        break;
+                    case PropertyType.STRING:
+                        String escapedValue = escapeString(valStr);
+                        if (ISO8601_TIMESTAMP.matcher(escapedValue).matches()) {
+                            buff.append(" TIMESTAMP ");
+                        }
+                        buff.append("'").append(escapedValue).append("'");
+                        break;
+                    case PropertyType.DATE:
+                        buff.append(" TIMESTAMP '").append(valStr).append("'");
+                        break;
+                    case PropertyType.NAME:
+                    case PropertyType.PATH:
+                    case PropertyType.REFERENCE:
+                    case PropertyType.WEAKREFERENCE:
+                    case PropertyType.URI:
+                        // TODO implement valid support for this operand types
+                        buff.append("'").append(valStr).append("'");
+                        break;
+                    default:
+                        throw new UnsupportedRepositoryOperationException("Unsupported operand value type " + val.getType());
+                }
+            } catch (ParseException ex) {
+                throw new UnsupportedRepositoryOperationException(ex);
             }
         } else {
             throw new UnsupportedRepositoryOperationException("Unsupported operand type " + operand.getClass());
@@ -387,5 +394,80 @@ public class QueryResolver {
         // Supports queries on nt:hierarchyNode or jmix:searchable or jmix:image as file queries
         return (name.equals("nt:hierarchyNode") || name.equals("jmix:searchable") || name.equals("jmix:image")) ?
                 "jnt:file" : name;
+    }
+    
+    
+    // Function retrieved from org.apache.lucene.queryParser.QueryParser
+    public static String discardEscapeChar(String input) throws ParseException{
+        // Create char array to hold unescaped char sequence
+        char[] output = new char[input.length()];
+
+        // The length of the output can be less than the input
+        // due to discarded escape chars. This variable holds
+        // the actual length of the output
+        int length = 0;
+
+        // We remember whether the last processed character was 
+        // an escape character
+        boolean lastCharWasEscapeChar = false;
+
+        // The multiplier the current unicode digit must be multiplied with.
+        // E. g. the first digit must be multiplied with 16^3, the second with 16^2...
+        int codePointMultiplier = 0;
+
+        // Used to calculate the codepoint of the escaped unicode character
+        int codePoint = 0;
+
+        for (int i = 0; i < input.length(); i++) {
+            char curChar = input.charAt(i);
+            if (codePointMultiplier > 0) {
+                codePoint += hexToInt(curChar) * codePointMultiplier;
+                codePointMultiplier >>>= 4;
+                if (codePointMultiplier == 0) {
+                    output[length++] = (char) codePoint;
+                    codePoint = 0;
+                }
+            } else if (lastCharWasEscapeChar) {
+                if (curChar == 'u') {
+                    // found an escaped unicode character
+                    codePointMultiplier = 16 * 16 * 16;
+                } else {
+                    // this character was escaped
+                    output[length] = curChar;
+                    length++;
+                }
+                lastCharWasEscapeChar = false;
+            } else {
+                if (curChar == '\\') {
+                    lastCharWasEscapeChar = true;
+                } else {
+                    output[length] = curChar;
+                    length++;
+                }
+            }
+        }
+
+        if (codePointMultiplier > 0) {
+            throw new IllegalStateException("Truncated unicode escape sequence.");
+        }
+
+        if (lastCharWasEscapeChar) {
+            throw new IllegalStateException("Term can not end with escape character.");
+        }
+
+        return new String(output, 0, length);
+    }
+    
+    // Function retrieved from org.apache.lucene.queryParser.QueryParser
+    private static int hexToInt(char c) throws ParseException {
+        if ('0' <= c && c <= '9') {
+            return c - '0';
+        } else if ('a' <= c && c <= 'f') {
+            return c - 'a' + 10;
+        } else if ('A' <= c && c <= 'F') {
+            return c - 'A' + 10;
+        } else {
+            throw new IllegalStateException("None-hex character in unicode escape sequence: " + c);
+        }
     }
 }
