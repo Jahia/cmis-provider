@@ -86,6 +86,76 @@
 
                         <form:label path="slowConnection"><form:checkbox path="slowConnection"/>&nbsp;<fmt:message key="cmisFactory.slowConnection"/></form:label>
                     </div>
+
+                    <div class="row-fluid">
+                        <form:label path="connectionTimeout"><fmt:message key="cmis_cmisMountPoint.connectionTimeout"/></form:label>
+                        <form:input path="connectionTimeout"/>
+                        <span class="admin_tooltip" data-placement="right" title="<fmt:message key="cmis_cmisMountPoint.connectionTimeout.ui.tooltip"/>"><i class="icon-info-sign"></i></span>
+                    </div>
+                    <div class="row-fluid">
+                        <form:label path="readTimeout"><fmt:message key="cmis_cmisMountPoint.readTimeout"/></form:label>
+                        <form:input path="readTimeout"/>
+                        <span class="admin_tooltip" data-placement="right" title="<fmt:message key="cmis_cmisMountPoint.readTimeout.ui.tooltip"/>"><i class="icon-info-sign"></i></span>
+                    </div>
+
+                    <div class="row-fluid">
+                        <form:label path="compressionEnabled"><form:checkbox path="compressionEnabled"/>&nbsp;<fmt:message key="cmis_cmisMountPoint.compressionEnabled"/></form:label>
+                        <span class="admin_tooltip" data-placement="right" title="<fmt:message key="cmis_cmisMountPoint.compressionEnabled.ui.tooltip"/>"><i class="icon-info-sign"></i></span>
+                    </div>
+                    <div class="row-fluid">
+                        <form:label path="clientCompressionEnabled"><form:checkbox path="clientCompressionEnabled"/>&nbsp;<fmt:message key="cmis_cmisMountPoint.clientCompressionEnabled"/></form:label>
+                        <span class="admin_tooltip" data-placement="right" title="<fmt:message key="cmis_cmisMountPoint.clientCompressionEnabled.ui.tooltip"/>"><i class="icon-info-sign"></i></span>
+                    </div>
+                    <div class="row-fluid">
+                        <form:label path="cookieEnabled"><form:checkbox path="cookieEnabled"/>&nbsp;<fmt:message key="cmis_cmisMountPoint.cookieEnabled"/></form:label>
+                        <span class="admin_tooltip" data-placement="right" title="<fmt:message key="cmis_cmisMountPoint.cookieEnabled.ui.tooltip"/>"><i class="icon-info-sign"></i></span>
+                    </div>
+
+                    <div class="row-fluid">
+                        <form:label path="forceCmisVersion"><fmt:message key="cmis_cmisMountPoint.forceCmisVersion"/></form:label>
+                        <form:input path="forceCmisVersion"/>
+                        <span class="admin_tooltip" data-placement="right" title="<fmt:message key="cmis_cmisMountPoint.forceCmisVersion.ui.tooltip"/>"><i class="icon-info-sign"></i></span>
+                    </div>
+                    <div class="row-fluid">
+                        <form:label path="cookieEnabled"><form:checkbox path="cacheEnabled"/>&nbsp;<fmt:message key="cmis_cmisMountPoint.cacheEnabled"/></form:label>
+                        <span class="admin_tooltip" data-placement="right" title="<fmt:message key="cmis_cmisMountPoint.cacheEnabled.ui.tooltip"/>"><i class="icon-info-sign"></i></span>
+                    </div>
+                    <div class="row-fluid">
+                        <form:label path="responseFilter"><fmt:message key="cmis_cmisMountPoint.responseFilter"/></form:label>
+                        <form:input path="responseFilter" />
+                        <span class="admin_tooltip" data-placement="right" title="<fmt:message key="cmis_cmisMountPoint.responseFilter.ui.tooltip"/>"><i class="icon-info-sign"></i></span>
+                    </div>
+                    <div class="row-fluid">
+                        <form:label path="includeActions"><form:checkbox path="includeActions"/>&nbsp;<fmt:message key="cmis_cmisMountPoint.includeActions"/></form:label>
+                        <span class="admin_tooltip" data-placement="right" title="<fmt:message key="cmis_cmisMountPoint.includeActions.ui.tooltip"/>"><i class="icon-info-sign"></i></span>
+                    </div>
+                    <div class="row-fluid">
+                        <form:label path="includeAcl"><form:checkbox path="includeAcl"/>&nbsp;<fmt:message key="cmis_cmisMountPoint.includeAcl"/></form:label>
+                        <span class="admin_tooltip" data-placement="right" title="<fmt:message key="cmis_cmisMountPoint.includeAcl.ui.tooltip"/>"><i class="icon-info-sign"></i></span>
+                    </div>
+                    <div class="row-fluid">
+                        <form:label path="includePolicies"><form:checkbox path="includePolicies"/>&nbsp;<fmt:message key="cmis_cmisMountPoint.includePolicies"/></form:label>
+                        <span class="admin_tooltip" data-placement="right" title="<fmt:message key="cmis_cmisMountPoint.includePolicies.ui.tooltip"/>"><i class="icon-info-sign"></i></span>
+                    </div>
+                    <div class="row-fluid">
+                        <form:label path="includeRelationships"><fmt:message key="cmis_cmisMountPoint.includeRelationships"/></form:label>
+                        <form:select path="includeRelationships">
+                            <form:option value="none"><fmt:message key="cmis_cmisMountPoint.includeRelationships.none"/></form:option>
+                            <form:option value="source"><fmt:message key="cmis_cmisMountPoint.includeRelationships.source"/></form:option>
+                            <form:option value="target"><fmt:message key="cmis_cmisMountPoint.includeRelationships.target"/></form:option>
+                            <form:option value="both"><fmt:message key="cmis_cmisMountPoint.includeRelationships.both"/></form:option>
+                        </form:select>&nbsp;<span class="admin_tooltip" data-placement="right" title="<fmt:message key="cmis_cmisMountPoint.includeRelationships.ui.tooltip"/>"><i class="icon-info-sign"></i></span>
+                    </div>
+                    <div class="row-fluid">
+                        <form:label path="loadSecondaryTypeProperties"><form:checkbox path="loadSecondaryTypeProperties"/>&nbsp;<fmt:message key="cmis_cmisMountPoint.loadSecondaryTypeProperties"/></form:label>
+                        <span class="admin_tooltip" data-placement="right" title="<fmt:message key="cmis_cmisMountPoint.loadSecondaryTypeProperties.ui.tooltip"/>"><i class="icon-info-sign"></i></span>
+                    </div>
+                    <div class="row-fluid">
+                        <form:label path="renditionFilter"><fmt:message key="cmis_cmisMountPoint.renditionFilter"/></form:label>
+                        <form:input path="renditionFilter"/>
+                        <span class="admin_tooltip" data-placement="right" title="<fmt:message key="cmis_cmisMountPoint.renditionFilter.ui.tooltip"/>"><i class="icon-info-sign"></i></span>
+                    </div>
+
                     <div class="row-fluid">
                         <jsp:include page="/modules/external-provider/angular/folderPicker.jsp"/>
                     </div>

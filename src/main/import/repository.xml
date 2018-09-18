@@ -14,6 +14,7 @@
                           j:templateName="cmis-factory"
                           jcr:primaryType="cmis:cmisMountPointFactoryPage">
                         <j:translation_en jcr:language="en"
+                                 jcr:mixinTypes="mix:title"
                                  jcr:primaryType="jnt:translation"
                                  jcr:title="cmis factory"/>
                     </cmis-factory>
@@ -25,6 +26,7 @@
                   j:view="serverSettings"
                   jcr:primaryType="jnt:template">
                         <j:translation_en jcr:language="en"
+                                 jcr:mixinTypes="mix:title"
                                  jcr:primaryType="jnt:translation"
                                  jcr:title="base"/>
                         <cmis-factory j:applyOn="cmis:cmisMountPointFactoryPage"
@@ -32,11 +34,13 @@
                              j:hiddenTemplate="false"
                              jcr:primaryType="jnt:contentTemplate">
                             <j:translation_en jcr:language="en"
+                                    jcr:mixinTypes="mix:title"
                                     jcr:primaryType="jnt:translation"
                                     jcr:title="cmis factory"/>
                             <pagecontent jcr:primaryType="jnt:contentList">
                                 <cmis-factory-form jcr:primaryType="cmis:cmisPointFactoryForm">
                                     <j:translation_en jcr:language="en"
+                                          jcr:mixinTypes="mix:title"
                                           jcr:primaryType="jnt:translation"
                                           jcr:title="cmis factory form"/>
                                 </cmis-factory-form>

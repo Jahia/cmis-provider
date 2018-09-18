@@ -97,11 +97,23 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     private static final String CONF_SESSION_CACHE_MAXIMUM_SIZE = "org.jahia.cmis.session.cache.maximumSize";
     private static final String CONF_SESSION_CACHE_EXPIRE_AFTER_ACCESS = "org.jahia.cmis.session.cache.expireAfterAccess";
 
+
+    public static final String CONF_CONTEXT_CACHE_ENABLE ="org.jahia.cmis.optimisation.context.cacheEnable";
+    public static final String CONF_CONTEXT_FILTER ="org.jahia.cmis.optimisation.context.filter";
+    public static final String CONF_CONTEXT_INCLUDE_ALLOWABLE_ACTIONS ="org.jahia.cmis.optimisation.context.includeAllowableActions";
+    public static final String CONF_CONTEXT_INCLUDE_ACLS ="org.jahia.cmis.optimisation.context.includeAcls";
+    public static final String CONF_CONTEXT_INCLUDE_POLICIES ="org.jahia.cmis.optimisation.context.includePolicies";
+
+    public static final String CONF_CONTEXT_INCLUDE_RELATIONSHIPS = "org.jahia.cmis.optimisation.context.includeRelationships";
+    public static final String CONF_CONTEXT_LOAD_SECONDARY_TYPE_PROPERTIES = "org.jahia.cmis.optimisation.context.loadSecondaryTypeProperties";
+    public static final String CONF_CONTEXT_RENDITION_FILTER = "org.jahia.cmis.optimisation.context.renditionFilter";
+
     private static final String CONF_MAX_CHILD_NODES = "org.jahia.cmis.max.child.nodes";
 
     private static final String DEFAULT_MIMETYPE = "binary/octet-stream";
     private static final List<String> JCR_CONTENT_LIST = Collections.singletonList(Constants.JCR_CONTENT);
     protected static final String JCR_CONTENT_SUFFIX = "/" + Constants.JCR_CONTENT;
+
 
     private boolean firstConnectFailure = true;
     protected Cache<String, Session> activeConnections;
@@ -143,6 +155,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
     @Override
     public List<String> getChildren(final String path) throws RepositoryException {
+    	log.debug("Get Children for path:"+path);
         final List<String> list = new ArrayList<>();
         try {
             if (!path.endsWith(JCR_CONTENT_SUFFIX)) {
@@ -200,6 +213,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
     @Override
     public List<ExternalData> getChildrenNodes(final String path) throws RepositoryException {
+    	log.debug("Get ChildrenNodes for path:"+path);
         return executeWithCMISSession(new ExecuteCallback<List<ExternalData>>() {
             @Override
             public List<ExternalData> execute(Session session) throws RepositoryException {
@@ -240,6 +254,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
     @Override
     public ExternalData getItemByIdentifier(final String identifier) throws ItemNotFoundException {
+    	log.debug("Get item by  identifier:"+identifier);
         try {
             return executeWithCMISSession(new ExecuteCallback<ExternalData>() {
                 @Override
@@ -261,6 +276,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
     @Override
     public ExternalData getItemByPath(String path) throws PathNotFoundException {
+    	log.debug("Get item by  path:"+path);
         try {
             if (path.endsWith(JCR_CONTENT_SUFFIX)) {
                 CmisObject object = getObjectByPath(removeContentSufix(path));
@@ -804,12 +820,41 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     public synchronized Session getCmisSession(String user) throws CantConnectCmis {
         try {
             // get or create session
+        	log.debug("Get or create session for "+user);
             final Map<String, String> repositoryPropertiesMap = getConf().getRepositoryPropertiesMap();
-            Session cmisSession = activeConnections.get(repositoryPropertiesMap.get(SessionParameter.USER), new Callable<Session>() {
+            //Session cmisSession = activeConnections.get(repositoryPropertiesMap.get(SessionParameter.USER), new Callable<Session>() {
+            String userSessionName = user;
+            userSessionName = userSessionName.trim();
+            Session cmisSession = activeConnections.get(userSessionName, new Callable<Session>() {
                 @Override
                 public Session call() throws ExecutionException {
+                	log.debug("Creating new session");
                     SessionFactory factory = SessionFactoryImpl.newInstance();
-                    return factory.createSession(repositoryPropertiesMap);
+                    Session session = factory.createSession(repositoryPropertiesMap);
+                    OperationContext defaultContext = session.getDefaultContext();
+
+                    String filter = repositoryPropertiesMap.get(CmisDataSource.CONF_CONTEXT_FILTER);
+                    String cacheStr = repositoryPropertiesMap.get(CmisDataSource.CONF_CONTEXT_CACHE_ENABLE);
+                    String includeActionsStr = repositoryPropertiesMap.get(CmisDataSource.CONF_CONTEXT_INCLUDE_ALLOWABLE_ACTIONS);
+                    String includeAclsStr = repositoryPropertiesMap.get(CmisDataSource.CONF_CONTEXT_INCLUDE_ACLS);
+                    String includePoliciesStr = repositoryPropertiesMap.get(CmisDataSource.CONF_CONTEXT_INCLUDE_POLICIES);
+
+                    String includeRelationships = repositoryPropertiesMap.get(CmisDataSource.CONF_CONTEXT_INCLUDE_RELATIONSHIPS);
+                    String loadSecondaryTypeProperties = repositoryPropertiesMap.get(CmisDataSource.CONF_CONTEXT_LOAD_SECONDARY_TYPE_PROPERTIES);
+                    String renditionFilter = repositoryPropertiesMap.get(CmisDataSource.CONF_CONTEXT_RENDITION_FILTER);
+
+                    defaultContext.setFilterString(filter);
+
+                    defaultContext.setCacheEnabled(Boolean.parseBoolean(cacheStr));
+                    defaultContext.setIncludeAllowableActions(Boolean.parseBoolean(includeActionsStr));
+                    defaultContext.setIncludeAcls(Boolean.parseBoolean(includeAclsStr));
+                    defaultContext.setIncludePolicies(Boolean.parseBoolean(includePoliciesStr));
+
+                    defaultContext.setIncludeRelationships(IncludeRelationships.fromValue(includeRelationships));
+                    defaultContext.setLoadSecondaryTypeProperties(Boolean.parseBoolean(loadSecondaryTypeProperties));
+                    defaultContext.setRenditionFilterString(renditionFilter);
+
+                    return session;
                 }
             });
             firstConnectFailure = true;
@@ -841,49 +886,6 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         try {
             Session cmisSession = getCmisSession(user);
             setSessionProperties(cmisSession);
-            // Client side caching is turned on by default. (Just add this to be sure:)
-			/* Explanation:
-			* That is, getObject() will first look into the session cache if the object already exists there.
-			* If this is the case, it returns the object without talking to the repository.
-			* So it might return stale objects... -> importance of cache invalidation
-			* There are multiple ways to deal with that:
-			* Refresh the object data that is returned from getObject(). {code:java} CmisObject object = session.getObject(id);
-			* object.refresh(); // contacts the repository and refreshes the object
-			* object.refreshIfOld(60 * 1000); // ... or refreshes the object only if the data is older than a minute (to put in a configurable parameter)
-			*/
-            cmisSession.getDefaultContext().setCacheEnabled(true);
-			/*
-			* The property filter defines which properties the repository must return.
-			* Only select the properties you really need to keep the transferred data as small as possible
-			* -> huge improvement in performances possible !
-			* (rem: The repository may return more properties than specified in certain cases)
-			*
-			* The following configuration is only a proposition based on some empirical tests.
-			* TODO: the correct way to manage this should be to:
-			* 1) use a minimal configuration in the default operationContext
-			* 2) have a specific 'augmented' operationContext for each type of requests
-			* NB: only cmis fields in cmis-provider.xml (mapping) in p:cmisName fields should be used normaly
-			* -> TODO2: generate operationContexts based on this mapping file and type of object used in the query ?
-			*/
-            cmisSession.getDefaultContext().setFilterString("cmis:repositoryId, cmis:cmisMountPoint, cmis:contentStreamLength, cmis:objectTypeId, alfcmis:nodeRef, cmis:contentStreamId, cmis:name, cmis:contentStreamMimeType, cmis:creationDate, cmis:objectId, cmis:baseTypeId, cmis:contentStreamFileName, cmis:lastModificationDate, cmis:path");
-            // For the moment the checking of allowable actions is not use in Jahia (see method 'getPrivilegesNames' unused in our version of the connector)
-			cmisSession.getDefaultContext().setIncludeAllowableActions(false);
-			// For a connector with technical user (without impersonification) and in readonly mode, we could do this:
-            cmisSession.getDefaultContext().setIncludeAcls(false);
-            cmisSession.getDefaultContext().setIncludePolicies(false);
-			// CMIS 'Relationships' not used by Jahia in the current connector -> disable the retrieving of theses informations in CMIS responses :
-			/* Explanation:
-			* When you fetch an object, you can choose to retrieve no relationships, only the relationships where the object is the source or is the target, or all relationships the object is involved in.
-			* Some repositories have to filter which relationships the current user is allowed to see.
-			* Even if the number of relationships that the repository returns is small, the repository might have touched a greater number of objects, so only pick what you need.
-			* !Check whether requesting the relationships with a separate getObjectRelationships call makes more sense than getting the relationships in the same call as getObject or getObjectByPath.
-			* This provides much better control over the result set. (Rem: The CMIS operation getObjectRelationships is called getRelationships in OpenCMIS.)
-			*/
-            cmisSession.getDefaultContext().setIncludeRelationships(IncludeRelationships.NONE);
-			// Secondary types not used by Jahia in the current connector -> disable the retrieving of theses informations in CMIS responses :
-            cmisSession.getDefaultContext().setLoadSecondaryTypeProperties(false);
-			// Renditions not used by Jahia in the current connector -> disable the retrieving of renditions informations in CMIS responses :
-            cmisSession.getDefaultContext().setRenditionFilterString("cmis:none");
             return callback.execute(cmisSession);
         } catch (CmisUnauthorizedException e) {
             // flush caches
@@ -932,11 +934,14 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
      * Invalidate the current user connection
      */
     protected void invalidateCurrentConnection() throws RepositoryException {
-        getActiveConnections().invalidate(resolveUser());
+        String resolveUser = resolveUser();
+        log.debug("Invalidate session  "+resolveUser);
+		getActiveConnections().invalidate(resolveUser);
     }
 
     @Override
     public boolean isAvailable() throws RepositoryException {
+    	log.debug("Is Available");
         return executeWithCMISSession(new ExecuteCallback<Boolean>() {
             @Override
             public Boolean execute(Session session) throws RepositoryException {

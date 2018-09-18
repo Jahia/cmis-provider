@@ -15,6 +15,20 @@
     - slowConnection (boolean)
     - type (string)
     - remotePath (string)
+    - connectionTimeout (long) = 5000
+    - readTimeout (long) = 5000
+    - compressionEnabled (boolean) = true
+    - clientCompressionEnabled (boolean) =false
+    - cookieEnabled (boolean) = false
+    - forceCmisVersion (string) = '1.1'
+    - cacheEnabled (boolean) = false
+    - responseFilter (string) = 'cmis:repositoryId, cmis:cmisMountPoint, cmis:contentStreamLength, cmis:objectTypeId, alfcmis:nodeRef, cmis:contentStreamId, cmis:name, cmis:contentStreamMimeType, cmis:creationDate, cmis:objectId, cmis:baseTypeId, cmis:contentStreamFileName, cmis:lastModificationDate, cmis:path'
+    - includeActions (boolean) = false
+    - includeAcl (boolean) = true
+    - includePolicies (boolean) = true
+    - includeRelationships (string, choicelist) = 'none' < 'none', 'source', 'target', 'both'
+    - loadSecondaryTypeProperties (boolean) = false
+    - renditionFilter (string) = 'cmis:none'
 
 [jnt:alfrescoCmisMountPoint] > jnt:mountPoint
  - j:url (string) nofulltext
