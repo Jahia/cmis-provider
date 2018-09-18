@@ -3,21 +3,21 @@
  * =                            JAHIA'S ENTERPRISE DISTRIBUTION                             =
  * ==========================================================================================
  *
- * http://www.jahia.com
+ *                                  http://www.jahia.com
  *
  * JAHIA'S ENTERPRISE DISTRIBUTIONS LICENSING - IMPORTANT INFORMATION
  * ==========================================================================================
  *
- * Copyright (C) 2002-2016 Jahia Solutions Group. All rights reserved.
+ *     Copyright (C) 2002-2018 Jahia Solutions Group. All rights reserved.
  *
- * This file is part of a Jahia's Enterprise Distribution.
+ *     This file is part of a Jahia's Enterprise Distribution.
  *
- * Jahia's Enterprise Distributions must be used in accordance with the terms
- * contained in the Jahia Solutions Group Terms & Conditions as well as
- * the Jahia Sustainable Enterprise License (JSEL).
+ *     Jahia's Enterprise Distributions must be used in accordance with the terms
+ *     contained in the Jahia Solutions Group Terms & Conditions as well as
+ *     the Jahia Sustainable Enterprise License (JSEL).
  *
- * For questions regarding licensing, support, production usage...
- * please contact our team at sales@jahia.com or go to http://www.jahia.com/license.
+ *     For questions regarding licensing, support, production usage...
+ *     please contact our team at sales@jahia.com or go to http://www.jahia.com/license.
  *
  * ==========================================================================================
  */
@@ -27,6 +27,7 @@ import org.apache.chemistry.opencmis.client.api.Document;
 import org.apache.chemistry.opencmis.commons.data.ContentStream;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisUnauthorizedException;
 import org.apache.commons.io.IOUtils;
+import org.jahia.services.content.files.FileServlet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +44,7 @@ import java.util.ArrayList;
  * Date: 1/27/14
  * Time: 1:09 PM
  */
-public class CmisBinaryImpl implements Binary {
+public class CmisBinaryImpl implements Binary, FileServlet.BinaryRangesSupport {
     //    ContentStream contentStream;
     Document doc;
     ArrayList<InputStream> listOfStreamsForClose;
@@ -69,10 +70,10 @@ public class CmisBinaryImpl implements Binary {
 
     @Override
     public InputStream getStream() throws RepositoryException {
-        if (listOfStreamsForClose == null) {
-            listOfStreamsForClose = new ArrayList<InputStream>();
-        }
         InputStream stream = null;
+        if (listOfStreamsForClose == null) {
+            listOfStreamsForClose = new ArrayList<>();
+        }
         if (doc == null) {
             throw new IllegalStateException();
         }
@@ -127,8 +128,7 @@ public class CmisBinaryImpl implements Binary {
     public long getSize() throws RepositoryException {
         if (doc == null)
             throw new IllegalStateException();
-        long size = this.doc.getContentStreamLength();
-        return size;
+        return this.doc.getContentStreamLength();
 //        return contentStream.getLength();
     }
 
@@ -143,4 +143,8 @@ public class CmisBinaryImpl implements Binary {
         doc = null;
     }
 
+    @Override
+    public boolean supportRanges() {
+        return false;
+    }
 }

@@ -8,7 +8,7 @@
  * JAHIA'S ENTERPRISE DISTRIBUTIONS LICENSING - IMPORTANT INFORMATION
  * ==========================================================================================
  *
- *     Copyright (C) 2002-2016 Jahia Solutions Group. All rights reserved.
+ *     Copyright (C) 2002-2018 Jahia Solutions Group. All rights reserved.
  *
  *     This file is part of a Jahia's Enterprise Distribution.
  *
@@ -22,6 +22,8 @@
  * ==========================================================================================
  */
 package org.jahia.modules.external.cmis;
+
+import org.apache.commons.collections.CollectionUtils;
 
 import java.util.*;
 
@@ -41,16 +43,24 @@ public class CmisConfiguration {
     private String defaultFolderTypeName = "cmis:folder";
     //    private Properties repositoryProperties;
     private HashMap<String, String> repositoryPropertiesMap;
-
+    
     public void onStart() {
         cmisTypes = new HashMap<String, CmisTypeMapping>();
         jcrTypes = new HashMap<String, CmisTypeMapping>();
+        Set<String> supported = new HashSet<String>();
+
         if (typeMapping != null) {
             Queue<CmisTypeMapping> list = new LinkedList<CmisTypeMapping>(typeMapping);
             while (!list.isEmpty()) {
                 CmisTypeMapping type = list.remove();
                 cmisTypes.put(type.getCmisName(), type);
                 jcrTypes.put(type.getJcrName(), type);
+
+                supported.add(type.getJcrName());
+                if (!CollectionUtils.isEmpty(type.getAdditionalSupportedMixins())) {
+                   supported.addAll(type.getAdditionalSupportedMixins());
+                }
+
                 if (type.getChildren() != null) {
                     list.addAll(type.getChildren());
                 }
@@ -59,7 +69,8 @@ public class CmisConfiguration {
                 cmisTypeMapping.initProperties();
             }
         }
-        supportedNodeTypes = Collections.unmodifiableSet(new HashSet(jcrTypes.keySet()));
+
+        supportedNodeTypes = Collections.unmodifiableSet(supported);
     }
 
     public void setTypeMapping(List<CmisTypeMapping> typeMapping) {

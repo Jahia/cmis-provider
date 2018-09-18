@@ -8,7 +8,7 @@
  * JAHIA'S ENTERPRISE DISTRIBUTIONS LICENSING - IMPORTANT INFORMATION
  * ==========================================================================================
  *
- *     Copyright (C) 2002-2016 Jahia Solutions Group. All rights reserved.
+ *     Copyright (C) 2002-2018 Jahia Solutions Group. All rights reserved.
  *
  *     This file is part of a Jahia's Enterprise Distribution.
  *
@@ -34,6 +34,8 @@ import javax.jcr.RepositoryException;
  * Time: 4:58 PM
  */
 public class NotMappedCmisProperty extends RepositoryException {
+    private static final long serialVersionUID = 404316619871182597L;
+
     public NotMappedCmisProperty() {
     }
 

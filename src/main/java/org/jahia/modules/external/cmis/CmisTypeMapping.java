@@ -8,7 +8,7 @@
  * JAHIA'S ENTERPRISE DISTRIBUTIONS LICENSING - IMPORTANT INFORMATION
  * ==========================================================================================
  *
- *     Copyright (C) 2002-2016 Jahia Solutions Group. All rights reserved.
+ *     Copyright (C) 2002-2018 Jahia Solutions Group. All rights reserved.
  *
  *     This file is part of a Jahia's Enterprise Distribution.
  *
@@ -34,6 +34,7 @@ import java.util.*;
  */
 public class CmisTypeMapping implements Cloneable {
     private String jcrName;
+    private Set<String> additionalSupportedMixins;
     private List<String> jcrMixins;
     private String cmisName;
     private String queryName;
@@ -66,6 +67,14 @@ public class CmisTypeMapping implements Cloneable {
 
     public void setJcrMixins(String jcrName) {
         this.jcrMixins = Arrays.asList(jcrName.split(" "));
+    }
+
+    public Set<String> getAdditionalSupportedMixins() {
+        return additionalSupportedMixins;
+    }
+
+    public void setAdditionalSupportedMixins(String additionalSupportedMixins) {
+        this.additionalSupportedMixins = new HashSet<>(Arrays.asList(additionalSupportedMixins.split(" ")));
     }
 
     public String getCmisName() {
@@ -118,17 +127,17 @@ public class CmisTypeMapping implements Cloneable {
         this.properties = properties;
     }
 
-    protected Map getPropertiesMapJCR() {
+    protected Map<String, CmisPropertyMapping> getPropertiesMapJCR() {
         return propertiesMapJCR;
     }
 
-    protected Map getPropertiesMapCMIS() {
+    protected Map<String, CmisPropertyMapping> getPropertiesMapCMIS() {
         return propertiesMapCMIS;
     }
 
     protected void initProperties() {
-        HashMap<String, CmisPropertyMapping> mapJCR = new HashMap<String, CmisPropertyMapping>();
-        HashMap<String, CmisPropertyMapping> mapCMIS = new HashMap<String, CmisPropertyMapping>();
+        HashMap<String, CmisPropertyMapping> mapJCR = new HashMap<>();
+        HashMap<String, CmisPropertyMapping> mapCMIS = new HashMap<>();
         if (parent != null) {
             mapJCR.putAll(parent.getPropertiesMapJCR());
             mapCMIS.putAll(parent.getPropertiesMapCMIS());

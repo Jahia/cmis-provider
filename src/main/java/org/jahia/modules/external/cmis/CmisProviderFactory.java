@@ -3,21 +3,21 @@
  * =                            JAHIA'S ENTERPRISE DISTRIBUTION                             =
  * ==========================================================================================
  *
- * http://www.jahia.com
+ *                                  http://www.jahia.com
  *
  * JAHIA'S ENTERPRISE DISTRIBUTIONS LICENSING - IMPORTANT INFORMATION
  * ==========================================================================================
  *
- * Copyright (C) 2002-2016 Jahia Solutions Group. All rights reserved.
+ *     Copyright (C) 2002-2018 Jahia Solutions Group. All rights reserved.
  *
- * This file is part of a Jahia's Enterprise Distribution.
+ *     This file is part of a Jahia's Enterprise Distribution.
  *
- * Jahia's Enterprise Distributions must be used in accordance with the terms
- * contained in the Jahia Solutions Group Terms & Conditions as well as
- * the Jahia Sustainable Enterprise License (JSEL).
+ *     Jahia's Enterprise Distributions must be used in accordance with the terms
+ *     contained in the Jahia Solutions Group Terms & Conditions as well as
+ *     the Jahia Sustainable Enterprise License (JSEL).
  *
- * For questions regarding licensing, support, production usage...
- * please contact our team at sales@jahia.com or go to http://www.jahia.com/license.
+ *     For questions regarding licensing, support, production usage...
+ *     please contact our team at sales@jahia.com or go to http://www.jahia.com/license.
  *
  * ==========================================================================================
  */
@@ -29,13 +29,11 @@ import org.apache.commons.lang.StringUtils;
 import org.jahia.exceptions.JahiaInitializationException;
 import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.modules.external.cmis.admin.CMISMountPointFactory;
+import org.jahia.modules.external.cmis.services.NuxeoFileNode;
 import org.jahia.security.license.LicenseCheckException;
 import org.jahia.security.license.LicenseCheckerService;
 import org.jahia.services.SpringContextSingleton;
-import org.jahia.services.content.JCRNodeWrapper;
-import org.jahia.services.content.JCRSessionFactory;
-import org.jahia.services.content.JCRStoreProvider;
-import org.jahia.services.content.ProviderFactory;
+import org.jahia.services.content.*;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -48,12 +46,16 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
 
     private static final String ALFRESCO_ENDPOINT_BROWSER = "/api/-default-/public/cmis/versions/1.1/browser";
     private static final String ALFRESCO_ENDPOINT_ATOM = "/api/-default-/public/cmis/versions/1.1/atom";
+    private static final String NUXEO_ENDPOINT_ATOM = "/nuxeo/atom/cmis/default/";
 
     private ApplicationContext applicationContext;
 
     public static final String TYPE_ALFRESCO = "alfresco";
     public static final String ALFRESCO_URL = "alfresco.url";
 
+    public static final String TYPE_NUXEO = "nuxeo";
+    public static final String NUXEO_URL = "nuxeo.url";
+    private JCRStoreService jcrStoreService;
 
     @Override
     public String getNodeTypeName() {
@@ -66,14 +68,15 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
         provider.setKey(mountPoint.getIdentifier());
         provider.setMountPoint(mountPoint.getPath());
         CmisDataSource dataSource;
-        CmisConfiguration conf = (CmisConfiguration) applicationContext.getBean("CmisConfiguration");
+        CmisConfiguration conf = null;
         String cmisUrl = mountPoint.getProperty("url").getString();
-        cmisUrl = StringUtils.endsWith(cmisUrl,"/") ? StringUtils.substring(cmisUrl, 0, cmisUrl.length() - 1) : cmisUrl;
+        cmisUrl = StringUtils.endsWith(cmisUrl, "/") ? StringUtils.substring(cmisUrl, 0, cmisUrl.length() - 1) : cmisUrl;
         String type = "";
         if (mountPoint.hasProperty(CMISMountPointFactory.TYPE)) {
-           type = mountPoint.getProperty(CMISMountPointFactory.TYPE).getString();
+            type = mountPoint.getProperty(CMISMountPointFactory.TYPE).getString();
         }
         if (TYPE_ALFRESCO.equals(type)) {
+            conf = (CmisConfiguration) applicationContext.getBean("CmisConfiguration");
             dataSource = new AlfrescoCmisDataSource();
             conf.getRepositoryPropertiesMap().put(ALFRESCO_URL, cmisUrl);
             if (BindingType.BROWSER.value().equals(conf.getRepositoryPropertiesMap().get(SessionParameter.BINDING_TYPE))) {
@@ -84,7 +87,22 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
             if (mountPoint.hasProperty(CMISMountPointFactory.PUBLIC_USER)) {
                 ((AlfrescoCmisDataSource) dataSource).setPublicUser(mountPoint.getProperty(CMISMountPointFactory.PUBLIC_USER).getString());
             }
+        } else if (TYPE_NUXEO.equals(type)) {
+            //Get Nuxeo conf for type Mapping
+            conf = (CmisConfiguration) applicationContext.getBean("NuxeoConfiguration");
+
+            //Change file decorator to use the nuxeo one (Display only title instead of fileName and title in gwt
+            if (!jcrStoreService.getDecorators().containsKey("nuxeo:file")) {
+                jcrStoreService.addDecorator("nuxeo:file", NuxeoFileNode.class);
+            }
+
+            //Setup Nuxeo datasource
+            dataSource = new NuxeoCmisDataSource();
+            conf.getRepositoryPropertiesMap().put(NUXEO_URL, cmisUrl);
+            conf.getRepositoryPropertiesMap().put(SessionParameter.BINDING_TYPE, BindingType.ATOMPUB.value());
+            conf.getRepositoryPropertiesMap().put(SessionParameter.ATOMPUB_URL, cmisUrl + NUXEO_ENDPOINT_ATOM);
         } else {
+            conf = (CmisConfiguration) applicationContext.getBean("CmisConfiguration");
             // legacy support
             dataSource = new CmisDataSource();
             conf.getRepositoryPropertiesMap().put(SessionParameter.BINDING_TYPE, BindingType.ATOMPUB.value());
@@ -118,7 +136,7 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
         String remotePath = "";
         if (mountPoint.hasProperty(CMISMountPointFactory.REMOTE_PATH)) {
             remotePath = mountPoint.getProperty(CMISMountPointFactory.REMOTE_PATH).getString();
-            remotePath = StringUtils.equals(remotePath, "/")?"":remotePath;
+            remotePath = StringUtils.equals(remotePath, "/") ? "" : remotePath;
         }
         dataSource.setProvider(provider);
         dataSource.setRemotePath(remotePath);
@@ -153,5 +171,9 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
         if (!LicenseCheckerService.Stub.isAllowed("org.jahia.cmis")) {
             throw new LicenseCheckException("No license found for CMIS connector");
         }
+    }
+
+    public void setJcrStoreService(JCRStoreService jcrStoreService) {
+        this.jcrStoreService = jcrStoreService;
     }
 }

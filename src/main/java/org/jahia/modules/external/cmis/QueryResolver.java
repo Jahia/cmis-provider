@@ -8,7 +8,7 @@
  * JAHIA'S ENTERPRISE DISTRIBUTIONS LICENSING - IMPORTANT INFORMATION
  * ==========================================================================================
  *
- *     Copyright (C) 2002-2016 Jahia Solutions Group. All rights reserved.
+ *     Copyright (C) 2002-2018 Jahia Solutions Group. All rights reserved.
  *
  *     This file is part of a Jahia's Enterprise Distribution.
  *
@@ -28,9 +28,10 @@ import org.apache.chemistry.opencmis.commons.exceptions.CmisObjectNotFoundExcept
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.commons.query.qom.Operator;
 import org.jahia.modules.external.ExternalQuery;
-import org.jahia.services.content.nodetypes.NodeTypeRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.regex.Pattern;
 
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
@@ -50,8 +51,10 @@ public class QueryResolver {
     */
     private static final Logger log = LoggerFactory.getLogger(CmisDataSource.class);
 
-    private final StringBuffer TRUE = new StringBuffer("true");
-    private final StringBuffer FALSE = new StringBuffer("false");
+    private static final Pattern ISO8601_TIMESTAMP = Pattern.compile("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}\\+\\d{2}:\\d{2}");
+
+    protected final StringBuffer TRUE = new StringBuffer("true");
+    protected final StringBuffer FALSE = new StringBuffer("false");
 
     CmisDataSource dataSource;
     ExternalQuery query;
@@ -73,12 +76,8 @@ public class QueryResolver {
             return null;
         }
         Selector selector = (Selector) source;
-        String nodeTypeName = selector.getNodeTypeName();
+        String nodeTypeName = getNodeTypeName(selector.getNodeTypeName());
 
-        // Supports queries on nt:hierarchyNode or jmix:searchable as file queries
-        if (nodeTypeName.equals("nt:hierarchyNode") || nodeTypeName.equals("jmix:searchable")) {
-            nodeTypeName = "jnt:file";
-        }
         cmisType = conf.getTypeByJCR(nodeTypeName);
         if (cmisType == null) {
             log.debug("Unmapped types not supported in CMIS queries");
@@ -109,6 +108,16 @@ public class QueryResolver {
             buff.append("')");
         }
 
+        // add constraint on mime type to get only images
+        if (nodeTypeName.equals("jmix:image")) {
+            if (hasConstraint) {
+                buff.append(" AND");
+            } else {
+                buff.append(" WHERE ");
+            }
+            buff.append( " (cmis:contentStreamMimeType like 'image/%')");
+        }
+
         if (query.getOrderings() != null) {
             boolean isFirst = true;
             StringBuffer tmpBuf = new StringBuffer();
@@ -116,6 +125,11 @@ public class QueryResolver {
                 tmpBuf.setLength(0);
                 try {
                     addOperand(tmpBuf, ordering.getOperand());
+                    //In CMIS the score can only be used when using fulltext search
+                    if (" myscore ".equals(tmpBuf.toString()) && (!"contains(".contains(buff.toString()))) {
+                        return buff.toString();
+                    }
+
                     if (isFirst) {
                         buff.append(" ORDER BY ");
                         isFirst = false;
@@ -140,129 +154,181 @@ public class QueryResolver {
     }
 
 
-    private StringBuffer addConstraint(Constraint constraint) throws RepositoryException {
+    protected StringBuffer addConstraint(Constraint constraint) throws RepositoryException {
         StringBuffer buff = new StringBuffer();
         if (constraint instanceof Or) {
-            Or c = (Or) constraint;
-            StringBuffer constraint1 = addConstraint(c.getConstraint1());
-            StringBuffer constraint2 = addConstraint(c.getConstraint2());
-            if (constraint1 == TRUE || constraint2 == TRUE) {
-                return TRUE;
-            }
-            if (constraint1 == FALSE) {
-                return constraint2;
-            }
-            if (constraint2 == FALSE) {
-                return constraint1;
-            }
-            buff.append(" (");
-            buff.append(constraint1);
-            buff.append(" OR ");
-            buff.append(constraint2);
-            buff.append(") ");
+           buff = getOrConstraint((Or) constraint);
         } else if (constraint instanceof And) {
-            And c = (And) constraint;
-            StringBuffer constraint1 = addConstraint(c.getConstraint1());
-            StringBuffer constraint2 = addConstraint(c.getConstraint2());
-            if (constraint1 == FALSE || constraint2 == FALSE) {
-                return FALSE;
-            }
-            if (constraint1 == TRUE) {
-                return constraint2;
-            }
-            if (constraint2 == TRUE) {
-                return constraint1;
-            }
-            buff.append(" (");
-            buff.append(constraint1);
-            buff.append(" AND ");
-            buff.append(constraint2);
-            buff.append(") ");
+            buff = getAndConstraint((And) constraint);
         } else if (constraint instanceof Comparison) {
-            Comparison c = (Comparison) constraint;
-            buff.append(" (");
             try {
-                int pos = buff.length();
-                addOperand(buff, c.getOperand1());
-                String op1 = buff.substring(pos);
-                buff.setLength(pos);
-
-                pos = buff.length();
-                addOperand(buff, c.getOperand2());
-                String op2 = buff.substring(pos);
-                buff.setLength(pos);
-
-                Operator operator = Operator.getOperatorByName(c.getOperator());
-                buff.append(operator.formatSql(op1, op2));
+                buff = getComparisonConstraint((Comparison) constraint);
             } catch (NotMappedCmisProperty e) {
                 return FALSE;
             }
-            buff.append(") ");
         } else if (constraint instanceof PropertyExistence) {
-            PropertyExistence c = (PropertyExistence) constraint;
-            CmisPropertyMapping propertyMapping = cmisType.getPropertyByJCR(c.getPropertyName());
-            if (propertyMapping == null)
-                return FALSE;
-            else
-                buff.append(" (").append(propertyMapping.getQueryName()).append(" IS NOT NULL) ");
+            buff = getPropertyExistenceConstraint((PropertyExistence) constraint);
         } else if (constraint instanceof SameNode) {
-            try {
-                SameNode c = (SameNode) constraint;
-                String path = c.getPath();
-                CmisObject object = dataSource.getObjectByPath(path);
-                buff.append(" (cmis:objectId='").append(object.getId()).append("') ");
+            try{
+                buff = getSameNodeConstraint((SameNode) constraint);
             } catch (CmisObjectNotFoundException e) {
                 return FALSE;
             }
         } else if (constraint instanceof Not) {
-            Not c = (Not) constraint;
-            StringBuffer constraint1 = addConstraint(c.getConstraint());
-            if (constraint1 == FALSE) {
-                return TRUE;
-            }
-            if (constraint1 == TRUE) {
-                return FALSE;
-            }
-            buff.append(" NOT(");
-            buff.append(constraint1);
-            buff.append(") ");
+            buff = getNotConstraint((Not) constraint);
         } else if (constraint instanceof ChildNode) {
             try {
-                ChildNode c = (ChildNode) constraint;
-                String parentPath = c.getParentPath();
-                CmisObject object = dataSource.getObjectByPath(parentPath);
-                buff.append(" IN_FOLDER('").append(object.getId()).append("') ");
+                buff = getChildNodeConstraint((ChildNode) constraint);
             } catch (CmisObjectNotFoundException e) {
                 return FALSE;
             }
         } else if (constraint instanceof DescendantNode) {
             try {
-                DescendantNode c = (DescendantNode) constraint;
-                String ancestorPath = c.getAncestorPath();
-                CmisObject object = dataSource.getObjectByPath(ancestorPath);
-                buff.append(" IN_TREE('").append(object.getId()).append("') ");
+                buff = getDescendantNodeConstraint((DescendantNode) constraint);
             } catch (CmisObjectNotFoundException e) {
                 return FALSE;
             }
         } else if (constraint instanceof FullTextSearch) {
             FullTextSearch c = (FullTextSearch) constraint;
-            buff.append(" contains(");
-            addOperand(buff, c.getFullTextSearchExpression());
-            buff.append(") ");
+            buff = getFullTextSearchConstraint(c);
         }
         return buff;
     }
 
-    private void addOperand(StringBuffer buff, DynamicOperand operand) throws RepositoryException {
+    protected StringBuffer getDescendantNodeConstraint(DescendantNode c) throws CmisObjectNotFoundException, RepositoryException{
+        StringBuffer buff = new StringBuffer();
+        String ancestorPath = c.getAncestorPath();
+        CmisObject object = dataSource.getObjectByPath(ancestorPath);
+        buff.append(" IN_TREE('").append(object.getId()).append("') ");
+        return buff;
+    }
+
+    protected StringBuffer getChildNodeConstraint(ChildNode c) throws CmisObjectNotFoundException, RepositoryException{
+        StringBuffer buff = new StringBuffer();
+        String parentPath = c.getParentPath();
+        CmisObject object = dataSource.getObjectByPath(parentPath);
+        buff.append(" IN_FOLDER('").append(object.getId()).append("') ");
+        return buff;
+    }
+
+    protected StringBuffer getNotConstraint(Not c) throws CmisObjectNotFoundException, RepositoryException{
+        StringBuffer buff = new StringBuffer();
+        StringBuffer constraint1 = addConstraint(c.getConstraint());
+        if (constraint1 == FALSE) {
+            return TRUE;
+        }
+        if (constraint1 == TRUE) {
+            return FALSE;
+        }
+        buff.append(" NOT(");
+        buff.append(constraint1);
+        buff.append(") ");
+        return buff;
+    }
+
+    protected StringBuffer getSameNodeConstraint(SameNode c) throws CmisObjectNotFoundException, RepositoryException{
+        StringBuffer buff = new StringBuffer();
+        String path = c.getPath();
+        CmisObject object = dataSource.getObjectByPath(path);
+        buff.append(" (cmis:objectId='").append(object.getId()).append("') ");
+        return buff;
+    }
+
+    protected StringBuffer getPropertyExistenceConstraint(PropertyExistence c) throws CmisObjectNotFoundException, RepositoryException{
+        StringBuffer buff = new StringBuffer();
+        CmisPropertyMapping propertyMapping = cmisType.getPropertyByJCR(c.getPropertyName());
+        if (propertyMapping == null)
+            return FALSE;
+        else
+            buff.append(" (").append(propertyMapping.getQueryName()).append(" IS NOT NULL) ");
+        return buff;
+    }
+
+    protected StringBuffer getComparisonConstraint(Comparison c) throws NotMappedCmisProperty, RepositoryException{
+        StringBuffer buff = new StringBuffer();
+        buff.append(" (");
+        int pos = buff.length();
+        addOperand(buff, c.getOperand1());
+        String op1 = buff.substring(pos);
+        buff.setLength(pos);
+
+        pos = buff.length();
+        addOperand(buff, c.getOperand2());
+        String op2 = buff.substring(pos);
+        buff.setLength(pos);
+
+        Operator operator = Operator.getOperatorByName(c.getOperator());
+        buff.append(operator.formatSql(op1, op2));
+        buff.append(") ");
+        return buff;
+    }
+
+    protected StringBuffer getAndConstraint(And c) throws RepositoryException{
+        StringBuffer buff = new StringBuffer();
+        StringBuffer constraint1 = addConstraint(c.getConstraint1());
+        StringBuffer constraint2 = addConstraint(c.getConstraint2());
+        if (constraint1 == FALSE || constraint2 == FALSE) {
+            return FALSE;
+        }
+        if (constraint1 == TRUE) {
+            return constraint2;
+        }
+        if (constraint2 == TRUE) {
+            return constraint1;
+        }
+        buff.append(" (");
+        buff.append(constraint1);
+        buff.append(" AND ");
+        buff.append(constraint2);
+        buff.append(") ");
+        return buff;
+    }
+
+    protected StringBuffer getOrConstraint(Or c) throws RepositoryException{
+        StringBuffer buff = new StringBuffer();
+        StringBuffer constraint1 = addConstraint(c.getConstraint1());
+        StringBuffer constraint2 = addConstraint(c.getConstraint2());
+        if (constraint1 == TRUE || constraint2 == TRUE) {
+            return TRUE;
+        }
+        if (constraint1 == FALSE) {
+            return constraint2;
+        }
+        if (constraint2 == FALSE) {
+            return constraint1;
+        }
+        buff.append(" (");
+        buff.append(constraint1);
+        buff.append(" OR ");
+        buff.append(constraint2);
+        buff.append(") ");
+        return buff;
+    }
+
+    /**
+     * Externalize the fulltext search treatment for overrides
+     * @param c
+     * @return
+     * @throws RepositoryException
+     */
+    protected StringBuffer getFullTextSearchConstraint(FullTextSearch c) throws RepositoryException {
+        StringBuffer buff = new StringBuffer();
+        buff.append(" contains(");
+        addOperand(buff, c.getFullTextSearchExpression());
+        buff.append(") ");
+        return buff;
+    }
+
+    protected void addOperand(StringBuffer buff, DynamicOperand operand) throws RepositoryException {
         if (operand instanceof LowerCase) {
-            throw new UnsupportedRepositoryOperationException("Unsupported operand type LowerCase");
+            // ignore lowerCase keyword as it's not supported by cmis
+            addOperand(buff, ((LowerCase) operand).getOperand());
         } else if (operand instanceof UpperCase) {
-            throw new UnsupportedRepositoryOperationException("Unsupported operand type UpperCase");
+            // ignore upperCase keyword as it's not supported by cmis
+            addOperand(buff, ((UpperCase) operand).getOperand());
         } else if (operand instanceof Length) {
             throw new UnsupportedRepositoryOperationException("Unsupported operand type Length");
-        } else if (operand instanceof NodeName) {
-            buff.append("cmis:name");
-        } else if (operand instanceof NodeLocalName) {
+        } else if (operand instanceof NodeName || operand instanceof NodeLocalName) {
             buff.append("cmis:name");
         } else if (operand instanceof PropertyValue) {
             PropertyValue o = (PropertyValue) operand;
@@ -275,7 +341,7 @@ public class QueryResolver {
         }
     }
 
-    private void addOperand(StringBuffer buff, StaticOperand operand) throws RepositoryException {
+    protected void addOperand(StringBuffer buff, StaticOperand operand) throws RepositoryException {
         if (operand instanceof Literal) {
             Value val = ((Literal) operand).getLiteralValue();
             switch (val.getType()) {
@@ -287,7 +353,11 @@ public class QueryResolver {
                     buff.append(val.getString());
                     break;
                 case PropertyType.STRING:
-                    buff.append("'").append(escapeString(val.getString())).append("'");
+                    String escapedValue = escapeString(val.getString());
+                    if (ISO8601_TIMESTAMP.matcher(escapedValue).matches()) {
+                        buff.append(" TIMESTAMP ");
+                    }
+                    buff.append("'").append(escapedValue).append("'");
                     break;
                 case PropertyType.DATE:
                     buff.append(" TIMESTAMP '").append(val.getString()).append("'");
@@ -297,7 +367,7 @@ public class QueryResolver {
                 case PropertyType.REFERENCE:
                 case PropertyType.WEAKREFERENCE:
                 case PropertyType.URI:
-                    // TODO implement valid suppoert for this operand types
+                    // TODO implement valid support for this operand types
                     buff.append("'").append(val.getString()).append("'");
                     break;
                 default:
@@ -308,8 +378,14 @@ public class QueryResolver {
         }
     }
 
-    private String escapeString(String string) {
+    protected String escapeString(String string) {
         return string.replace("\\", "\\\\").replace("'", "\\'");
 
+    }
+
+    protected String getNodeTypeName(String name){
+        // Supports queries on nt:hierarchyNode or jmix:searchable or jmix:image as file queries
+        return (name.equals("nt:hierarchyNode") || name.equals("jmix:searchable") || name.equals("jmix:image")) ?
+                "jnt:file" : name;
     }
 }

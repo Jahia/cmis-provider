@@ -38,7 +38,34 @@ The goals of this project are as follows:
     - any specific behaviour for multivalue properties is not implemented.
     - date type is supported only if cast expression is used (no auto converting).
 6. Configurable mapping for custom types.
+
 CMIS not supports languages attribute, so if Jahia will add language restrictions there will be not mapped property in CMIS queries.
+
+#### Nuxeo connection feature
+
+##### Prerequisite
+The Nuxeo CMIS connection is implemented for Nuxeo cap LTS 2015 (7.10)
+In order to test this connection you will need to know the URL, User and password to connect to this server
+
+##### Nuxeo Mount point initiation
+To create a Nuxeo mount point using the CMIS standard, a new connector type has been created in this module.
+The "CMIS connector type" in the mount point creation form can now be filled with "Nuxeo CMIS connector".
+
+By default the repository used to connect to Nuxeo through CMIS is "default".
+
+The remote path has to be filled normally for example "/default-domain/workspaces"
+
+![Nuxeo mount point example](src/main/resources/img/Nuxeo_mount_point.png)
+
+For more information on the Nuxeo CMIS implementation please refer to the following documentation :
+https://doc.nuxeo.com/display/NXDOC/CMIS
+
+####Nuxeo mount point limitations
+In the case of Nuxeo mount points the move, copy and rename operations are not supported due to Nuxeo path management.
+
+####The images management
+The images are mapped adding the image mixin and their exif properties are also mapped.
+If an image has at least one exif property set, then the exif mixin will also be added to it.
 
 ### Implementation tips
 
@@ -160,4 +187,7 @@ There will be CMIS repository mounted in /mounts
 
 ## TODO:
  - Renditions;
+ - Use of standard Alfresco Tokenization service (instead of custom Impersonnalisation AMP to deploy)
+ 
+
 

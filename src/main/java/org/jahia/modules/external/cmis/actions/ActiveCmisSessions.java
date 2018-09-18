@@ -1,3 +1,26 @@
+/**
+ * ==========================================================================================
+ * =                            JAHIA'S ENTERPRISE DISTRIBUTION                             =
+ * ==========================================================================================
+ *
+ *                                  http://www.jahia.com
+ *
+ * JAHIA'S ENTERPRISE DISTRIBUTIONS LICENSING - IMPORTANT INFORMATION
+ * ==========================================================================================
+ *
+ *     Copyright (C) 2002-2018 Jahia Solutions Group. All rights reserved.
+ *
+ *     This file is part of a Jahia's Enterprise Distribution.
+ *
+ *     Jahia's Enterprise Distributions must be used in accordance with the terms
+ *     contained in the Jahia Solutions Group Terms & Conditions as well as
+ *     the Jahia Sustainable Enterprise License (JSEL).
+ *
+ *     For questions regarding licensing, support, production usage...
+ *     please contact our team at sales@jahia.com or go to http://www.jahia.com/license.
+ *
+ * ==========================================================================================
+ */
 package org.jahia.modules.external.cmis.actions;
 
 import com.google.common.cache.Cache;
@@ -41,27 +64,26 @@ public class ActiveCmisSessions extends Action {
         }
 
         for (JCRStoreProvider provider : jcrStoreService.getSessionFactory().getProviderList()) {
-            if (provider instanceof ExternalContentStoreProvider) {
-                if (((ExternalContentStoreProvider) provider).getDataSource() instanceof CmisDataSource) {
-                    JSONObject providerEntry = new JSONObject();
-                    CmisDataSource cmisDataSource = (CmisDataSource) ((ExternalContentStoreProvider) provider).getDataSource();
-                    if (recordStats != null) {
-                        cmisDataSource.setRecordingConnectionsStats(recordStats);
-                    }
-                    Cache<String, Session> sessions = cmisDataSource.getActiveConnections();
-                    if (doFlush) {
-                        sessions.invalidateAll();
-                    }
-                    JSONArray connectedUsers = new JSONArray();
-                    for (Map.Entry userName : sessions.asMap().entrySet()) {
-                            connectedUsers.add(userName.getKey());
-                    }
-                    providerEntry.append("connectedUsers", connectedUsers);
-                    if (cmisDataSource.isRecordingConnectionsStats()) {
-                        providerEntry.append("stats", sessions.stats().toString());
-                    }
-                    result.append(provider.getMountPoint(), providerEntry);
+            if (provider instanceof ExternalContentStoreProvider
+                    && ((ExternalContentStoreProvider) provider).getDataSource() instanceof CmisDataSource) {
+                JSONObject providerEntry = new JSONObject();
+                CmisDataSource cmisDataSource = (CmisDataSource) ((ExternalContentStoreProvider) provider).getDataSource();
+                if (recordStats != null) {
+                    cmisDataSource.setRecordingConnectionsStats(recordStats);
                 }
+                Cache<String, Session> sessions = cmisDataSource.getActiveConnections();
+                if (doFlush) {
+                    sessions.invalidateAll();
+                }
+                JSONArray connectedUsers = new JSONArray();
+                for (Map.Entry<String, Session> userName : sessions.asMap().entrySet()) {
+                    connectedUsers.add(userName.getKey());
+                }
+                providerEntry.append("connectedUsers", connectedUsers);
+                if (cmisDataSource.isRecordingConnectionsStats()) {
+                    providerEntry.append("stats", sessions.stats().toString());
+                }
+                result.append(provider.getMountPoint(), providerEntry);
             }
         }
         return new ActionResult(HttpServletResponse.SC_OK, resource.getNode().getPath(), result);
