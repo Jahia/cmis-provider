@@ -354,7 +354,7 @@ public class QueryResolver {
                     case PropertyType.DECIMAL:
                     case PropertyType.LONG:
                     case PropertyType.BOOLEAN:
-                        buff.append(val.getString());
+                        buff.append(valStr);
                         break;
                     case PropertyType.STRING:
                         String escapedValue = escapeString(valStr);
