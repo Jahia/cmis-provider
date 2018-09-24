@@ -378,7 +378,7 @@ public class QueryResolver {
                         throw new UnsupportedRepositoryOperationException("Unsupported operand value type " + val.getType());
                 }
             } catch (ParseException ex) {
-                throw new UnsupportedRepositoryOperationException(ex);
+                throw new IllegalStateException(ex);
             }
         } else {
             throw new UnsupportedRepositoryOperationException("Unsupported operand type " + operand.getClass());
