@@ -75,12 +75,12 @@ public class NuxeoQueryResolver extends QueryResolver{
             CmisPropertyMapping propertyByJCR = cmisType.getPropertyByJCR(c.getPropertyName());
             //If the property is mapped then use like operator to avoid "contains" repetition
             if (propertyByJCR != null) {
-                String searchTerm; 
+                String searchTerm = c.getFullTextSearchExpression().toString();
                 try {
-                    searchTerm = discardEscapeChar(c.getFullTextSearchExpression().toString());
+                    searchTerm = discardEscapeChar(searchTerm);
                 } catch (ParseException ex) {
                     LOGGER.warn("Impossible to escape the full text search expression", ex);
-                    searchTerm = escapeString(c.getFullTextSearchExpression().toString());
+                    searchTerm = escapeString(searchTerm);
                 }
                 searchTerm = searchTerm.substring(1, searchTerm.length() - 1);
                 buff.append(propertyByJCR.getCmisName()).append("  like '%").append(searchTerm).append("%' ");
