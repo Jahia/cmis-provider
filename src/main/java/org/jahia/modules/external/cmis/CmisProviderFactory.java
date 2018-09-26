@@ -52,6 +52,7 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
     private ApplicationContext applicationContext;
 
     public static final String TYPE_ALFRESCO = "alfresco";
+    public static final String TYPE_ALFRESCO_TOKEN = "alfrescoToken";
     public static final String ALFRESCO_URL = "alfresco.url";
 
     public static final String TYPE_NUXEO = "nuxeo";
@@ -88,6 +89,15 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
             if (mountPoint.hasProperty(CMISMountPointFactory.PUBLIC_USER)) {
                 ((AlfrescoCmisDataSource) dataSource).setPublicUser(mountPoint.getProperty(CMISMountPointFactory.PUBLIC_USER).getString());
             }
+        } else if (TYPE_ALFRESCO_TOKEN.equals(type)) {
+            conf = (CmisConfiguration) applicationContext.getBean("CmisConfiguration");
+            dataSource = new AlfrescoCmisTokenDataSource();
+            conf.getRepositoryPropertiesMap().put(ALFRESCO_URL, cmisUrl);
+            if (BindingType.BROWSER.value().equals(conf.getRepositoryPropertiesMap().get(SessionParameter.BINDING_TYPE))) {
+                conf.getRepositoryPropertiesMap().put(SessionParameter.BROWSER_URL, cmisUrl + ALFRESCO_ENDPOINT_BROWSER);
+            } else {
+                conf.getRepositoryPropertiesMap().put(SessionParameter.ATOMPUB_URL, cmisUrl + ALFRESCO_ENDPOINT_ATOM);
+            }
         } else if (TYPE_NUXEO.equals(type)) {
             //Get Nuxeo conf for type Mapping
             conf = (CmisConfiguration) applicationContext.getBean("NuxeoConfiguration");
@@ -117,6 +127,9 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
         //DTIC : Ajout du timeout à la lecture également
         HashMap<String, String> repositoryPropertiesMap = conf.getRepositoryPropertiesMap();
 
+            String cacheConcLevel = mountPoint.getPropertyAsString(CMISMountPointFactory.CACHE_CONCURRENCY_LEVEL);
+            String cacheMaxSize = mountPoint.getPropertyAsString(CMISMountPointFactory.CACHE_MAXIMUM_SIZE);
+            String cacheExpireAfter = mountPoint.getPropertyAsString(CMISMountPointFactory.CACHE_EXPIRE_AFTER_ACCESS);
         String connectionTimeout = mountPoint.getPropertyAsString(CMISMountPointFactory.CONNECT_TIMEOUT);
         String readTimeout = mountPoint.getPropertyAsString(CMISMountPointFactory.READ_TIMEOUT);
 
@@ -161,7 +174,9 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
         conf.getRepositoryPropertiesMap().put(SessionParameter.COOKIES, cookies);
         conf.getRepositoryPropertiesMap().put(SessionParameter.FORCE_CMIS_VERSION, forcedCMISVersion); //Valeur a valider
 
-
+            conf.getRepositoryPropertiesMap().put(CmisDataSource.CONF_SESSION_CACHE_CONCURRENCY_LEVEL,cacheConcLevel);
+            conf.getRepositoryPropertiesMap().put(CmisDataSource.CONF_SESSION_CACHE_MAXIMUM_SIZE,cacheMaxSize);
+            conf.getRepositoryPropertiesMap().put(CmisDataSource.CONF_SESSION_CACHE_EXPIRE_AFTER_ACCESS,cacheExpireAfter);
         conf.getRepositoryPropertiesMap().put(CmisDataSource.CONF_CONTEXT_CACHE_ENABLE,cacheEnable);
         conf.getRepositoryPropertiesMap().put(CmisDataSource.CONF_CONTEXT_FILTER,filter);
         conf.getRepositoryPropertiesMap().put(CmisDataSource.CONF_CONTEXT_INCLUDE_ALLOWABLE_ACTIONS,includeAllowableAction);
@@ -191,7 +206,7 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
         provider.setOverridableItems(Arrays.asList("jmix:description.*", "jmix:i18n.*"));
         provider.setNonExtendableMixins(Arrays.asList("cmismix:base", "cmismix:folder", "cmismix:document", "jmix:image"));
         provider.setDynamicallyMounted(true);
-        provider.setCacheKeyOnReferenceSupport(TYPE_ALFRESCO.equals(type));
+        provider.setCacheKeyOnReferenceSupport(TYPE_ALFRESCO.equals(type)||TYPE_ALFRESCO_TOKEN.equals(type));
         provider.setSessionFactory(JCRSessionFactory.getInstance());
         try {
             provider.start();

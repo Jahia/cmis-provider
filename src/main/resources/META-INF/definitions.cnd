@@ -15,6 +15,9 @@
     - slowConnection (boolean)
     - type (string)
     - remotePath (string)
+    - cacheConcurrencyLevel (long) = 4
+    - cacheMaximumSize (long) = 1280
+    - cacheExpireAfterAccess (long) = 30
     - connectionTimeout (long) = 5000
     - readTimeout (long) = 5000
     - compressionEnabled (boolean) = true
@@ -36,6 +39,7 @@
  - j:rootPassword (string) nofulltext
  - j:repositoryId (string) nofulltext
 
+[jnt:alfrescoCmisTokenMountPoint] > jnt:alfrescoCmisMountPoint
 
 [cmismix:base] mixin
     - cmis:objectId  (string) protected

@@ -62,6 +62,9 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
     public static final String CMIS_SERVICE_ENDPOINT = "/api/-default-/public/cmis/versions/1.1/atom";
     public static final String PUBLIC_USER = "publicUser";
 
+    public static final String CACHE_CONCURRENCY_LEVEL = "cacheConcurrencyLevel";
+    public static final String CACHE_MAXIMUM_SIZE = "cacheMaximumSize";
+    public static final String CACHE_EXPIRE_AFTER_ACCESS = "cacheExpireAfterAccess";
     public static final String CONNECT_TIMEOUT = "connectionTimeout";
     public static final String READ_TIMEOUT = "readTimeout";
     public static final String COMPRESSION = "compressionEnabled";
@@ -93,13 +96,18 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
     private String url;
     private boolean slowConnection = false;
 
+    private Long cacheConcurrencyLevel;
+    private Long cacheMaximumSize;
+    private Long cacheExpireAfterAccess;
     private Long connectionTimeout;
     private Long readTimeout;
 
     public CMISMountPointFactory() {
         Properties defaultValues = (Properties) SpringContextSingleton.getBean("CmisRepositoryProperties");
 
-        this.connectionTimeout = Long.parseLong(defaultValues.getProperty(SessionParameter.CONNECT_TIMEOUT));
+        this.cacheConcurrencyLevel = Long.parseLong(defaultValues.getProperty(CONF_SESSION_CACHE_CONCURRENCY_LEVEL));
+        this.cacheMaximumSize = Long.parseLong(defaultValues.getProperty(CONF_SESSION_CACHE_MAXIMUM_SIZE));
+        this.cacheExpireAfterAccess = Long.parseLong(defaultValues.getProperty(CONF_SESSION_CACHE_EXPIRE_AFTER_ACCESS));
         this.readTimeout = Long.parseLong(defaultValues.getProperty(SessionParameter.READ_TIMEOUT));
         this.compressionEnabled = Boolean.parseBoolean(defaultValues.getProperty(SessionParameter.COMPRESSION));
         this.clientCompressionEnabled = Boolean.parseBoolean(defaultValues.getProperty(SessionParameter.CLIENT_COMPRESSION));
@@ -121,6 +129,17 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
 
     }
 
+    public Long getCacheConcurrencyLevel() { return cacheConcurrencyLevel; }
+
+    public void setCacheConcurrencyLevel(Long cacheConcurrencyLevel) { this.cacheConcurrencyLevel = cacheConcurrencyLevel; }
+
+    public Long getCacheMaximumSize() { return cacheMaximumSize; }
+
+    public void setCacheMaximumSize(Long cacheMaximumSize) { this.cacheMaximumSize = cacheMaximumSize; }
+
+    public Long getCacheExpireAfterAccess() { return cacheExpireAfterAccess; }
+
+    public void setCacheExpireAfterAccess(Long cacheExpireAfterAccess) { this.cacheExpireAfterAccess = cacheExpireAfterAccess; }
 
     public Long getConnectionTimeout() {
         return connectionTimeout;
@@ -284,6 +303,9 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
         mountNode.setProperty(SLOW_CONNECTION, slowConnection);
         mountNode.setProperty(REMOTE_PATH, remotePath);
 
+        mountNode.setProperty(CACHE_CONCURRENCY_LEVEL,cacheConcurrencyLevel);
+        mountNode.setProperty(CACHE_MAXIMUM_SIZE,cacheMaximumSize);
+        mountNode.setProperty(CACHE_EXPIRE_AFTER_ACCESS,cacheExpireAfterAccess);
         mountNode.setProperty(CONNECT_TIMEOUT,connectionTimeout);
         mountNode.setProperty(READ_TIMEOUT,readTimeout);
         mountNode.setProperty(COMPRESSION, compressionEnabled);
@@ -326,6 +348,31 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
             mountNode.setProperty(TYPE, CmisProviderFactory.TYPE_ALFRESCO);
             mountNode.setProtectedPropertyNames(new String[]{PASSWORD, REPOSITORY_ID});
             mountNode.setProperty(PUBLIC_USER, publicUser);
+        } else if (CmisProviderFactory.TYPE_ALFRESCO_TOKEN.equals(type)) {
+
+                // get repository id from the server
+                String alfrescoRepositoryId;
+                Client client = ClientBuilder.newBuilder().register(HttpAuthenticationFeature.basic(user, password)).build();
+
+                try {
+                    WebTarget target = client.target(url).path(CMIS_SERVICE_ENDPOINT);
+
+                    // get reposiroty id
+
+                    DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
+                    DocumentBuilder domBuilder = domFactory.newDocumentBuilder();
+                    Document domDoc = domBuilder.parse(target.request().accept(MediaType.TEXT_XML).get(InputStream.class));
+
+                    alfrescoRepositoryId = domDoc.getElementsByTagName("cmis:repositoryId").item(0).getTextContent();
+                } catch (Exception e) {
+                    throw new RepositoryException(String.format("Unable to get repository id from %s due to the following error '%s'", url + CMIS_SERVICE_ENDPOINT, e.getMessage()), e);
+                } finally {
+                    client.close();
+                }
+
+                mountNode.setProperty(REPOSITORY_ID, alfrescoRepositoryId);
+                mountNode.setProperty(TYPE, CmisProviderFactory.TYPE_ALFRESCO_TOKEN);
+                mountNode.setProtectedPropertyNames(new String[]{PASSWORD, REPOSITORY_ID});
         } else {
             mountNode.setProperty(REPOSITORY_ID, repositoryId);
             if(CmisProviderFactory.TYPE_NUXEO.equals(type)){
@@ -354,6 +401,9 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
         if(nodeWrapper.hasProperty(TYPE) && CmisProviderFactory.TYPE_ALFRESCO.equals(nodeWrapper.getPropertyAsString(TYPE))){
             type = CmisProviderFactory.TYPE_ALFRESCO;
         }
+        if(nodeWrapper.hasProperty(TYPE) && CmisProviderFactory.TYPE_ALFRESCO_TOKEN.equals(nodeWrapper.getPropertyAsString(TYPE))){
+            type = CmisProviderFactory.TYPE_ALFRESCO_TOKEN;
+        }
         if(nodeWrapper.hasProperty(TYPE) && CmisProviderFactory.TYPE_NUXEO.equals(nodeWrapper.getPropertyAsString(TYPE))){
             type = CmisProviderFactory.TYPE_NUXEO;
         }
@@ -363,24 +413,28 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
         this.url = nodeWrapper.getPropertyAsString(URL);
         this.slowConnection = nodeWrapper.hasProperty(SLOW_CONNECTION) && nodeWrapper.getProperty(SLOW_CONNECTION).getBoolean();
 
-        this.connectionTimeout = (nodeWrapper.hasProperty(CONNECT_TIMEOUT) ? nodeWrapper.getProperty(CONNECT_TIMEOUT).getLong(): 5000L);
-        this.readTimeout = (nodeWrapper.hasProperty(READ_TIMEOUT) ? nodeWrapper.getProperty(READ_TIMEOUT).getLong():5000L);
+        Properties defaultValues = (Properties) SpringContextSingleton.getBean("CmisRepositoryProperties");
+
+        this.cacheConcurrencyLevel = (nodeWrapper.hasProperty(CACHE_CONCURRENCY_LEVEL) ? nodeWrapper.getProperty(CACHE_CONCURRENCY_LEVEL).getLong():Integer.valueOf(defaultValues.getProperty(CONF_SESSION_CACHE_CONCURRENCY_LEVEL)));
+        this.cacheMaximumSize = (nodeWrapper.hasProperty(CACHE_MAXIMUM_SIZE) ? nodeWrapper.getProperty(CACHE_MAXIMUM_SIZE).getLong(): Integer.valueOf(defaultValues.getProperty(CONF_SESSION_CACHE_MAXIMUM_SIZE)));
+        this.cacheExpireAfterAccess = (nodeWrapper.hasProperty(CACHE_EXPIRE_AFTER_ACCESS) ? nodeWrapper.getProperty(CACHE_EXPIRE_AFTER_ACCESS).getLong(): Integer.valueOf(defaultValues.getProperty(CONF_SESSION_CACHE_EXPIRE_AFTER_ACCESS)));
+        this.connectionTimeout = (nodeWrapper.hasProperty(CONNECT_TIMEOUT) ? nodeWrapper.getProperty(CONNECT_TIMEOUT).getLong(): Integer.valueOf(defaultValues.getProperty(CONF_SESSION_CMIS_CONNECT_TIMEOUT)));
+        this.readTimeout = (nodeWrapper.hasProperty(READ_TIMEOUT) ? nodeWrapper.getProperty(READ_TIMEOUT).getLong(): Integer.valueOf(defaultValues.getProperty(CONF_SESSION_CMIS_READ_TIMEOUT)));
         this.compressionEnabled = nodeWrapper.hasProperty(COMPRESSION) && nodeWrapper.getProperty(COMPRESSION).getBoolean();
         this.clientCompressionEnabled = nodeWrapper.hasProperty(CLIENT_COMPRESSION) && nodeWrapper.getProperty(CLIENT_COMPRESSION).getBoolean();
         this.cookieEnabled = nodeWrapper.hasProperty(COOKIES) && nodeWrapper.getProperty(COOKIES).getBoolean();
 
-        Properties defaultValues = (Properties) SpringContextSingleton.getBean("CmisRepositoryProperties");
-        this.forceCmisVersion = (nodeWrapper.hasProperty(FORCED_CMIS_VERSION)? nodeWrapper.getProperty(FORCED_CMIS_VERSION).getString():defaultValues.getProperty("org.apache.chemistry.opencmis.cmisversion"));
+        this.forceCmisVersion = (nodeWrapper.hasProperty(FORCED_CMIS_VERSION)? nodeWrapper.getProperty(FORCED_CMIS_VERSION).getString():defaultValues.getProperty(CONF_SESSION_CMIS_CMISVERSION));
         this.cacheEnabled = nodeWrapper.hasProperty(CACHE_ENABLED) && nodeWrapper.getProperty(CACHE_ENABLED).getBoolean();
 
-        this.responseFilter = (nodeWrapper.hasProperty(RESPONSE_FILTER) ? nodeWrapper.getProperty(RESPONSE_FILTER).getString():defaultValues.getProperty("org.jahia.cmis.optimisation.context.filter"));
+        this.responseFilter = (nodeWrapper.hasProperty(RESPONSE_FILTER) ? nodeWrapper.getProperty(RESPONSE_FILTER).getString():defaultValues.getProperty(CONF_CONTEXT_FILTER));
 
         this.includeActions = nodeWrapper.hasProperty(INCLUDE_ACTIONS) && nodeWrapper.getProperty(INCLUDE_ACTIONS).getBoolean();
         this.includeAcl = nodeWrapper.hasProperty(INCLUDE_ACL) && nodeWrapper.getProperty(INCLUDE_ACL).getBoolean();
         this.includePolicies = nodeWrapper.hasProperty(INCLUDE_POLICIES) && nodeWrapper.getProperty(INCLUDE_POLICIES).getBoolean();
 
-        this.includeRelationships= (nodeWrapper.hasProperty(INCLUDE_RELATIONSHIPS) ? nodeWrapper.getProperty(INCLUDE_RELATIONSHIPS).getString():defaultValues.getProperty("org.jahia.cmis.optimisation.context.includeRelationships"));
-        this.renditionFilter = (nodeWrapper.hasProperty(RENDITION_FILTER) ? nodeWrapper.getProperty(RENDITION_FILTER).getString():defaultValues.getProperty("org.jahia.cmis.optimisation.context.renditionFilter"));
+        this.includeRelationships= (nodeWrapper.hasProperty(INCLUDE_RELATIONSHIPS) ? nodeWrapper.getProperty(INCLUDE_RELATIONSHIPS).getString():defaultValues.getProperty(CONF_CONTEXT_INCLUDE_RELATIONSHIPS));
+        this.renditionFilter = (nodeWrapper.hasProperty(RENDITION_FILTER) ? nodeWrapper.getProperty(RENDITION_FILTER).getString():defaultValues.getProperty(CONF_CONTEXT_RENDITION_FILTER));
         this.loadSecondaryTypeProperties = nodeWrapper.hasProperty(LOAD_SECONDARY_TYPE_PROPERTIES) && nodeWrapper.getProperty(LOAD_SECONDARY_TYPE_PROPERTIES).getBoolean();
 
     }

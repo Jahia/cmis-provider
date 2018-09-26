@@ -45,6 +45,7 @@
                             <option value=""><fmt:message key="cmisFactory.type.empty"/></option>
                             <option value="cmis"><fmt:message key="cmisFactory.type.cmis"/></option>
                             <option value="alfresco"><fmt:message key="cmisFactory.type.alfresco"/></option>
+                            <option value="alfrescoToken"><fmt:message key="cmisFactory.type.alfrescoToken"/></option>
                             <option value="nuxeo"><fmt:message key="cmisFactory.type.nuxeo"/></option>
                         </select>&nbsp;<span class="admin_tooltip" data-placement="right" title="<fmt:message key="cmisFactory.type.tooltip"/>"><i class="icon-info-sign"></i></span>
                     </div>
@@ -71,6 +72,7 @@
                     <div class="row-fluid">
                         <form:label ng-show="cmisType == 'cmis'" path="url"><fmt:message key="cmisFactory.url"/> <span style="color: red">*</span></form:label>
                         <form:label ng-show="cmisType == 'alfresco'" path="url"><fmt:message key="cmisFactory.urlAlfresco"/> <span style="color: red">*</span></form:label>
+                        <form:label ng-show="cmisType == 'alfrescoToken'" path="url"><fmt:message key="cmisFactory.urlAlfresco"/> <span style="color: red">*</span></form:label>
                         <form:label ng-show="cmisType == 'nuxeo'" path="url"><fmt:message key="cmisFactory.urlNuxeo"/><span style="color: red">*</span></form:label>
                         <form:input path="url"/>
                     </div>
@@ -81,6 +83,26 @@
                     <div class="row-fluid">
                         <form:label path="remotePath"><fmt:message key="cmisFactory.remotePath"/></form:label>
                         <form:input path="remotePath"/>
+                    </div>
+                    <div class="row-fluid">
+                        <form:label path="cacheConcurrencyLevel"><fmt:message key="cmis_cmisMountPoint.cacheConcurrencyLevel"/></form:label>
+                        <form:input path="cacheConcurrencyLevel"/>
+                        <span class="admin_tooltip" data-placement="right" title="<fmt:message key="cmis_cmisMountPoint.cacheConcurrencyLevel.ui.tooltip"/>"><i class="icon-info-sign"></i></span>
+                    </div>
+                    <div class="row-fluid">
+                        <form:label path="cacheMaximumSize"><fmt:message key="cmis_cmisMountPoint.cacheMaximumSize"/></form:label>
+                        <form:input path="cacheMaximumSize"/>
+                        <span class="admin_tooltip" data-placement="right" title="<fmt:message key="cmis_cmisMountPoint.cacheMaximumSize.ui.tooltip"/>"><i class="icon-info-sign"></i></span>
+                    </div>
+                    <div class="row-fluid">
+                        <form:label path="cacheExpireAfterAccess"><fmt:message key="cmis_cmisMountPoint.cacheExpireAfterAccess"/></form:label>
+                        <form:input path="cacheExpireAfterAccess"/>
+                        <span class="admin_tooltip" data-placement="right" title="<fmt:message key="cmis_cmisMountPoint.cacheExpireAfterAccess.ui.tooltip"/>"><i class="icon-info-sign"></i></span>
+                    </div>
+                    <div class="row-fluid">
+                        <form:label path="connectionTimeout"><fmt:message key="cmis_cmisMountPoint.connectionTimeout"/></form:label>
+                        <form:input path="connectionTimeout"/>
+                        <span class="admin_tooltip" data-placement="right" title="<fmt:message key="cmis_cmisMountPoint.connectionTimeout.ui.tooltip"/>"><i class="icon-info-sign"></i></span>
                     </div>
                     <div class="row-fluid">
 

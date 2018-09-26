@@ -32,6 +32,7 @@ import org.apache.chemistry.opencmis.client.api.*;
 import org.apache.chemistry.opencmis.client.api.Property;
 import org.apache.chemistry.opencmis.client.api.Session;
 import org.apache.chemistry.opencmis.client.runtime.SessionFactoryImpl;
+import org.apache.chemistry.opencmis.client.runtime.SessionImpl;
 import org.apache.chemistry.opencmis.commons.PropertyIds;
 import org.apache.chemistry.opencmis.commons.SessionParameter;
 import org.apache.chemistry.opencmis.commons.data.AllowableActions;
@@ -93,10 +94,12 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     */
     private static final Logger log = LoggerFactory.getLogger(CmisDataSource.class);
 
-    private static final String CONF_SESSION_CACHE_CONCURRENCY_LEVEL = "org.jahia.cmis.session.cache.concurrencyLevel";
-    private static final String CONF_SESSION_CACHE_MAXIMUM_SIZE = "org.jahia.cmis.session.cache.maximumSize";
-    private static final String CONF_SESSION_CACHE_EXPIRE_AFTER_ACCESS = "org.jahia.cmis.session.cache.expireAfterAccess";
-
+    public static final String CONF_SESSION_CACHE_CONCURRENCY_LEVEL = "org.jahia.cmis.session.cache.concurrencyLevel";
+    public static final String CONF_SESSION_CACHE_MAXIMUM_SIZE = "org.jahia.cmis.session.cache.maximumSize";
+    public static final String CONF_SESSION_CACHE_EXPIRE_AFTER_ACCESS = "org.jahia.cmis.session.cache.expireAfterAccess";
+    public static final String CONF_SESSION_CMIS_CONNECT_TIMEOUT = "org.apache.chemistry.opencmis.binding.connecttimeout";
+    public static final String CONF_SESSION_CMIS_READ_TIMEOUT = "org.apache.chemistry.opencmis.binding.readtimeout";
+    public static final String CONF_SESSION_CMIS_CMISVERSION = "org.apache.chemistry.opencmis.cmisversion";
 
     public static final String CONF_CONTEXT_CACHE_ENABLE ="org.jahia.cmis.optimisation.context.cacheEnable";
     public static final String CONF_CONTEXT_FILTER ="org.jahia.cmis.optimisation.context.filter";
@@ -113,10 +116,14 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     private static final String DEFAULT_MIMETYPE = "binary/octet-stream";
     private static final List<String> JCR_CONTENT_LIST = Collections.singletonList(Constants.JCR_CONTENT);
     protected static final String JCR_CONTENT_SUFFIX = "/" + Constants.JCR_CONTENT;
+    
+    protected static final String JCR_TRANSLATION_SUFFIX = "/" + "j:translation";
 
 
     private boolean firstConnectFailure = true;
     protected Cache<String, Session> activeConnections;
+    protected Cache<String, String> cachedPath;
+    protected Cache<String, List<String>> cachedParentPath;
     private boolean recordingConnectionsStats;
     private ExternalContentStoreProvider provider;
 
@@ -136,6 +143,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     };
 
     private CacheBuilder<String, Session> cacheBuilder;
+    private CacheBuilder<Object, Object> cachePathBuilder;
 
     /**
      * Configuration
@@ -191,21 +199,46 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     }
 
     protected CmisObject getObjectByPath(final String path) throws RepositoryException {
+    	log.debug("Get object by  path:"+path);
         return executeWithCMISSession(new ExecuteCallback<CmisObject>() {
             @Override
             public CmisObject execute(Session session) throws RepositoryException {
                 // the path is encoded by DX using JCRContentUtils.escapeLocalNodeName() that
                 // do not encode "+" that has to be encoded
-                return session.getObjectByPath(addRemotePath(transformPath(transformPath(path, Operation.DECODE), Operation.URLENCODE)));
+                String remoteURLPATH = addRemotePath(transformPath(transformPath(path, Operation.DECODE), Operation.URLENCODE));
+                log.debug("Retrieving PATH : "+remoteURLPATH);
+                org.apache.chemistry.opencmis.client.runtime.cache.Cache cache = ((SessionImpl)session).getCache();
+				boolean cachedByPath = cache.containsPath(remoteURLPATH, session.getDefaultContext().getCacheKey());
+				log.debug("Session cache = "+cachedByPath);
+				CmisObject objectByPath;
+				if (!cachedByPath) {
+					objectByPath = session.getObjectByPath(remoteURLPATH);
+				} else {
+					objectByPath = cache.getByPath(remoteURLPATH, session.getDefaultContext().getCacheKey());
+				}
+				log.debug("Session cache object ="+objectByPath); 
+				return objectByPath;
             }
         });
     }
 
     protected CmisObject getObjectById(final String user, final String id) throws RepositoryException {
+    	log.debug("Get object by  id:"+id);
         return executeWithCMISSession(user, new ExecuteCallback<CmisObject>() {
             @Override
             public CmisObject execute(Session session) throws RepositoryException {
-                return session.getObject(id);
+                log.debug("Retrieving ID : "+id);
+                boolean cachedById = ((SessionImpl)session).getCache().containsId(id, session.getDefaultContext().getCacheKey());
+                boolean cachedByPath = ((SessionImpl)session).getCache().containsPath(id, session.getDefaultContext().getCacheKey());
+				log.debug("Session cache by ID = "+cachedById+" - "+cachedByPath);
+				if (!cachedByPath) {
+					CmisObject object = session.getObject(id);
+					String path = StringUtils.substringBeforeLast(object.getId(),";");
+					((SessionImpl)session).getCache().putPath(path, object, session.getDefaultContext().getCacheKey());
+					return object;
+				} else {
+					return session.getObjectByPath(id);
+				}
             }
         });
 
@@ -222,7 +255,9 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                     if (!path.endsWith(JCR_CONTENT_SUFFIX)) {
                         // the path is encoded by DX using JCRContentUtils.escapeLocalNodeName() that
                         // do not encode "+" that has to be encoded
-                        CmisObject object = session.getObjectByPath(addRemotePath(transformPath(transformPath(path, Operation.DECODE), Operation.URLENCODE)));
+                        String remoteURLToCall = addRemotePath(transformPath(transformPath(path, Operation.DECODE), Operation.URLENCODE));
+                        log.debug("Getting PATH : "+remoteURLToCall);
+						CmisObject object = session.getObjectByPath(remoteURLToCall);
                         if (object instanceof Document) {
                             return Collections.singletonList(getObjectContent((Document) object, path + JCR_CONTENT_SUFFIX));
                         } else if (object instanceof Folder) {
@@ -260,10 +295,34 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 @Override
                 public ExternalData execute(Session session) throws RepositoryException {
                     if (identifier.endsWith(JCR_CONTENT_SUFFIX)) {
-                        CmisObject object = session.getObject(session.createObjectId(removeContentSufix(identifier)));
+                    	ObjectId id = session.createObjectId(removeContentSufix(identifier));
+                        boolean cachedById = ((SessionImpl)session).getCache().containsId(id.getId(), session.getDefaultContext().getCacheKey());
+                        boolean cachedByPath = ((SessionImpl)session).getCache().containsPath(id.getId(), session.getDefaultContext().getCacheKey());
+        				log.debug("Session cache by ID = "+cachedById+" - "+cachedByPath);                   	
+        				CmisObject object = null;
+        				if (!cachedByPath) {
+        					object = session.getObject(id);
+        					String path = StringUtils.substringBeforeLast(object.getId(),";");
+        					((SessionImpl)session).getCache().putPath(path, object, session.getDefaultContext().getCacheKey());
+        				} else {
+        					object =  session.getObjectByPath(id.getId());
+        				}
                         return getObjectContent((Document) object, null);
                     } else {
-                        CmisObject object = session.getObject(session.createObjectId(identifier));
+
+                    	ObjectId id = session.createObjectId(identifier);
+                        boolean cachedById = ((SessionImpl)session).getCache().containsId(id.getId(), session.getDefaultContext().getCacheKey());
+                        boolean cachedByPath = ((SessionImpl)session).getCache().containsPath(id.getId(), session.getDefaultContext().getCacheKey());
+        				log.debug("Session cache by ID = "+cachedById+" - "+cachedByPath);                   	
+        				CmisObject object = null;
+        				if (!cachedByPath) {
+        					object = session.getObject(id);
+        					String path = StringUtils.substringBeforeLast(object.getId(),";");
+        					((SessionImpl)session).getCache().putPath(path, object, session.getDefaultContext().getCacheKey());
+        				} else {
+        					log.debug("Getting identifier using path");
+        					object =  ((SessionImpl)session).getCache().getByPath(id.getId(), session.getDefaultContext().getCacheKey());
+        				}
                         return getObject(object, null);
                     }
                 }
@@ -291,6 +350,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     }
 
     protected ExternalData getObjectContent(Document doc, String jcrContentPath) throws PathNotFoundException {
+    	log.debug("Get Object content "+jcrContentPath);
         if (jcrContentPath == null) {
             if (doc.getPaths().isEmpty() || doc.getContentStreamLength() < 0) {
                 throw new PathNotFoundException("No path found for CMIS document: " + doc.getId());
@@ -325,19 +385,50 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         if (object instanceof Document) {
             Document doc = ((Document) object);
             object = doc;
+            final Document pathObject = doc;
             additionalMixins = getMixinsToAdd(doc);
-
             if (path == null) {
-                if (doc.getPaths().isEmpty()) {
+            	log.debug("Getting path START for "+object);
+                List<String> paths;// = doc.getPaths();
+                try {
+	                paths = cachedParentPath.get(pathObject.getId(), new Callable<List<String>>() {
+		                    @Override
+		                    public List<String> call() throws ExecutionException {
+		                    	return pathObject.getPaths(); 
+		                    }
+		                }
+	                );
+                } catch (Exception ue) {
+                	log.debug(ue.getMessage(),ue);
+                	paths = doc.getPaths();
+                }
+                
+                log.debug("Getting path END for "+object);
+				if (paths.isEmpty()) {
                     throw new PathNotFoundException("No path found for CMIS document: " + doc.getId());
                 } else {
-                    path = transformPath(removeRemotePath(doc.getPaths().get(0)), Operation.ENCODE);
+                    path = transformPath(removeRemotePath(paths.get(0)), Operation.ENCODE);
                 }
             }
         } else if (object instanceof Folder) {
-            Folder folder = (Folder) object;
+            final Folder folder = (Folder) object;
             if (path == null) {
-                path = transformPath(removeRemotePath(folder.getPath()), Operation.ENCODE);
+            	log.debug("Getting path START for "+object);
+            	String paths;// = folder.getPath();
+            	try {
+	                paths = cachedPath.get(folder.getId(), new Callable<String>() {
+		                    @Override
+		                    public String call() throws ExecutionException {
+		                    	return folder.getPath(); 
+		                    }
+		                }
+	                );
+                } catch (Exception ue) {
+                	log.debug(ue.getMessage(),ue);
+                	paths = folder.getPath();
+                }
+            	log.debug("Getting path END for "+object);
+                path = transformPath(removeRemotePath(paths), Operation.ENCODE);
             }
         }
         final GregorianCalendar createdDate = object.getCreationDate();
@@ -438,9 +529,13 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         int concurrencyLevel = parseInt(repositoryPropertiesMap, CONF_SESSION_CACHE_CONCURRENCY_LEVEL);
         int size = parseInt(repositoryPropertiesMap, CONF_SESSION_CACHE_MAXIMUM_SIZE);
         int duration = parseInt(repositoryPropertiesMap, CONF_SESSION_CACHE_EXPIRE_AFTER_ACCESS);
+
         maxChildNodes = parseInt(repositoryPropertiesMap, CONF_MAX_CHILD_NODES);
         cacheBuilder = CacheBuilder.newBuilder().removalListener(removalListener)
                 .concurrencyLevel(concurrencyLevel)
+                .maximumSize(size)
+                .expireAfterAccess(duration, TimeUnit.MINUTES);
+        cachePathBuilder = CacheBuilder.newBuilder().concurrencyLevel(concurrencyLevel)
                 .maximumSize(size)
                 .expireAfterAccess(duration, TimeUnit.MINUTES);
         buildActiveConnections();
@@ -459,6 +554,8 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     @Override
     public void stop() {
         activeConnections.invalidateAll();
+        cachedPath.invalidateAll();
+        cachedParentPath.invalidateAll();
     }
 
     @Override
@@ -745,6 +842,8 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
     private void buildActiveConnections() {
         activeConnections = recordingConnectionsStats ? cacheBuilder.recordStats().build() : cacheBuilder.build();
+        cachedPath = cachePathBuilder.build();
+        cachedParentPath = cachePathBuilder.build();
     }
 
 
@@ -800,6 +899,10 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
     protected String removeContentSufix(String identifier) {
         return identifier.substring(0, identifier.length() - JCR_CONTENT_SUFFIX.length());
+    }
+
+    protected String removeTranslationSufix(String identifier) {
+        return identifier.substring(0, identifier.length() - JCR_TRANSLATION_SUFFIX.length()-3);
     }
 
     public CmisConfiguration getConf() {
@@ -911,6 +1014,8 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                     errorContent = json.get("stacktrace").toString();
                 } catch (JSONParseException e1) {
                     // parsing fail .. return all object
+                } catch (Exception ue) {
+                	log.debug("Unable to parse response");
                 }
                 if (e instanceof CmisObjectNotFoundException) {
                     log.debug("an error occurs on remote server:\n {}", errorContent);
@@ -962,7 +1067,11 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         Set<String> privileges = new HashSet<>();
 
         try {
-            AllowableActions allowable = getObjectByPath(path.endsWith(JCR_CONTENT_SUFFIX) ? removeContentSufix(path) : path)
+        	
+        	String pathToFind = path.endsWith(JCR_CONTENT_SUFFIX) ? removeContentSufix(path) : 
+        						(path.indexOf(JCR_TRANSLATION_SUFFIX)>-1 && path.substring(0, path.length()-3).endsWith(JCR_TRANSLATION_SUFFIX) ? removeTranslationSufix(path) : path);
+        	
+            AllowableActions allowable = getObjectByPath(pathToFind)
                     .getAllowableActions();
             for (Action action : allowable.getAllowableActions()) {
                 switch (action) {
@@ -1056,6 +1165,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         if (StringUtils.equals(path, "/")) {
             return path;
         }
+        log.debug("Operation="+operation+" Path="+path);
         String sep = StringUtils.contains(path, "/") ? "/" : "";
         StringBuilder sb = new StringBuilder();
         if (operation != Operation.URLENCODE) {
@@ -1081,9 +1191,11 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         } else {
             // Browser binding needs to encode the path as it is part of the url path
             // in the other case (atompub), the path is part of the queryString and is encoded by the CMIS implementation
+        	log.debug("Binding type "+getConf().getRepositoryPropertiesMap().get(SessionParameter.BINDING_TYPE));
             if (BindingType.BROWSER.value().equals(getConf().getRepositoryPropertiesMap().get(SessionParameter.BINDING_TYPE))) {
                 try {
-                    return (new URI(null,null,path,null)).toString().replace("+","%2B");
+                    (new URI(null,null,path,null)).toString().replace("+","%2B");
+                	return path;
                 } catch (URISyntaxException e) {
                     throw new PathNotFoundException(e);
                 }
