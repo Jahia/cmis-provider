@@ -29,7 +29,7 @@
     <parent>
         <artifactId>jahia-modules</artifactId>
         <groupId>org.jahia.modules</groupId>
-        <version>7.2.0.0</version>
+        <version>7.2.3.0</version>
     </parent>
     <artifactId>cmis-provider</artifactId>
     <name>Portal factory - CMIS provider</name>

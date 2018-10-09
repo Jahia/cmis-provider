@@ -526,11 +526,11 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         // cache config
         Map<String, String> repositoryPropertiesMap = getConf().getRepositoryPropertiesMap();
 
-        int concurrencyLevel = parseInt(repositoryPropertiesMap, CONF_SESSION_CACHE_CONCURRENCY_LEVEL);
-        int size = parseInt(repositoryPropertiesMap, CONF_SESSION_CACHE_MAXIMUM_SIZE);
-        int duration = parseInt(repositoryPropertiesMap, CONF_SESSION_CACHE_EXPIRE_AFTER_ACCESS);
+        int concurrencyLevel = parseInt(repositoryPropertiesMap, CONF_SESSION_CACHE_CONCURRENCY_LEVEL,4);
+        int size = parseInt(repositoryPropertiesMap, CONF_SESSION_CACHE_MAXIMUM_SIZE,1280);
+        int duration = parseInt(repositoryPropertiesMap, CONF_SESSION_CACHE_EXPIRE_AFTER_ACCESS,30);
 
-        maxChildNodes = parseInt(repositoryPropertiesMap, CONF_MAX_CHILD_NODES);
+        maxChildNodes = parseInt(repositoryPropertiesMap, CONF_MAX_CHILD_NODES, 0);
         cacheBuilder = CacheBuilder.newBuilder().removalListener(removalListener)
                 .concurrencyLevel(concurrencyLevel)
                 .maximumSize(size)
@@ -541,12 +541,14 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         buildActiveConnections();
     }
 
-    private int parseInt(Map<String, String> repositoryPropertiesMap, String propertyName) {
+    private int parseInt(Map<String, String> repositoryPropertiesMap, String propertyName, int defaultValue) {
         int value;
-        try {
-            value = Integer.parseInt(repositoryPropertiesMap.get(propertyName));
+        String configParam = repositoryPropertiesMap.get(propertyName);
+		try {
+            value = Integer.parseInt(configParam);
         } catch (NumberFormatException e) {
-            throw new NumberFormatException(String.format("Parsing property %s failed. Unable to parse \"%s\" as int", propertyName, repositoryPropertiesMap.get(propertyName)));
+            //throw new NumberFormatException(String.format("Parsing property %s failed. Unable to parse \"%s\" as int", propertyName, configParam));
+        	value = defaultValue;
         }
         return value;
     }

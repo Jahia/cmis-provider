@@ -174,9 +174,9 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
         conf.getRepositoryPropertiesMap().put(SessionParameter.COOKIES, cookies);
         conf.getRepositoryPropertiesMap().put(SessionParameter.FORCE_CMIS_VERSION, forcedCMISVersion); //Valeur a valider
 
-            conf.getRepositoryPropertiesMap().put(CmisDataSource.CONF_SESSION_CACHE_CONCURRENCY_LEVEL,cacheConcLevel);
-            conf.getRepositoryPropertiesMap().put(CmisDataSource.CONF_SESSION_CACHE_MAXIMUM_SIZE,cacheMaxSize);
-            conf.getRepositoryPropertiesMap().put(CmisDataSource.CONF_SESSION_CACHE_EXPIRE_AFTER_ACCESS,cacheExpireAfter);
+        conf.getRepositoryPropertiesMap().put(CmisDataSource.CONF_SESSION_CACHE_CONCURRENCY_LEVEL,cacheConcLevel);
+        conf.getRepositoryPropertiesMap().put(CmisDataSource.CONF_SESSION_CACHE_MAXIMUM_SIZE,cacheMaxSize);
+        conf.getRepositoryPropertiesMap().put(CmisDataSource.CONF_SESSION_CACHE_EXPIRE_AFTER_ACCESS,cacheExpireAfter);
         conf.getRepositoryPropertiesMap().put(CmisDataSource.CONF_CONTEXT_CACHE_ENABLE,cacheEnable);
         conf.getRepositoryPropertiesMap().put(CmisDataSource.CONF_CONTEXT_FILTER,filter);
         conf.getRepositoryPropertiesMap().put(CmisDataSource.CONF_CONTEXT_INCLUDE_ALLOWABLE_ACTIONS,includeAllowableAction);
