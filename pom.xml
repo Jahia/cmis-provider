@@ -38,9 +38,10 @@
     <description>Provides an implementation of the CMIS external provider.</description>
 
     <scm>
-        <connection>dummy</connection>
-        <url>dummy</url>
-        <developerConnection>dummy</developerConnection>
+        <connection>scm:git:git@github.com:spw-dtic/cmis-provider.git</connection>
+        <url>scm:git:git@github.com:spw-dtic/cmis-provider.git</url>
+        <developerConnection>scm:git:git@github.com:spw-dtic/cmis-provider.git</developerConnection>
+      <tag>cmis-provider-2.3.0</tag>
   </scm>
 
     <properties>
