@@ -54,13 +54,6 @@ public class NuxeoFileNode extends JCRFileNode {
     @Override
     public String getDisplayableName() {
         try {
-            if(isNodeType(Constants.NT_FOLDER)) {
-                return super.getDisplayableName();
-            }
-        } catch (RepositoryException e) {
-            logger.error(e.getMessage(), e);
-        }
-        try {
             return getProperty(Constants.JCR_TITLE).getValue().getString();
         } catch (RepositoryException e) {
             logger.debug("could not retrieve jcr:title of " + this.getPath(), e);

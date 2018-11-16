@@ -151,6 +151,24 @@
             </list>
         </property>
     </bean>
+    
+   <bean class="org.jahia.modules.external.cmis.CmisTypeMapping" parent="cmis_base" id="nuxeo_folder"
+          p:jcrName="nuxeo:folder"
+          p:jcrMixins="cmismix:folder"
+          p:cmisName="cmis:folder">
+        <property name="properties">
+            <list merge="true">
+                <bean p:cmisName="cmis:parentId" p:jcrName="cmis:parentId"
+                      class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
+                <bean p:cmisName="cmis:allowedChildObjectTypeIds" p:jcrName="cmis:allowedChildObjectTypeIds"
+                      class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
+                <bean p:cmisName="cmis:path" p:jcrName="cmis:path"
+                      class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
+                <bean p:cmisName="dc:title" p:jcrName="jcr:title"
+                      class="org.jahia.modules.external.cmis.CmisPropertyMapping"/>
+            </list>
+        </property>
+    </bean>
 
     <bean id="NuxeoConfiguration" class="org.jahia.modules.external.cmis.CmisConfiguration" init-method="onStart"
           scope="prototype">
@@ -160,7 +178,7 @@
         <property name="typeMapping">
             <list>
                 <ref bean="nuxeo_document"/>
-                <ref bean="cmis_folder"/>
+                <ref bean="nuxeo_folder"/>
             </list>
         </property>
     </bean>
