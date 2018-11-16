@@ -41,16 +41,18 @@ import org.springframework.context.ApplicationContextAware;
 
 import javax.jcr.RepositoryException;
 import java.util.Arrays;
+import java.util.HashMap;
 
 public class CmisProviderFactory implements ProviderFactory, ApplicationContextAware, InitializingBean {
 
     private static final String ALFRESCO_ENDPOINT_BROWSER = "/api/-default-/public/cmis/versions/1.1/browser";
     private static final String ALFRESCO_ENDPOINT_ATOM = "/api/-default-/public/cmis/versions/1.1/atom";
     private static final String NUXEO_ENDPOINT_ATOM = "/nuxeo/atom/cmis/default/";
-
+    private static final String CONNECT_TIMEOUT = "org.apache.chemistry.opencmis.binding.connecttimeout";
     private ApplicationContext applicationContext;
 
     public static final String TYPE_ALFRESCO = "alfresco";
+    public static final String TYPE_ALFRESCO_TOKEN = "alfrescoToken";
     public static final String ALFRESCO_URL = "alfresco.url";
 
     public static final String TYPE_NUXEO = "nuxeo";
@@ -87,6 +89,15 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
             if (mountPoint.hasProperty(CMISMountPointFactory.PUBLIC_USER)) {
                 ((AlfrescoCmisDataSource) dataSource).setPublicUser(mountPoint.getProperty(CMISMountPointFactory.PUBLIC_USER).getString());
             }
+        } else if (TYPE_ALFRESCO_TOKEN.equals(type)) {
+            conf = (CmisConfiguration) applicationContext.getBean("CmisConfiguration");
+            dataSource = new AlfrescoCmisTokenDataSource();
+            conf.getRepositoryPropertiesMap().put(ALFRESCO_URL, cmisUrl);
+            if (BindingType.BROWSER.value().equals(conf.getRepositoryPropertiesMap().get(SessionParameter.BINDING_TYPE))) {
+                conf.getRepositoryPropertiesMap().put(SessionParameter.BROWSER_URL, cmisUrl + ALFRESCO_ENDPOINT_BROWSER);
+            } else {
+                conf.getRepositoryPropertiesMap().put(SessionParameter.ATOMPUB_URL, cmisUrl + ALFRESCO_ENDPOINT_ATOM);
+            }
         } else if (TYPE_NUXEO.equals(type)) {
             //Get Nuxeo conf for type Mapping
             conf = (CmisConfiguration) applicationContext.getBean("NuxeoConfiguration");
@@ -115,6 +126,71 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
         conf.getRepositoryPropertiesMap().put(SessionParameter.REPOSITORY_ID, mountPoint.getProperty(CMISMountPointFactory.REPOSITORY_ID).getString());
         conf.getRepositoryPropertiesMap().put(SessionParameter.USER, mountPoint.getProperty(CMISMountPointFactory.USER).getString());
         conf.getRepositoryPropertiesMap().put(SessionParameter.PASSWORD, mountPoint.getProperty(CMISMountPointFactory.PASSWORD).getString());
+        conf.getRepositoryPropertiesMap().put(SessionParameter.CONNECT_TIMEOUT, conf.getRepositoryPropertiesMap().get(CONNECT_TIMEOUT));
+
+        //DTIC : Ajout du timeout à la lecture également
+        HashMap<String, String> repositoryPropertiesMap = conf.getRepositoryPropertiesMap();
+
+            String cacheConcLevel = mountPoint.getPropertyAsString(CMISMountPointFactory.CACHE_CONCURRENCY_LEVEL);
+            String cacheMaxSize = mountPoint.getPropertyAsString(CMISMountPointFactory.CACHE_MAXIMUM_SIZE);
+            String cacheExpireAfter = mountPoint.getPropertyAsString(CMISMountPointFactory.CACHE_EXPIRE_AFTER_ACCESS);
+        String connectionTimeout = mountPoint.getPropertyAsString(CMISMountPointFactory.CONNECT_TIMEOUT);
+        String readTimeout = mountPoint.getPropertyAsString(CMISMountPointFactory.READ_TIMEOUT);
+
+        String compression = mountPoint.getPropertyAsString(CMISMountPointFactory.COMPRESSION);
+        String clientCompression = mountPoint.getPropertyAsString(CMISMountPointFactory.CLIENT_COMPRESSION);
+        String cookies = mountPoint.getPropertyAsString(CMISMountPointFactory.COOKIES);
+        String forcedCMISVersion = mountPoint.getPropertyAsString(CMISMountPointFactory.FORCED_CMIS_VERSION);
+
+        String cacheEnable=mountPoint.getPropertyAsString(CMISMountPointFactory.CACHE_ENABLED);
+        String filter=mountPoint.getPropertyAsString(CMISMountPointFactory.RESPONSE_FILTER);
+        String includeAllowableAction=mountPoint.getPropertyAsString(CMISMountPointFactory.INCLUDE_ACTIONS);
+        String includeAcls=mountPoint.getPropertyAsString(CMISMountPointFactory.INCLUDE_ACL);
+        String includePolicies=mountPoint.getPropertyAsString(CMISMountPointFactory.INCLUDE_POLICIES);
+
+        String includeRelationships=mountPoint.getPropertyAsString(CMISMountPointFactory.INCLUDE_RELATIONSHIPS);
+        String loadSecondaryTypeProperties=mountPoint.getPropertyAsString(CMISMountPointFactory.LOAD_SECONDARY_TYPE_PROPERTIES);
+        String renditionFilter=mountPoint.getPropertyAsString(CMISMountPointFactory.RENDITION_FILTER);
+
+
+        repositoryPropertiesMap.put(SessionParameter.CONNECT_TIMEOUT, connectionTimeout);
+        repositoryPropertiesMap.put(SessionParameter.READ_TIMEOUT, readTimeout);
+
+        // source: CMIS and Apache Chemistry in Action / Chapter 13. Performance :
+        /* CMIS sends XML and JSON requests and responses over the wire. Both compress very well (with gzip).
+         * The size of an AtomPub feed shrinks between 5% and 95% when it s compressed.
+         * Compression can burst application performance, especially on slow networks and over the internet.
+         *
+         * Clients can request RESPONSE compression by setting the HTTP header Accept-Encoding.
+         * OpenCMIS does that if you turn on compression when you set up the session, exemple:
+         * parameter.put(SessionParameter.COMPRESSION, "true");
+         * REM: That doesn t necessarily mean the repository returns a compressed response.
+         * Some repositories support it out of the box, and others don t (and they ignore it then)
+         * Check with the repository vendor as well as the application server vendor.
+         * For Alfresco, see: https://wiki.alfresco.com/wiki/CMIS#Compression
+         */
+        conf.getRepositoryPropertiesMap().put(SessionParameter.COMPRESSION, compression);
+        /* OpenCMIS can also compress REQUESTs.
+         * Turn on client compression when you set up the session, like this:
+         * (but it's not recommanded by default for normal use because it's not a good tradeoff : compression time VS normal packet transfert time)
+         */
+        conf.getRepositoryPropertiesMap().put(SessionParameter.CLIENT_COMPRESSION, clientCompression);
+        conf.getRepositoryPropertiesMap().put(SessionParameter.COOKIES, cookies);
+        conf.getRepositoryPropertiesMap().put(SessionParameter.FORCE_CMIS_VERSION, forcedCMISVersion); //Valeur a valider
+
+        conf.getRepositoryPropertiesMap().put(CmisDataSource.CONF_SESSION_CACHE_CONCURRENCY_LEVEL,cacheConcLevel);
+        conf.getRepositoryPropertiesMap().put(CmisDataSource.CONF_SESSION_CACHE_MAXIMUM_SIZE,cacheMaxSize);
+        conf.getRepositoryPropertiesMap().put(CmisDataSource.CONF_SESSION_CACHE_EXPIRE_AFTER_ACCESS,cacheExpireAfter);
+        conf.getRepositoryPropertiesMap().put(CmisDataSource.CONF_CONTEXT_CACHE_ENABLE,cacheEnable);
+        conf.getRepositoryPropertiesMap().put(CmisDataSource.CONF_CONTEXT_FILTER,filter);
+        conf.getRepositoryPropertiesMap().put(CmisDataSource.CONF_CONTEXT_INCLUDE_ALLOWABLE_ACTIONS,includeAllowableAction);
+        conf.getRepositoryPropertiesMap().put(CmisDataSource.CONF_CONTEXT_INCLUDE_ACLS, includeAcls);
+        conf.getRepositoryPropertiesMap().put(CmisDataSource.CONF_CONTEXT_INCLUDE_POLICIES, includePolicies);
+
+        conf.getRepositoryPropertiesMap().put(CmisDataSource.CONF_CONTEXT_INCLUDE_RELATIONSHIPS, includeRelationships);
+        conf.getRepositoryPropertiesMap().put(CmisDataSource.CONF_CONTEXT_LOAD_SECONDARY_TYPE_PROPERTIES, loadSecondaryTypeProperties);
+        conf.getRepositoryPropertiesMap().put(CmisDataSource.CONF_CONTEXT_RENDITION_FILTER, renditionFilter);
+
         dataSource.setConf(conf);
         String remotePath = "";
         if (mountPoint.hasProperty(CMISMountPointFactory.REMOTE_PATH)) {
@@ -134,7 +210,7 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
         provider.setOverridableItems(Arrays.asList("jmix:description.*", "jmix:i18n.*"));
         provider.setNonExtendableMixins(Arrays.asList("cmismix:base", "cmismix:folder", "cmismix:document", "jmix:image"));
         provider.setDynamicallyMounted(true);
-        provider.setCacheKeyOnReferenceSupport(TYPE_ALFRESCO.equals(type));
+        provider.setCacheKeyOnReferenceSupport(TYPE_ALFRESCO.equals(type)||TYPE_ALFRESCO_TOKEN.equals(type));
         provider.setSessionFactory(JCRSessionFactory.getInstance());
         try {
             provider.start();
