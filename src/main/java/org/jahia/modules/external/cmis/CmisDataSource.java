@@ -1013,20 +1013,9 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
             for (String p : StringUtils.split(path, "/")) {
                 sb.append(sep);
                 if (operation == Operation.DECODE) {
-                    // as + is decoded to space, we have first to escape it
-                    sb.append(p != null && p.indexOf('%') != -1 ? Text.unescapeIllegalJcrChars(p) : p);
+                    sb.append(Text.unescapeIllegalJcrChars(p));
                 } else {
-                    // replace encoded space to "+" by %20
-                    for (int i = 0; i < p.length(); i++) {
-                        char ch = p.charAt(i);
-                        if (ch == '[' || ch == ']' || ch == '*' || ch == '|' || ch == '%') {
-                            sb.append('%');
-                            sb.append(Character.toUpperCase(Character.forDigit(ch / 16, 16)));
-                            sb.append(Character.toUpperCase(Character.forDigit(ch % 16, 16)));
-                        } else {
-                            sb.append(ch);
-                        }
-                    }
+                    sb.append(Text.escapeIllegalJcrChars(p));
                 }
             }
         } else {
