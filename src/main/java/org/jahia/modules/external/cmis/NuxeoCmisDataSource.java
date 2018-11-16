@@ -52,7 +52,7 @@ public class NuxeoCmisDataSource extends CmisDataSource implements ExternalDataS
     protected void setSessionProperties(Session cmisSession){
         super.setSessionProperties(cmisSession);
         //Get CMIS folder maps properties into string
-        CmisTypeMapping folderTypeMapping = conf.getTypeByJCR("jnt:folder");
+        CmisTypeMapping folderTypeMapping = conf.getTypeByJCR("nuxeo:folder");
         String folderPropertiesList = folderTypeMapping.getPropertiesMapCMIS().keySet().toString().replaceAll("\\[","").replaceAll("]","");
 
         //Get CMIS files mapped properties into string

@@ -95,6 +95,10 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
             if (!jcrStoreService.getDecorators().containsKey("nuxeo:file")) {
                 jcrStoreService.addDecorator("nuxeo:file", NuxeoFileNode.class);
             }
+            
+            if (!jcrStoreService.getDecorators().containsKey("nuxeo:folder")) {
+                jcrStoreService.addDecorator("nuxeo:folder", NuxeoFileNode.class);
+            }
 
             //Setup Nuxeo datasource
             dataSource = new NuxeoCmisDataSource();
