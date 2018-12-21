@@ -29,6 +29,8 @@ import org.jahia.api.Constants;
 import org.jahia.modules.external.ExternalQuery;
 import javax.jcr.RepositoryException;
 import javax.jcr.query.qom.*;
+import org.apache.chemistry.opencmis.client.api.QueryStatement;
+import org.apache.chemistry.opencmis.client.api.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,9 +40,11 @@ import org.slf4j.LoggerFactory;
  */
 public class NuxeoQueryResolver extends QueryResolver{
     private static final Logger LOGGER = LoggerFactory.getLogger(NuxeoQueryResolver.class);
+    private final Session session;
 
-    public NuxeoQueryResolver(CmisDataSource dataSource, ExternalQuery query) {
+    public NuxeoQueryResolver(CmisDataSource dataSource, ExternalQuery query, Session session) {
         super(dataSource, query);
+        this.session = session;
     }
 
     @Override
@@ -61,34 +65,37 @@ public class NuxeoQueryResolver extends QueryResolver{
      * @throws RepositoryException
      */
     @Override
-    protected StringBuffer getFullTextSearchConstraint(FullTextSearch c) throws RepositoryException{
-        StringBuffer buff = new StringBuffer();
+    protected StringBuffer getFullTextSearchConstraint(FullTextSearch c) throws RepositoryException {
+        final StringBuffer buff = new StringBuffer();
+        String searchTerm;
+
+        try {
+            searchTerm = discardEscapeChar(c.getFullTextSearchExpression().toString());
+        } catch (ParseException ex) {
+            LOGGER.warn("Impossible to escape the full text search expression", ex);
+            searchTerm = escapeString(c.getFullTextSearchExpression().toString());
+        }
+        searchTerm = searchTerm.substring(1, searchTerm.length() - 1);
+
         //If fulltext search is done on jcr:content then executing fulltext search
         if (c.getPropertyName().equals(Constants.JCR_CONTENT)) {
-            buff.append(" contains(");
-            addOperand(buff, c.getFullTextSearchExpression());
-            buff.append(") ");
-        }
-        //If fulltext search is done on another property then checking the property mapping
+            buff.append(" contains(?) ");
+        } //If fulltext search is done on another property then checking the property mapping
         //TODO : Avoid to use the like operator as often as possible and prefer one contains on multiple expressions
         else {
             CmisPropertyMapping propertyByJCR = cmisType.getPropertyByJCR(c.getPropertyName());
             //If the property is mapped then use like operator to avoid "contains" repetition
             if (propertyByJCR != null) {
-                String searchTerm = c.getFullTextSearchExpression().toString();
-                try {
-                    searchTerm = discardEscapeChar(searchTerm);
-                } catch (ParseException ex) {
-                    LOGGER.warn("Impossible to escape the full text search expression", ex);
-                    searchTerm = escapeString(searchTerm);
-                }
-                searchTerm = searchTerm.substring(1, searchTerm.length() - 1);
-                buff.append(propertyByJCR.getCmisName()).append("  like '%").append(searchTerm).append("%' ");
+                buff.append(propertyByJCR.getCmisName()).append("  like ? ");
+                searchTerm = '%' + searchTerm + '%';
             } else {
                 //If the property is not mapped we don't do anything
                 return FALSE;
             }
         }
-        return buff;
+
+        final QueryStatement qs = session.createQueryStatement(buff.toString());
+        qs.setString(1, searchTerm);
+        return new StringBuffer(qs.toQueryString());
     }
 }

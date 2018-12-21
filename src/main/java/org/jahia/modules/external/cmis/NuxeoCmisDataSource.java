@@ -205,7 +205,7 @@ public class NuxeoCmisDataSource extends CmisDataSource implements ExternalDataS
             @Override
             public List<String> execute(Session session) {
                 try {
-                    NuxeoQueryResolver resolver = new NuxeoQueryResolver(NuxeoCmisDataSource.this, query);
+                    NuxeoQueryResolver resolver = new NuxeoQueryResolver(NuxeoCmisDataSource.this, query, session);
                     String sql = resolver.resolve();
 
                     // Not mapped or unsupported queries treated as empty.
@@ -223,7 +223,7 @@ public class NuxeoCmisDataSource extends CmisDataSource implements ExternalDataS
                     }
                     OperationContext operationContext = session.createOperationContext();
                     operationContext.setIncludePathSegments(true);
-                    //In nuxeo the search query MUST be done with searchAllVersions attribute to true
+                    //In nuxeo the search query MUST be done with searchAllVersions attribute to true               
                     ItemIterable<QueryResult> results = session.query(sql, true, operationContext);
                     if (query.getLimit() > 0 && query.getLimit() < Integer.MAX_VALUE) {
                         results = results.getPage((int) query.getLimit());
