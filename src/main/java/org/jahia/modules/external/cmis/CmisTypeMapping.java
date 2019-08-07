@@ -32,7 +32,7 @@ import java.util.*;
  * Date: 1/29/14
  * Time: 10:51 PM
  */
-public class CmisTypeMapping implements Cloneable {
+public class CmisTypeMapping {
     private String jcrName;
     private Set<String> additionalSupportedMixins;
     private List<String> jcrMixins;
@@ -154,16 +154,6 @@ public class CmisTypeMapping implements Cloneable {
             for (CmisTypeMapping child : children) {
                 child.initProperties();
             }
-        }
-    }
-
-
-    @Override
-    protected CmisTypeMapping clone() {
-        try {
-            return (CmisTypeMapping) super.clone();
-        } catch (CloneNotSupportedException e) {  // impossible
-            throw new IllegalStateException(e);
         }
     }
 
