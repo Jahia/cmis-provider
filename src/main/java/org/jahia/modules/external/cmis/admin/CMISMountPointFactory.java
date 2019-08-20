@@ -38,6 +38,7 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.InputStream;
@@ -119,7 +120,10 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
                 // get reposiroty id
 
                 DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
+                domFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
                 DocumentBuilder domBuilder = domFactory.newDocumentBuilder();
+
+
                 Document domDoc = domBuilder.parse(target.request().accept(MediaType.TEXT_XML).get(InputStream.class));
 
                 alfrescoRepositoryId = domDoc.getElementsByTagName("cmis:repositoryId").item(0).getTextContent();
