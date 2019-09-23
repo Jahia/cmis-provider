@@ -238,7 +238,7 @@ public class NuxeoCmisDataSource extends CmisDataSource implements ExternalDataS
                             CmisObject object = session.getObject(remotePath);
                             remotePath = ((FileableCmisObject) object).getPaths().get(0);
                         }
-                        res.add(removeRemotePath(remotePath));
+                        res.add(transformPath(removeRemotePath(remotePath), Operation.ENCODE));
                     }
                     return res;
                 } catch (RepositoryException | CmisObjectNotFoundException e) {
