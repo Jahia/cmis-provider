@@ -10,7 +10,7 @@
     JAHIA'S ENTERPRISE DISTRIBUTIONS LICENSING - IMPORTANT INFORMATION
     ==========================================================================================
 
-        Copyright (C) 2002-2019 Jahia Solutions Group. All rights reserved.
+        Copyright (C) 2002-2020 Jahia Solutions Group. All rights reserved.
 
         This file is part of a Jahia's Enterprise Distribution.
 
@@ -29,11 +29,11 @@
     <parent>
         <artifactId>jahia-modules</artifactId>
         <groupId>org.jahia.modules</groupId>
-        <version>7.5.0.0-SNAPSHOT</version>
+        <version>8.0.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>cmis-provider</artifactId>
     <name>Portal factory - CMIS provider</name>
-    <version>3.0.0-SNAPSHOT</version>
+    <version>4.0.0-SNAPSHOT</version>
     <packaging>bundle</packaging>
     <description>Provides an implementation of the CMIS external provider.</description>
 
@@ -48,7 +48,8 @@
         <jahia-depends>external-provider</jahia-depends>
         <jahia-module-type>system</jahia-module-type>
         <export-package>org.jahia.modules.external.cmis</export-package>
-        <jahia-module-signature>MCwCFHVcDXK/XI2CpC58PP2zVLwyPzQSAhQxlMhXfI5M2c7hFMvKK6lvB0x4cQ==</jahia-module-signature>
+        <require-capability>osgi.extender;filter:="(osgi.extender=org.jahia.bundles.blueprint.extender.config)"</require-capability>
+        <jahia-module-signature>MCwCFGOP+3W8h5/JObI5l2YGN/wJKPdoAhRF0+2wJxgskGmqreUFJXspIO4gbw==</jahia-module-signature>
     </properties>
 
     <distributionManagement>
