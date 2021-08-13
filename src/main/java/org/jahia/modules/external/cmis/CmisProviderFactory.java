@@ -30,19 +30,16 @@ import org.jahia.exceptions.JahiaInitializationException;
 import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.modules.external.cmis.admin.CMISMountPointFactory;
 import org.jahia.modules.external.cmis.services.NuxeoFileNode;
-import org.jahia.security.license.LicenseCheckException;
-import org.jahia.security.license.LicenseCheckerService;
 import org.jahia.services.SpringContextSingleton;
 import org.jahia.services.content.*;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import javax.jcr.RepositoryException;
 import java.util.Arrays;
 
-public class CmisProviderFactory implements ProviderFactory, ApplicationContextAware, InitializingBean {
+public class CmisProviderFactory implements ProviderFactory, ApplicationContextAware {
 
     private static final String ALFRESCO_ENDPOINT_BROWSER = "/api/-default-/public/cmis/versions/1.1/browser";
     private static final String ALFRESCO_ENDPOINT_ATOM = "/api/-default-/public/cmis/versions/1.1/atom";
@@ -95,7 +92,7 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
             if (!jcrStoreService.getDecorators().containsKey("nuxeo:file")) {
                 jcrStoreService.addDecorator("nuxeo:file", NuxeoFileNode.class);
             }
-            
+
             if (!jcrStoreService.getDecorators().containsKey("nuxeo:folder")) {
                 jcrStoreService.addDecorator("nuxeo:folder", NuxeoFileNode.class);
             }
@@ -147,13 +144,6 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
-    }
-
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        if (!LicenseCheckerService.Stub.isAllowed("org.jahia.cmis")) {
-            throw new LicenseCheckException("No license found for CMIS connector");
-        }
     }
 
     public void setJcrStoreService(JCRStoreService jcrStoreService) {

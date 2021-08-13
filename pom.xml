@@ -29,7 +29,7 @@
     <parent>
         <artifactId>jahia-modules</artifactId>
         <groupId>org.jahia.modules</groupId>
-        <version>8.0.0.0</version>
+        <version>8.1.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>cmis-provider</artifactId>
     <name>Portal factory - CMIS provider</name>
@@ -49,7 +49,7 @@
         <jahia-module-type>system</jahia-module-type>
         <export-package>org.jahia.modules.external.cmis</export-package>
         <require-capability>osgi.extender;filter:="(osgi.extender=org.jahia.bundles.blueprint.extender.config)"</require-capability>
-        <jahia-module-signature>MC0CFQCRnB/n7pKoNRE6ZPvx1To0JKhd+QIUPA1JOd1coDgDJGG4k0xhK2X62Yw=</jahia-module-signature>
+        <jahia-module-signature>MCwCFHcMA2R0uP6hP4A8x6Gn3U488bIrAhQ5VuBBQmzWYwkaKaegDW6ivG8vmQ==</jahia-module-signature>
     </properties>
 
     <distributionManagement>
@@ -127,7 +127,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>15.0</version>
+            <version>30.1.1-jre</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
