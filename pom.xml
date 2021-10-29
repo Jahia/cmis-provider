@@ -49,7 +49,7 @@
         <jahia-module-type>system</jahia-module-type>
         <export-package>org.jahia.modules.external.cmis</export-package>
         <require-capability>osgi.extender;filter:="(osgi.extender=org.jahia.bundles.blueprint.extender.config)"</require-capability>
-        <jahia-module-signature>MCwCFHcMA2R0uP6hP4A8x6Gn3U488bIrAhQ5VuBBQmzWYwkaKaegDW6ivG8vmQ==</jahia-module-signature>
+        <jahia-module-signature>MCwCFGeMsSyh1BY7NYovL7KXRGtEVL7kAhRqNB4GN4uUu7ChCngULJc8KEVeVQ==</jahia-module-signature>
     </properties>
 
     <distributionManagement>
