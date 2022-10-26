@@ -31,6 +31,7 @@ import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.modules.external.cmis.admin.CMISMountPointFactory;
 import org.jahia.modules.external.cmis.services.NuxeoFileNode;
 import org.jahia.services.SpringContextSingleton;
+import org.jahia.services.cache.ehcache.EhCacheProvider;
 import org.jahia.services.content.*;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -45,6 +46,8 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
     private static final String ALFRESCO_ENDPOINT_ATOM = "/api/-default-/public/cmis/versions/1.1/atom";
     private static final String NUXEO_ENDPOINT_ATOM = "/nuxeo/atom/cmis/default/";
 
+    private static final String CONF_MAX_CHILD_NODES = "org.jahia.cmis.max.child.nodes";
+
     private ApplicationContext applicationContext;
 
     public static final String TYPE_ALFRESCO = "alfresco";
@@ -53,6 +56,7 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
     public static final String TYPE_NUXEO = "nuxeo";
     public static final String NUXEO_URL = "nuxeo.url";
     private JCRStoreService jcrStoreService;
+    private EhCacheProvider ehCacheprovider;
 
     @Override
     public String getNodeTypeName() {
@@ -120,6 +124,13 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
         }
         dataSource.setProvider(provider);
         dataSource.setRemotePath(remotePath);
+        dataSource.setCacheProvider(ehCacheprovider);
+        int maxChildNodesConfiguration = Integer.parseInt(conf.getRepositoryPropertiesMap().get(CONF_MAX_CHILD_NODES));
+        int maxChildNodesMountPoint = (int) mountPoint.getProperty(CMISMountPointFactory.MAX_CHILD_NODES).getValue().getLong();
+        dataSource.setMaxChildNodes(maxChildNodesMountPoint == 0 ? maxChildNodesConfiguration : maxChildNodesMountPoint);
+        dataSource.setMaxItemsPerPage((int) mountPoint.getProperty(CMISMountPointFactory.MAX_ITEMS_PER_PAGE).getValue().getLong());
+        dataSource.setTtidleSeconds((int) mountPoint.getProperty(CMISMountPointFactory.TTIDLE_SECONDS).getValue().getLong());
+        dataSource.setTtliveSeconds((int) mountPoint.getProperty(CMISMountPointFactory.TTLIVE_SECONDS).getValue().getLong());
         dataSource.start();
 
         boolean slowConnection = false;
@@ -149,4 +160,9 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
     public void setJcrStoreService(JCRStoreService jcrStoreService) {
         this.jcrStoreService = jcrStoreService;
     }
+
+    public void setEhCacheprovider(EhCacheProvider ehCacheprovider) {
+        this.ehCacheprovider = ehCacheprovider;
+    }
+
 }

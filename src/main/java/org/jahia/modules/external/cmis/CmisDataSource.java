@@ -27,10 +27,16 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import net.sf.ehcache.CacheException;
+import net.sf.ehcache.Ehcache;
+import net.sf.ehcache.Element;
+import net.sf.ehcache.config.SizeOfPolicyConfiguration;
 import org.apache.chemistry.opencmis.client.api.*;
 import org.apache.chemistry.opencmis.client.api.Property;
 import org.apache.chemistry.opencmis.client.api.Session;
+import org.apache.chemistry.opencmis.client.runtime.OperationContextImpl;
 import org.apache.chemistry.opencmis.client.runtime.SessionFactoryImpl;
 import org.apache.chemistry.opencmis.commons.PropertyIds;
 import org.apache.chemistry.opencmis.commons.SessionParameter;
@@ -58,6 +64,7 @@ import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.modules.external.ExternalData;
 import org.jahia.modules.external.ExternalDataSource;
 import org.jahia.modules.external.ExternalQuery;
+import org.jahia.services.cache.ehcache.EhCacheProvider;
 import org.jahia.services.content.JCRContentUtils;
 import org.jahia.services.content.JCRSessionFactory;
 import org.jahia.services.content.decorator.JCRMountPointNode;
@@ -78,25 +85,22 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static javax.jcr.security.Privilege.*;
-import static org.jahia.api.Constants.EDIT_WORKSPACE;
-import static org.jahia.api.Constants.LIVE_WORKSPACE;
+import static org.jahia.api.Constants.*;
 
 /**
  * ExternalDataSource implementation for CMIS full support for write and search Created by: Boris Date: 1/20/14 Time: 7:35 PM
  */
 public class CmisDataSource implements ExternalDataSource, ExternalDataSource.Initializable, ExternalDataSource.Writable,
-        ExternalDataSource.Searchable, ExternalDataSource.CanLoadChildrenInBatch, ExternalDataSource.CanCheckAvailability,
-        ExternalDataSource.SupportPrivileges {
-   /*
-    * The logger instance for this class
-    */
+        ExternalDataSource.Searchable, ExternalDataSource.CanCheckAvailability, ExternalDataSource.CanLoadChildrenInBatch,
+        ExternalDataSource.SupportPrivileges, ExternalDataSource.LazyProperty {
+    /*
+     * The logger instance for this class
+     */
     private static final Logger log = LoggerFactory.getLogger(CmisDataSource.class);
-    
+
     private static final String CONF_SESSION_CACHE_CONCURRENCY_LEVEL = "org.jahia.cmis.session.cache.concurrencyLevel";
     private static final String CONF_SESSION_CACHE_MAXIMUM_SIZE = "org.jahia.cmis.session.cache.maximumSize";
     private static final String CONF_SESSION_CACHE_EXPIRE_AFTER_ACCESS = "org.jahia.cmis.session.cache.expireAfterAccess";
-
-    private static final String CONF_MAX_CHILD_NODES = "org.jahia.cmis.max.child.nodes";
 
     private static final String DEFAULT_MIMETYPE = "binary/octet-stream";
     private static final List<String> JCR_CONTENT_LIST = Collections.singletonList(Constants.JCR_CONTENT);
@@ -106,8 +110,16 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     protected Cache<String, Session> activeConnections;
     private boolean recordingConnectionsStats;
     private ExternalContentStoreProvider provider;
+    private EhCacheProvider ehCacheProvider;
+    private Ehcache cache;
+    public static final String CMIS_CACHE = "cmis_provider_cache";
+    private int ttliveSeconds = 15 * 60;
+    private int ttidleSeconds = 5 * 60;
+    private static final Set<String> LAZY_BINARY_PROPERTIES = Sets.newHashSet(JCR_DATA);
+    private int maxItemsPerPage = 1000;
 
-    protected enum Operation { ENCODE, DECODE, URLENCODE }
+
+    protected enum Operation {ENCODE, DECODE, URLENCODE}
 
     protected int maxChildNodes = 0;
 
@@ -144,6 +156,11 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     public List<String> getChildren(final String path) throws RepositoryException {
         final List<String> list = new ArrayList<>();
         try {
+            String key = provider.getId() + "_children_" + path;
+            Element element = cache.get(key);
+            if (element != null) {
+                return (List<String>) element.getObjectValue();
+            }
             if (!path.endsWith(JCR_CONTENT_SUFFIX)) {
                 CmisObject object = getObjectByPath(path);
                 if (object instanceof Document) {
@@ -153,7 +170,9 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                     executeWithCMISSession(new ExecuteCallback<Object>() {
                         @Override
                         public Object execute(Session session) {
-                            ItemIterable<CmisObject> children = folder.getChildren();
+                            OperationContext operationContext = new OperationContextImpl();
+                            operationContext.setMaxItemsPerPage(maxItemsPerPage);
+                            ItemIterable<CmisObject> children = folder.getChildren(operationContext);
                             int i = 0;
                             for (CmisObject child : children) {
                                 list.add(child.getName());
@@ -168,6 +187,10 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
                 }
             }
+            element = new Element(key, list);
+            element.setTimeToLive(ttliveSeconds);
+            element.setTimeToIdle(ttidleSeconds);
+            cache.put(element);
             return list;
         } catch (CmisObjectNotFoundException e) {
             throw new PathNotFoundException("Can't find cmis folder " + path, e);
@@ -197,9 +220,14 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
     }
 
-    @Override
+
     public List<ExternalData> getChildrenNodes(final String path) throws RepositoryException {
-        return executeWithCMISSession(new ExecuteCallback<List<ExternalData>>() {
+        String key = provider.getId() + "_children_nodes_" + path;
+        Element element = cache.get(key);
+        if (element != null) {
+            return (List<ExternalData>) element.getObjectValue();
+        }
+        List<ExternalData> externalDataList = executeWithCMISSession(new ExecuteCallback<List<ExternalData>>() {
             @Override
             public List<ExternalData> execute(Session session) throws RepositoryException {
                 ArrayList<ExternalData> list = new ArrayList<>();
@@ -209,10 +237,18 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                         // do not encode "+" that has to be encoded
                         CmisObject object = session.getObjectByPath(addRemotePath(transformPath(transformPath(path, Operation.DECODE), Operation.URLENCODE)));
                         if (object instanceof Document) {
-                            return Collections.singletonList(getObjectContent((Document) object, path + JCR_CONTENT_SUFFIX));
+                            String jcrContentPath = path + JCR_CONTENT_SUFFIX;
+                            ExternalData objectContent = getObjectContent((Document) object, jcrContentPath);
+                            Element document = new Element(provider.getId() + "_path_" + jcrContentPath, objectContent);
+                            document.setTimeToIdle(ttidleSeconds);
+                            document.setTimeToLive(ttliveSeconds);
+                            cache.put(document);
+                            return Collections.singletonList(objectContent);
                         } else if (object instanceof Folder) {
                             Folder folder = (Folder) object;
-                            ItemIterable<CmisObject> children = folder.getChildren();
+                            OperationContext operationContext = new OperationContextImpl();
+                            operationContext.setMaxItemsPerPage(maxItemsPerPage);
+                            ItemIterable<CmisObject> children = folder.getChildren(operationContext);
                             int i = 0;
                             for (CmisObject child : children) {
                                 if (child.getBaseTypeId() == BaseTypeId.CMIS_DOCUMENT || child.getBaseTypeId() == BaseTypeId.CMIS_FOLDER) {
@@ -221,9 +257,20 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                                         break;
                                     }
                                     String childPath = transformPath(removeRemotePath(!folder.getPath().equals("/") ? folder.getPath() + "/" : "/") + child.getName(), Operation.ENCODE);
-                                    list.add(getObject(child, childPath));
+                                    ExternalData childData = getObject(child, childPath);
+                                    list.add(childData);
+                                    Element document = new Element(provider.getId() + "_path_" + childPath, childData);
+                                    document.setTimeToIdle(ttidleSeconds);
+                                    document.setTimeToLive(ttliveSeconds);
+                                    cache.put(document);
                                     if (child.getBaseTypeId() == BaseTypeId.CMIS_DOCUMENT) {
-                                        list.add(getObjectContent((Document) child, childPath + JCR_CONTENT_SUFFIX));
+                                        String jcrContentPath = childPath + JCR_CONTENT_SUFFIX;
+                                        ExternalData objectContent = getObjectContent((Document) child, jcrContentPath);
+                                        Element childDocument = new Element(provider.getId() + "_path_" + jcrContentPath, objectContent);
+                                        childDocument.setTimeToIdle(ttidleSeconds);
+                                        childDocument.setTimeToLive(ttliveSeconds);
+                                        cache.put(childDocument);
+                                        list.add(objectContent);
                                     }
                                 }
                             }
@@ -235,12 +282,22 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 return list;
             }
         });
+        element = new Element(key, externalDataList);
+        element.setTimeToLive(ttliveSeconds);
+        element.setTimeToIdle(ttidleSeconds);
+        cache.put(element);
+        return externalDataList;
     }
 
     @Override
     public ExternalData getItemByIdentifier(final String identifier) throws ItemNotFoundException {
         try {
-            return executeWithCMISSession(new ExecuteCallback<ExternalData>() {
+            String key = provider.getId() + "_id_" + identifier;
+            Element element = cache.get(key);
+            if (element != null) {
+                return (ExternalData) element.getObjectValue();
+            }
+            ExternalData externalData = executeWithCMISSession(new ExecuteCallback<ExternalData>() {
                 @Override
                 public ExternalData execute(Session session) throws RepositoryException {
                     if (identifier.endsWith(JCR_CONTENT_SUFFIX)) {
@@ -252,6 +309,11 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                     }
                 }
             });
+            element = new Element(key, externalData);
+            element.setTimeToLive(ttliveSeconds);
+            element.setTimeToIdle(ttidleSeconds);
+            cache.put(element);
+            return externalData;
 
         } catch (Exception e) {
             throw new ItemNotFoundException("Can't find object by id " + identifier, e);
@@ -261,15 +323,29 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     @Override
     public ExternalData getItemByPath(String path) throws PathNotFoundException {
         try {
-            if (path.endsWith(JCR_CONTENT_SUFFIX)) {
-                CmisObject object = getObjectByPath(removeContentSufix(path));
-                return getObjectContent((Document) object, path);
-            } else {
-                CmisObject object = getObjectByPath(path);
-                return getObject(object, path);
+            String key = provider.getId() + "_path_" + path;
+            Element element = cache.get(key);
+            if (element != null) {
+                return (ExternalData) element.getObjectValue();
             }
+            ExternalData externalData = getExternalData(path);
+            element = new Element(key, externalData);
+            element.setTimeToLive(ttliveSeconds);
+            element.setTimeToIdle(ttidleSeconds);
+            cache.put(element);
+            return externalData;
         } catch (Exception e) {
             throw new PathNotFoundException("Can't find object by path " + path, e);
+        }
+    }
+
+    private ExternalData getExternalData(String path) throws RepositoryException {
+        if (path.endsWith(JCR_CONTENT_SUFFIX)) {
+            CmisObject object = getObjectByPath(removeContentSufix(path));
+            return getObjectContent((Document) object, path);
+        } else {
+            CmisObject object = getObjectByPath(path);
+            return getObject(object, path);
         }
     }
 
@@ -284,17 +360,33 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         Map<String, String[]> properties = new HashMap<>(1);
         properties.put(Constants.JCR_MIMETYPE, new String[]{doc.getContentStreamMimeType()});
         ExternalData externalData = new ExternalData(stripVersionFromId(doc.getId()) + JCR_CONTENT_SUFFIX, jcrContentPath, Constants.NT_RESOURCE, properties);
-
-        Map<String, Binary[]> binaryProperties = new HashMap<>(1);
-        if (doc.getContentStreamLength() > 0) {
-            CmisBinaryImpl cmisBinary = new CmisBinaryImpl(doc, jcrContentPath, this, resolveUser());
-            binaryProperties.put(Constants.JCR_DATA, new Binary[]{cmisBinary});
-        } else {
-            BinaryImpl binary = new BinaryImpl("unable to get binary content".getBytes());
-            binaryProperties.put(Constants.JCR_DATA, new Binary[]{binary});
-        }
-        externalData.setBinaryProperties(binaryProperties);
+        externalData.setBinaryProperties(new HashMap<>());
+        externalData.setLazyBinaryProperties(LAZY_BINARY_PROPERTIES);
         return externalData;
+    }
+
+    @Override
+    public String[] getPropertyValues(String path, String propertyName) throws PathNotFoundException {
+        return new String[0];
+    }
+
+    @Override
+    public String[] getI18nPropertyValues(String path, String lang, String propertyName) throws PathNotFoundException {
+        return new String[0];
+    }
+
+    @Override
+    public Binary[] getBinaryPropertyValues(String path, String propertyName) throws PathNotFoundException {
+        try {
+            Document doc = (Document) getObjectByPath(removeContentSufix(path));
+            if (doc.getContentStreamLength() > 0) {
+                CmisBinaryImpl cmisBinary = new CmisBinaryImpl(doc, path, this, resolveUser());
+                return new Binary[]{cmisBinary};
+            }
+        } catch (RepositoryException e) {
+            throw new RuntimeException(e);
+        }
+        return new Binary[0];
     }
 
     private String stripVersionFromId(String id) {
@@ -304,7 +396,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     protected ExternalData getObject(CmisObject object, String path) throws PathNotFoundException {
         CmisTypeMapping typeMapping = getTypeMapping(object);
         Map<String, String[]> properties = new HashMap<>();
-        List <String> additionalMixins = new ArrayList<>();
+        List<String> additionalMixins = new ArrayList<>();
         if (object instanceof Document) {
             Document doc = ((Document) object);
             object = doc;
@@ -421,12 +513,22 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         int concurrencyLevel = parseInt(repositoryPropertiesMap, CONF_SESSION_CACHE_CONCURRENCY_LEVEL);
         int size = parseInt(repositoryPropertiesMap, CONF_SESSION_CACHE_MAXIMUM_SIZE);
         int duration = parseInt(repositoryPropertiesMap, CONF_SESSION_CACHE_EXPIRE_AFTER_ACCESS);
-        maxChildNodes = parseInt(repositoryPropertiesMap, CONF_MAX_CHILD_NODES);
         cacheBuilder = CacheBuilder.newBuilder().removalListener(removalListener)
                 .concurrencyLevel(concurrencyLevel)
                 .maximumSize(size)
                 .expireAfterAccess(duration, TimeUnit.MINUTES);
         buildActiveConnections();
+        try {
+            if (!ehCacheProvider.getCacheManager().cacheExists(CMIS_CACHE)) {
+                ehCacheProvider.getCacheManager().addCache(CMIS_CACHE);
+            }
+            cache = ehCacheProvider.getCacheManager().getCache(CMIS_CACHE);
+            cache.getCacheConfiguration().setTimeToLiveSeconds(ttliveSeconds);
+            cache.getCacheConfiguration().setTimeToIdleSeconds(ttidleSeconds);
+            cache.removeAll();
+        } catch (IllegalStateException | CacheException e) {
+            log.error("Error while initializing cache for IMDB", e);
+        }
     }
 
     private int parseInt(Map<String, String> repositoryPropertiesMap, String propertyName) {
@@ -557,7 +659,9 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                     session.removeObjectFromCache(version);
                 }
             } else if (object instanceof Folder) {
-                for (CmisObject o : ((Folder) object).getChildren()) {
+                OperationContext operationContext = new OperationContextImpl();
+                operationContext.setMaxItemsPerPage(maxItemsPerPage);
+                for (CmisObject o : ((Folder) object).getChildren(operationContext)) {
                     cleanUpCache(o, session);
                 }
             }
@@ -1035,4 +1139,23 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
     }
 
+    public void setCacheProvider(EhCacheProvider ehCacheProvider) {
+        this.ehCacheProvider = ehCacheProvider;
+    }
+
+    public void setTtliveSeconds(int ttliveSeconds) {
+        this.ttliveSeconds = ttliveSeconds;
+    }
+
+    public void setTtidleSeconds(int ttidleSeconds) {
+        this.ttidleSeconds = ttidleSeconds;
+    }
+
+    public void setMaxChildNodes(int maxChildNodes) {
+        this.maxChildNodes = maxChildNodes;
+    }
+
+    public void setMaxItemsPerPage(int maxItemsPerPage) {
+        this.maxItemsPerPage = maxItemsPerPage;
+    }
 }

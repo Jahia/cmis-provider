@@ -140,7 +140,6 @@ public class CmisBinaryImpl implements Binary, FileServlet.BinaryRangesSupport {
             }
         }
         listOfStreamsForClose = null;
-        doc = null;
     }
 
     @Override

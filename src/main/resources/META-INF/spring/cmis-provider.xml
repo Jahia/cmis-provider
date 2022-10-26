@@ -151,7 +151,7 @@
             </list>
         </property>
     </bean>
-    
+
    <bean class="org.jahia.modules.external.cmis.CmisTypeMapping" parent="cmis_base" id="nuxeo_folder"
           p:jcrName="nuxeo:folder"
           p:jcrMixins="cmismix:folder"
@@ -185,6 +185,7 @@
 
     <bean id="cmisProviderFactory" class="org.jahia.modules.external.cmis.CmisProviderFactory">
         <property name="jcrStoreService" ref="JCRStoreService"/>
+        <property name="ehCacheprovider" ref="ehCacheProvider"/>
     </bean>
     <bean class="org.jahia.modules.external.cmis.actions.ActiveCmisSessions" id="activeCmisSessions">
         <property name="requireAuthenticatedUser" value="true"/>

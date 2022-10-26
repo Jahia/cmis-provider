@@ -79,6 +79,14 @@
                         <form:input path="publicUser"/>
                     </div>
                     <div class="row-fluid">
+                        <form:label path="ttliveSeconds"><fmt:message key="cmisFactory.ttliveSeconds"/></form:label>
+                        <form:input path="ttliveSeconds"/>
+                        <form:label path="ttidleSeconds"><fmt:message key="cmisFactory.ttidleSeconds"/></form:label>
+                        <form:input path="ttidleSeconds"/>
+                        <form:label path="maxChildNodes"><fmt:message key="cmisFactory.maxChildNodes"/></form:label>
+                        <form:input path="maxChildNodes"/>
+                        <form:label path="maxItemsPerPage"><fmt:message key="cmisFactory.maxItemsPerPage"/></form:label>
+                        <form:input path="maxItemsPerPage"/>
                         <form:label path="remotePath"><fmt:message key="cmisFactory.remotePath"/></form:label>
                         <form:input path="remotePath"/>
                     </div>
@@ -93,6 +101,9 @@
             </fieldset>
             <fieldset>
                 <div class="container-fluid">
+                    <button class="btn btn-secondary" type="submit" name="_eventId_flush">
+                        <span><fmt:message key="label.flush"/></span>
+                    </button>
                     <button class="btn btn-primary" type="submit" name="_eventId_save">
                         <span><fmt:message key="label.save"/></span>
                     </button>

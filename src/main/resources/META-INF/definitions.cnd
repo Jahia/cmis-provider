@@ -17,6 +17,10 @@
     - slowConnection (boolean)
     - type (string)
     - remotePath (string)
+    - ttliveSeconds (long)
+    - ttidleSeconds (long)
+    - maxChildNodes (long)
+    - maxItemsPerPage (long)
 
 [cmismix:base] mixin
     - cmis:objectId  (string) protected
