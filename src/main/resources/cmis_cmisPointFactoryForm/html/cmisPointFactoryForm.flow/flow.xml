@@ -16,6 +16,7 @@
         </on-entry>
         <transition on="save" to="save"/>
         <transition on="cancel" to="cancel" bind="false"/>
+        <transition on="flush" to="flush"/>
     </view-state>
 
     <action-state id="save">
@@ -28,6 +29,12 @@
     <action-state id="cancel">
         <evaluate expression="flowHandler.getAdminURL(flowRequestContext)" result="conversationScope.adminURL"/>
         <transition to="redirectToAdmin"/>
+    </action-state>
+
+    <action-state id="flush">
+        <evaluate expression="flowHandler.getAdminURL(flowRequestContext)" result="conversationScope.adminURL"/>
+        <evaluate expression="flowHandler.flush(messageContext)"/>
+        <transition on="yes" to="redirectToAdmin"/>
     </action-state>
 
     <view-state id="redirectToAdmin" view="externalRedirect:#{conversationScope.adminURL}"/>

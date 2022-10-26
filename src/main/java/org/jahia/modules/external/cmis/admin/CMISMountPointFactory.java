@@ -57,6 +57,10 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
     public static final String TYPE = "type";
     public static final String CMIS_SERVICE_ENDPOINT = "/api/-default-/public/cmis/versions/1.1/atom";
     public static final String PUBLIC_USER = "publicUser";
+    public static final String TTLIVE_SECONDS = "ttliveSeconds";
+    public static final String TTIDLE_SECONDS = "ttidleSeconds";
+    public static final String MAX_CHILD_NODES = "maxChildNodes";
+    public static final String MAX_ITEMS_PER_PAGE = "maxItemsPerPage";
 
     private static final long serialVersionUID = 2927976149191746013L;
     @NotEmpty
@@ -76,6 +80,11 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
     private String publicUser = "";
 
     private String remotePath;
+
+    private int ttliveSeconds = 15 * 60;
+    private int ttidleSeconds = 5 * 60;
+    private int maxItemsPerPage = 1000;
+    private int maxChildNodes = 0;
 
     @Override
     public String getName() {
@@ -108,6 +117,10 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
         mountNode.setProperty(URL, url);
         mountNode.setProperty(SLOW_CONNECTION, slowConnection);
         mountNode.setProperty(REMOTE_PATH, remotePath);
+        mountNode.setProperty(TTLIVE_SECONDS, ttliveSeconds);
+        mountNode.setProperty(TTIDLE_SECONDS, ttidleSeconds);
+        mountNode.setProperty(MAX_CHILD_NODES, maxChildNodes);
+        mountNode.setProperty(MAX_ITEMS_PER_PAGE, maxItemsPerPage);
         if (CmisProviderFactory.TYPE_ALFRESCO.equals(type)) {
 
             // get repository id from the server
@@ -173,6 +186,10 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
         this.remotePath = nodeWrapper.hasProperty(REMOTE_PATH) ? nodeWrapper.getProperty(REMOTE_PATH).getString() : "";
         this.url = nodeWrapper.getPropertyAsString(URL);
         this.slowConnection = nodeWrapper.hasProperty(SLOW_CONNECTION) && nodeWrapper.getProperty(SLOW_CONNECTION).getBoolean();
+        this.maxChildNodes = nodeWrapper.hasProperty(MAX_CHILD_NODES) ? (int) nodeWrapper.getProperty(MAX_CHILD_NODES).getValue().getLong() : 0;
+        this.maxItemsPerPage = nodeWrapper.hasProperty(MAX_ITEMS_PER_PAGE) ? (int) nodeWrapper.getProperty(MAX_ITEMS_PER_PAGE).getValue().getLong() : 1000;
+        this.ttliveSeconds = nodeWrapper.hasProperty(TTLIVE_SECONDS) ? (int) nodeWrapper.getProperty(TTIDLE_SECONDS).getValue().getLong() : 15 * 60;
+        this.ttidleSeconds = nodeWrapper.hasProperty(TTIDLE_SECONDS) ? (int) nodeWrapper.getProperty(TTIDLE_SECONDS).getValue().getLong() : 15 * 60;
     }
 
     public String getRepositoryId() {
@@ -237,5 +254,37 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
 
     public void setPublicUser(String publicUser) {
         this.publicUser = publicUser;
+    }
+
+    public int getTtliveSeconds() {
+        return ttliveSeconds;
+    }
+
+    public void setTtliveSeconds(int ttliveSeconds) {
+        this.ttliveSeconds = ttliveSeconds;
+    }
+
+    public int getTtidleSeconds() {
+        return ttidleSeconds;
+    }
+
+    public void setTtidleSeconds(int ttidleSeconds) {
+        this.ttidleSeconds = ttidleSeconds;
+    }
+
+    public int getMaxItemsPerPage() {
+        return maxItemsPerPage;
+    }
+
+    public void setMaxItemsPerPage(int maxItemsPerPage) {
+        this.maxItemsPerPage = maxItemsPerPage;
+    }
+
+    public int getMaxChildNodes() {
+        return maxChildNodes;
+    }
+
+    public void setMaxChildNodes(int maxChildNodes) {
+        this.maxChildNodes = maxChildNodes;
     }
 }

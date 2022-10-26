@@ -24,6 +24,10 @@
 package org.jahia.modules.external.cmis.admin;
 
 import org.jahia.modules.external.admin.mount.AbstractMountPointFactoryHandler;
+import org.jahia.modules.external.cmis.CmisDataSource;
+import org.jahia.registries.ServicesRegistry;
+import org.jahia.services.SpringContextSingleton;
+import org.jahia.services.cache.ehcache.EhCacheProvider;
 import org.jahia.services.content.JCRCallback;
 import org.jahia.services.content.JCRSessionWrapper;
 import org.jahia.services.content.JCRTemplate;
@@ -97,5 +101,12 @@ public class CMISMountPointFactoryHandler extends AbstractMountPointFactoryHandl
             messageContext.addMessage(messageBuilder.build());
         }
         return false;
+    }
+
+    public Boolean flush(MessageContext messageContext) {
+        logger.info("Flushing cache: "+CmisDataSource.CMIS_CACHE);
+        EhCacheProvider ehCacheProvider = (EhCacheProvider) SpringContextSingleton.getBean("ehCacheProvider");
+        ehCacheProvider.getCacheManager().getCache(CmisDataSource.CMIS_CACHE).removeAll();
+        return true;
     }
 }
