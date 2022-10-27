@@ -116,7 +116,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     private int ttliveSeconds = 15 * 60;
     private int ttidleSeconds = 5 * 60;
     private static final Set<String> LAZY_BINARY_PROPERTIES = Sets.newHashSet(JCR_DATA);
-    private int maxItemsPerPage = 1000;
+    private int maxItemsPerBatch = 1000;
 
 
     protected enum Operation {ENCODE, DECODE, URLENCODE}
@@ -171,7 +171,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                         @Override
                         public Object execute(Session session) {
                             OperationContext operationContext = new OperationContextImpl();
-                            operationContext.setMaxItemsPerPage(maxItemsPerPage);
+                            operationContext.setMaxItemsPerPage(maxItemsPerBatch);
                             ItemIterable<CmisObject> children = folder.getChildren(operationContext);
                             int i = 0;
                             for (CmisObject child : children) {
@@ -247,7 +247,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                         } else if (object instanceof Folder) {
                             Folder folder = (Folder) object;
                             OperationContext operationContext = new OperationContextImpl();
-                            operationContext.setMaxItemsPerPage(maxItemsPerPage);
+                            operationContext.setMaxItemsPerPage(maxItemsPerBatch);
                             ItemIterable<CmisObject> children = folder.getChildren(operationContext);
                             int i = 0;
                             for (CmisObject child : children) {
@@ -384,7 +384,8 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 return new Binary[]{cmisBinary};
             }
         } catch (RepositoryException e) {
-            throw new RuntimeException(e);
+            log.warn("Could not read file located at {}", path);
+            return new Binary[0];
         }
         return new Binary[0];
     }
@@ -660,7 +661,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                 }
             } else if (object instanceof Folder) {
                 OperationContext operationContext = new OperationContextImpl();
-                operationContext.setMaxItemsPerPage(maxItemsPerPage);
+                operationContext.setMaxItemsPerPage(maxItemsPerBatch);
                 for (CmisObject o : ((Folder) object).getChildren(operationContext)) {
                     cleanUpCache(o, session);
                 }
@@ -981,11 +982,9 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         }
     }
 
-    protected void setSessionProperties(Session cmisSession){
-        if (maxChildNodes > 0) {
-            cmisSession.getDefaultContext().setMaxItemsPerPage(maxChildNodes);
-            cmisSession.getDefaultContext().setOrderBy("cmis:name");
-        }
+    protected void setSessionProperties(Session cmisSession) {
+        cmisSession.getDefaultContext().setMaxItemsPerPage(maxItemsPerBatch);
+        cmisSession.getDefaultContext().setOrderBy("cmis:name");
     }
 
     /**
@@ -1155,7 +1154,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         this.maxChildNodes = maxChildNodes;
     }
 
-    public void setMaxItemsPerPage(int maxItemsPerPage) {
-        this.maxItemsPerPage = maxItemsPerPage;
+    public void setMaxItemsPerBatch(int maxItemsPerBatch) {
+        this.maxItemsPerBatch = maxItemsPerBatch;
     }
 }

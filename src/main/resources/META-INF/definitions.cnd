@@ -20,7 +20,7 @@
     - ttliveSeconds (long)
     - ttidleSeconds (long)
     - maxChildNodes (long)
-    - maxItemsPerPage (long)
+    - maxItemsPerBatch (long)
 
 [cmismix:base] mixin
     - cmis:objectId  (string) protected
