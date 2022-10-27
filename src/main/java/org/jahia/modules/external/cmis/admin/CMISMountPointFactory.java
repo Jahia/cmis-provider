@@ -60,7 +60,7 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
     public static final String TTLIVE_SECONDS = "ttliveSeconds";
     public static final String TTIDLE_SECONDS = "ttidleSeconds";
     public static final String MAX_CHILD_NODES = "maxChildNodes";
-    public static final String MAX_ITEMS_PER_PAGE = "maxItemsPerPage";
+    public static final String MAX_ITEMS_PER_BATCH = "maxItemsPerBatch";
 
     private static final long serialVersionUID = 2927976149191746013L;
     @NotEmpty
@@ -83,7 +83,7 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
 
     private int ttliveSeconds = 15 * 60;
     private int ttidleSeconds = 5 * 60;
-    private int maxItemsPerPage = 1000;
+    private int maxItemsPerBatch = 1000;
     private int maxChildNodes = 0;
 
     @Override
@@ -120,7 +120,7 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
         mountNode.setProperty(TTLIVE_SECONDS, ttliveSeconds);
         mountNode.setProperty(TTIDLE_SECONDS, ttidleSeconds);
         mountNode.setProperty(MAX_CHILD_NODES, maxChildNodes);
-        mountNode.setProperty(MAX_ITEMS_PER_PAGE, maxItemsPerPage);
+        mountNode.setProperty(MAX_ITEMS_PER_BATCH, maxItemsPerBatch);
         if (CmisProviderFactory.TYPE_ALFRESCO.equals(type)) {
 
             // get repository id from the server
@@ -187,7 +187,7 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
         this.url = nodeWrapper.getPropertyAsString(URL);
         this.slowConnection = nodeWrapper.hasProperty(SLOW_CONNECTION) && nodeWrapper.getProperty(SLOW_CONNECTION).getBoolean();
         this.maxChildNodes = nodeWrapper.hasProperty(MAX_CHILD_NODES) ? (int) nodeWrapper.getProperty(MAX_CHILD_NODES).getValue().getLong() : 0;
-        this.maxItemsPerPage = nodeWrapper.hasProperty(MAX_ITEMS_PER_PAGE) ? (int) nodeWrapper.getProperty(MAX_ITEMS_PER_PAGE).getValue().getLong() : 1000;
+        this.maxItemsPerBatch = nodeWrapper.hasProperty(MAX_ITEMS_PER_BATCH) ? (int) nodeWrapper.getProperty(MAX_ITEMS_PER_BATCH).getValue().getLong() : 1000;
         this.ttliveSeconds = nodeWrapper.hasProperty(TTLIVE_SECONDS) ? (int) nodeWrapper.getProperty(TTIDLE_SECONDS).getValue().getLong() : 15 * 60;
         this.ttidleSeconds = nodeWrapper.hasProperty(TTIDLE_SECONDS) ? (int) nodeWrapper.getProperty(TTIDLE_SECONDS).getValue().getLong() : 15 * 60;
     }
@@ -272,12 +272,12 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
         this.ttidleSeconds = ttidleSeconds;
     }
 
-    public int getMaxItemsPerPage() {
-        return maxItemsPerPage;
+    public int getMaxItemsPerBatch() {
+        return maxItemsPerBatch;
     }
 
-    public void setMaxItemsPerPage(int maxItemsPerPage) {
-        this.maxItemsPerPage = maxItemsPerPage;
+    public void setMaxItemsPerBatch(int maxItemsPerBatch) {
+        this.maxItemsPerBatch = maxItemsPerBatch;
     }
 
     public int getMaxChildNodes() {

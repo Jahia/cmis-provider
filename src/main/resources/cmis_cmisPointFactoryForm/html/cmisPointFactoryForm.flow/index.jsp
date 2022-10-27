@@ -85,8 +85,8 @@
                         <form:input path="ttidleSeconds"/>
                         <form:label path="maxChildNodes"><fmt:message key="cmisFactory.maxChildNodes"/></form:label>
                         <form:input path="maxChildNodes"/>
-                        <form:label path="maxItemsPerPage"><fmt:message key="cmisFactory.maxItemsPerPage"/></form:label>
-                        <form:input path="maxItemsPerPage"/>
+                        <form:label path="maxItemsPerBatch"><fmt:message key="cmisFactory.maxItemsPerBatch"/></form:label>
+                        <form:input path="maxItemsPerBatch"/>
                         <form:label path="remotePath"><fmt:message key="cmisFactory.remotePath"/></form:label>
                         <form:input path="remotePath"/>
                     </div>

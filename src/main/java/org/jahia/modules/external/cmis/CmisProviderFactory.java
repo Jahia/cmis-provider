@@ -128,7 +128,7 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
         int maxChildNodesConfiguration = Integer.parseInt(conf.getRepositoryPropertiesMap().get(CONF_MAX_CHILD_NODES));
         int maxChildNodesMountPoint = (int) mountPoint.getProperty(CMISMountPointFactory.MAX_CHILD_NODES).getValue().getLong();
         dataSource.setMaxChildNodes(maxChildNodesMountPoint == 0 ? maxChildNodesConfiguration : maxChildNodesMountPoint);
-        dataSource.setMaxItemsPerPage((int) mountPoint.getProperty(CMISMountPointFactory.MAX_ITEMS_PER_PAGE).getValue().getLong());
+        dataSource.setMaxItemsPerBatch((int) mountPoint.getProperty(CMISMountPointFactory.MAX_ITEMS_PER_BATCH).getValue().getLong());
         dataSource.setTtidleSeconds((int) mountPoint.getProperty(CMISMountPointFactory.TTIDLE_SECONDS).getValue().getLong());
         dataSource.setTtliveSeconds((int) mountPoint.getProperty(CMISMountPointFactory.TTLIVE_SECONDS).getValue().getLong());
         dataSource.start();
