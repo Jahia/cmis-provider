@@ -27,15 +27,13 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
-import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import net.sf.ehcache.CacheException;
 import net.sf.ehcache.Ehcache;
 import net.sf.ehcache.Element;
-import net.sf.ehcache.config.SizeOfPolicyConfiguration;
-import org.apache.chemistry.opencmis.client.api.*;
 import org.apache.chemistry.opencmis.client.api.Property;
 import org.apache.chemistry.opencmis.client.api.Session;
+import org.apache.chemistry.opencmis.client.api.*;
 import org.apache.chemistry.opencmis.client.runtime.OperationContextImpl;
 import org.apache.chemistry.opencmis.client.runtime.SessionFactoryImpl;
 import org.apache.chemistry.opencmis.commons.PropertyIds;
@@ -58,7 +56,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.util.ISO8601;
 import org.apache.jackrabbit.util.Text;
-import org.apache.jackrabbit.value.BinaryImpl;
 import org.jahia.api.Constants;
 import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.modules.external.ExternalData;
@@ -115,7 +112,6 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     public static final String CMIS_CACHE = "cmis_provider_cache";
     private int ttliveSeconds = 15 * 60;
     private int ttidleSeconds = 5 * 60;
-    private static final Set<String> LAZY_BINARY_PROPERTIES = Sets.newHashSet(JCR_DATA);
     private int maxItemsPerBatch = 1000;
 
 
@@ -143,6 +139,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
     /**
      * Resolve the username from the Aliased / External Session / JCR Session
+     *
      * @return the username
      */
     protected static String resolveUser() {
@@ -361,7 +358,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
         properties.put(Constants.JCR_MIMETYPE, new String[]{doc.getContentStreamMimeType()});
         ExternalData externalData = new ExternalData(stripVersionFromId(doc.getId()) + JCR_CONTENT_SUFFIX, jcrContentPath, Constants.NT_RESOURCE, properties);
         externalData.setBinaryProperties(new HashMap<>());
-        externalData.setLazyBinaryProperties(LAZY_BINARY_PROPERTIES);
+        externalData.setLazyBinaryProperties(new HashSet<>(Collections.singletonList(JCR_DATA)));
         return externalData;
     }
 

@@ -126,11 +126,17 @@ public class CmisProviderFactory implements ProviderFactory, ApplicationContextA
         dataSource.setRemotePath(remotePath);
         dataSource.setCacheProvider(ehCacheprovider);
         int maxChildNodesConfiguration = Integer.parseInt(conf.getRepositoryPropertiesMap().get(CONF_MAX_CHILD_NODES));
-        int maxChildNodesMountPoint = (int) mountPoint.getProperty(CMISMountPointFactory.MAX_CHILD_NODES).getValue().getLong();
+        int maxChildNodesMountPoint = mountPoint.hasProperty(CMISMountPointFactory.MAX_CHILD_NODES) ? (int) mountPoint.getProperty(CMISMountPointFactory.MAX_CHILD_NODES).getValue().getLong() : 0;
         dataSource.setMaxChildNodes(maxChildNodesMountPoint == 0 ? maxChildNodesConfiguration : maxChildNodesMountPoint);
-        dataSource.setMaxItemsPerBatch((int) mountPoint.getProperty(CMISMountPointFactory.MAX_ITEMS_PER_BATCH).getValue().getLong());
-        dataSource.setTtidleSeconds((int) mountPoint.getProperty(CMISMountPointFactory.TTIDLE_SECONDS).getValue().getLong());
-        dataSource.setTtliveSeconds((int) mountPoint.getProperty(CMISMountPointFactory.TTLIVE_SECONDS).getValue().getLong());
+        if(mountPoint.hasProperty(CMISMountPointFactory.MAX_ITEMS_PER_BATCH)) {
+            dataSource.setMaxItemsPerBatch((int) mountPoint.getProperty(CMISMountPointFactory.MAX_ITEMS_PER_BATCH).getValue().getLong());
+        }
+        if(mountPoint.hasProperty(CMISMountPointFactory.TTIDLE_SECONDS)) {
+            dataSource.setTtidleSeconds((int) mountPoint.getProperty(CMISMountPointFactory.TTIDLE_SECONDS).getValue().getLong());
+        }
+        if(mountPoint.hasProperty(CMISMountPointFactory.TTLIVE_SECONDS)) {
+            dataSource.setTtliveSeconds((int) mountPoint.getProperty(CMISMountPointFactory.TTLIVE_SECONDS).getValue().getLong());
+        }
         dataSource.start();
 
         boolean slowConnection = false;
