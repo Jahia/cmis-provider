@@ -153,7 +153,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     public List<String> getChildren(final String path) throws RepositoryException {
         final List<String> list = new ArrayList<>();
         try {
-            String key = provider.getId() + "_children_" + path;
+            String key = provider.getId() + "_user_" + resolveUser() + "_children_" + path;
             Element element = cache.get(key);
             if (element != null) {
                 return (List<String>) element.getObjectValue();
@@ -219,7 +219,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
 
 
     public List<ExternalData> getChildrenNodes(final String path) throws RepositoryException {
-        String key = provider.getId() + "_children_nodes_" + path;
+        String key = provider.getId() + "_user_" + resolveUser() + "_children_nodes_" + path;
         Element element = cache.get(key);
         if (element != null) {
             return (List<ExternalData>) element.getObjectValue();
@@ -289,7 +289,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     @Override
     public ExternalData getItemByIdentifier(final String identifier) throws ItemNotFoundException {
         try {
-            String key = provider.getId() + "_id_" + identifier;
+            String key = provider.getId() + "_user_" + resolveUser() + "_id_" + identifier;
             Element element = cache.get(key);
             if (element != null) {
                 return (ExternalData) element.getObjectValue();
@@ -320,7 +320,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
     @Override
     public ExternalData getItemByPath(String path) throws PathNotFoundException {
         try {
-            String key = provider.getId() + "_path_" + path;
+            String key = provider.getId() + "_user_" + resolveUser() + "_path_" + path;
             Element element = cache.get(key);
             if (element != null) {
                 return (ExternalData) element.getObjectValue();
@@ -1041,6 +1041,7 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                         privileges.add(JCR_WRITE + "_" + LIVE_WORKSPACE);
                         break;
                     case CAN_DELETE_TREE:
+                    case CAN_REMOVE_OBJECT_FROM_FOLDER:
                         privileges.add(JCR_REMOVE_CHILD_NODES + "_" + EDIT_WORKSPACE);
                         privileges.add(JCR_REMOVE_CHILD_NODES + "_" + LIVE_WORKSPACE);
                         break;
@@ -1048,19 +1049,18 @@ public class CmisDataSource implements ExternalDataSource, ExternalDataSource.In
                         privileges.add(JCR_REMOVE_NODE + "_" + EDIT_WORKSPACE);
                         privileges.add(JCR_REMOVE_NODE + "_" + LIVE_WORKSPACE);
                         break;
-                    case CAN_REMOVE_OBJECT_FROM_FOLDER:
-                        privileges.add(JCR_REMOVE_CHILD_NODES + "_" + EDIT_WORKSPACE);
-                        privileges.add(JCR_REMOVE_CHILD_NODES + "_" + LIVE_WORKSPACE);
+                    default:
+                        log.debug("Action {} is not implemented.", action);
                         break;
                 }
             }
         } catch (RepositoryException cantConnectCmis) {
             log.error(cantConnectCmis.getMessage(), cantConnectCmis);
             throw new RuntimeException(cantConnectCmis);
-        } catch (CmisObjectNotFoundException cmisObjectNotFound) {
-            log.warn("Cannot get privileges for "+path, cmisObjectNotFound);
+        } catch (CmisBaseException cmisBaseException) {
+            log.warn("Cannot get privileges for " + path, cmisBaseException);
         }
-        return privileges.toArray(new String[privileges.size()]);
+        return privileges.toArray(new String[0]);
     }
 
     public Cache<String, Session> getActiveConnections() {
