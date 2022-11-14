@@ -33,7 +33,7 @@
     </parent>
     <artifactId>cmis-provider</artifactId>
     <name>Portal factory - CMIS provider</name>
-    <version>3.2.1-SNAPSHOT</version>
+    <version>3.2.1</version>
     <packaging>bundle</packaging>
     <description>Provides an implementation of the CMIS external provider.</description>
 
@@ -41,7 +41,7 @@
         <connection>scm:git:git@github.com:Jahia/cmis-provider.git</connection>
         <url>scm:git:git@github.com:Jahia/cmis-provider.git</url>
         <developerConnection>scm:git:git@github.com:Jahia/cmis-provider.git</developerConnection>
-      <tag>HEAD</tag>
+      <tag>3_2_1</tag>
   </scm>
 
     <properties>
