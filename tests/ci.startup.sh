@@ -36,13 +36,14 @@ else
     echo "$(date +'%d %B %Y - %k:%M') [JAHIA_CLUSTER_ENABLED] == Starting a single processing node (no cluster) =="
     if [[ $1 == "notests" ]]; then
         docker-compose up -d --renew-anon-volumes mariadb jahia alfresco transform-core-aio share postgres solr6 activemq content-app proxy
+        docker cp org.jahia.services.usermanager.ldap-config-docker.cfg jahia:/home/tomcat/
+        docker exec --user root jahia chown tomcat:tomcat /home/tomcat/org.jahia.services.usermanager.ldap-config-docker.cfg
     else
         docker-compose up --renew-anon-volumes -d mariadb jahia alfresco transform-core-aio share postgres solr6 activemq content-app proxy
+        docker cp org.jahia.services.usermanager.ldap-config-docker.cfg jahia:/home/tomcat/
+        docker exec --user root jahia chown tomcat:tomcat /home/tomcat/org.jahia.services.usermanager.ldap-config-docker.cfg
         docker ps -a
         docker stats --no-stream
         docker-compose up --abort-on-container-exit cypress
     fi
 fi
-
-docker cp org.jahia.services.usermanager.ldap-config-docker.cfg jahia:/home/tomcat/
-docker exec --user root jahia chown tomcat:tomcat /home/tomcat/org.jahia.services.usermanager.ldap-config-docker.cfg
