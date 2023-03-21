@@ -1,0 +1,332 @@
+version: '3.6'
+services:
+    mariadb:
+        image: library/mariadb:10-focal
+        container_name: mariadb
+        deploy:
+            resources:
+                limits:
+                    memory: 1gb
+        networks:
+            - stack
+        command: --max_allowed_packet=1073741824 --transaction-isolation=READ-UNCOMMITTED --innodb-lock-wait-timeout=10
+        environment:
+            MYSQL_ROOT_PASSWORD: root1234
+            MYSQL_DATABASE: jahia
+            MYSQL_USER: jahia
+            MYSQL_PASSWORD: jahia
+            TZ: ${TIMEZONE}
+
+    jahia:
+        image: '${JAHIA_IMAGE}'
+        container_name: jahia
+        restart: 'no'
+        deploy:
+            resources:
+                limits:
+                    memory: 4gb
+        depends_on:
+            - mariadb
+        networks:
+            - stack
+        ports:
+            - "8888:8080"
+            - "8101:8101"
+            - "8000:8000"
+        extra_hosts:
+            - jahia:127.0.0.1
+        environment:
+            jahia_cfg_karaf_remoteShellHost: 0.0.0.0
+            DB_VENDOR: mariadb
+            DB_HOST: mariadb
+            DB_NAME: jahia
+            DB_USER: jahia
+            DB_PASS: jahia
+            JAHIA_LICENSE: ${JAHIA_LICENSE}
+            SUPER_USER_PASSWORD: ${JAHIA_PASSWORD}
+            CLUSTER_ENABLED: '${JAHIA_CLUSTER_ENABLED}'
+            PROCESSING_SERVER: 'true'
+            MAX_RAM_PERCENTAGE: 95
+            JAHIA_PROPERTIES: ${JAHIA_PROPERTIES}
+            CATALINA_OPTS: ${CATALINA_OPTS}
+            RESTORE_MODULE_STATES: 'false'
+            NEXUS_USERNAME: ${NEXUS_USERNAME}
+            NEXUS_PASSWORD: ${NEXUS_PASSWORD}
+            TZ: ${TIMEZONE}
+            JPDA: 'true'
+#
+#    jahia-browsing-a:
+#        image: '${JAHIA_IMAGE}'
+#        container_name: jahia-browsing-a
+#        restart: 'no'
+#        deploy:
+#            resources:
+#                limits:
+#                    memory: 4gb
+#        depends_on:
+#            - mariadb
+#        networks:
+#            - stack
+#        ports:
+#            - '8881:8080'
+#            - '8102:8101'
+#        environment:
+#            jahia_cfg_karaf_remoteShellHost: 0.0.0.0
+#            DB_VENDOR: mariadb
+#            DB_HOST: mariadb
+#            DB_NAME: jahia
+#            DB_USER: jahia
+#            DB_PASS: jahia
+#            JAHIA_LICENSE: ${JAHIA_LICENSE}
+#            SUPER_USER_PASSWORD: ${JAHIA_PASSWORD}
+#            CLUSTER_ENABLED: '${JAHIA_CLUSTER_ENABLED}'
+#            PROCESSING_SERVER: 'false'
+#            PROCESSING_HOST: jahia
+#            MAX_RAM_PERCENTAGE: 95
+#            JAHIA_PROPERTIES: ${JAHIA_PROPERTIES}
+#            CATALINA_OPTS: ${CATALINA_OPTS}
+#            RESTORE_MODULE_STATES: 'false'
+#            NEXUS_USERNAME: ${NEXUS_USERNAME}
+#            NEXUS_PASSWORD: ${NEXUS_PASSWORD}
+#            TZ: ${TIMEZONE}
+#
+#    jahia-browsing-b:
+#        image: '${JAHIA_IMAGE}'
+#        container_name: jahia-browsing-b
+#        restart: 'no'
+#        deploy:
+#            resources:
+#                limits:
+#                    memory: 4gb
+#        depends_on:
+#            - mariadb
+#        networks:
+#            - stack
+#        ports:
+#            - '8882:8080'
+#            - '8103:8101'
+#        environment:
+#            jahia_cfg_karaf_remoteShellHost: 0.0.0.0
+#            DB_VENDOR: mariadb
+#            DB_HOST: mariadb
+#            DB_NAME: jahia
+#            DB_USER: jahia
+#            DB_PASS: jahia
+#            JAHIA_LICENSE: ${JAHIA_LICENSE}
+#            SUPER_USER_PASSWORD: ${JAHIA_PASSWORD}
+#            CLUSTER_ENABLED: '${JAHIA_CLUSTER_ENABLED}'
+#            PROCESSING_SERVER: 'false'
+#            PROCESSING_HOST: jahia
+#            MAX_RAM_PERCENTAGE: 95
+#            JAHIA_PROPERTIES: ${JAHIA_PROPERTIES}
+#            CATALINA_OPTS: ${CATALINA_OPTS}
+#            RESTORE_MODULE_STATES: 'false'
+#            TZ: ${TIMEZONE}
+#            NEXUS_USERNAME: ${NEXUS_USERNAME}
+#            NEXUS_PASSWORD: ${NEXUS_PASSWORD}
+
+    dockerldap:
+        image: "jahia/docker-openldap:${LDAP_TAG}"
+        container_name: dockerldap
+        environment:
+            LDAP_LOG_LEVEL: "256"
+            LDAP_ORGANISATION: "Jahia Inc."
+            LDAP_DOMAIN: "jahia.com"
+            LDAP_BASE_DN: "cn=admin,dc=jahia,dc=com"
+            LDAP_ADMIN_PASSWORD: "admin"
+            LDAP_CONFIG_PASSWORD: "config"
+            LDAP_READONLY_USER: "false"
+        tty: true
+        stdin_open: true
+        volumes:
+            - /var/lib/ldap
+            - /etc/ldap/slapd.d
+            - /container/service/slapd/assets/certs/
+        ports:
+            - "389:389"
+            - "636:636"
+        domainname: "jahia.com"
+        hostname: "ldap-server"
+        networks:
+            - stack
+
+    alfresco:
+        image: docker.io/alfresco/alfresco-content-repository-community:7.4.0-M2
+        depends_on:
+            - dockerldap
+        deploy:
+            resources:
+                limits:
+                    memory: 1900m
+        environment:
+            JAVA_TOOL_OPTIONS: >-
+                -Dencryption.keystore.type=JCEKS
+                -Dencryption.cipherAlgorithm=DESede/CBC/PKCS5Padding
+                -Dencryption.keyAlgorithm=DESede
+                -Dencryption.keystore.location=/usr/local/tomcat/shared/classes/alfresco/extension/keystore/keystore
+                -Dmetadata-keystore.password=mp6yc0UD9e
+                -Dmetadata-keystore.aliases=metadata
+                -Dmetadata-keystore.metadata.password=oKIWzVdEdA
+                -Dmetadata-keystore.metadata.algorithm=DESede
+            JAVA_OPTS: >-
+                -Ddb.driver=org.postgresql.Driver -Ddb.username=alfresco
+                -Ddb.password=alfresco -Ddb.url=jdbc:postgresql://postgres:5432/alfresco
+                -Dsolr.host=solr6 -Dsolr.port=8983 -Dsolr.http.connection.timeout=1000
+                -Dsolr.secureComms=secret -Dsolr.sharedSecret=secret
+                -Dsolr.base.url=/solr -Dindex.subsystem.name=solr6
+                -Dshare.host=127.0.0.1 -Dshare.port=8080 -Dalfresco.host=localhost
+                -Dalfresco.port=8080 -Dcsrf.filter.enabled=false
+                -Daos.baseUrlOverwrite=http://localhost:8080/alfresco/aos
+                -Dmessaging.broker.url="failover:(nio://activemq:61616)?timeout=3000&jms.useCompression=true"
+                -Ddeployment.method=DOCKER_COMPOSE
+                -DlocalTransform.core-aio.url=http://transform-core-aio:8090/
+                -XX:MinRAMPercentage=50 -XX:MaxRAMPercentage=80
+                -Dauthentication.chain=alfinst:alfrescoNtlm,ldap1:ldap
+                -Dldap.authentication.allowGuestLogin=false
+                -Dldap.authentication.java.naming.provider.url=ldap://dockerldap:389/
+                -Dldap.authentication.escapeCommasInBind=true
+                -Dldap.authentication.escapeCommasInUid=true
+                -Dldap.synchronization.java.naming.security.principal=cn\=admin,dc\=jahia,dc\=com
+                -Dldap.synchronization.java.naming.security.credentials=admin
+                -Dldap.synchronization.groupSearchBase=ou\=Groups,dc\=jahia,dc\=com
+                -Dldap.synchronization.userSearchBase=dc\=jahia,dc\=com
+                -Dldap.synchronization.groupType=groupOfUniqueNames
+        networks:
+            - stack
+    transform-core-aio:
+        image: alfresco/alfresco-transform-core-aio:3.0.0
+        deploy:
+            resources:
+                limits:
+                    memory: 1536m
+        environment:
+            JAVA_OPTS: " -XX:MinRAMPercentage=50 -XX:MaxRAMPercentage=80"
+        ports:
+            - "8090:8090"
+        networks:
+            - stack
+    share:
+        image: docker.io/alfresco/alfresco-share:7.4.0-M2
+        deploy:
+            resources:
+                limits:
+                    memory: 1g
+        environment:
+            REPO_HOST: "alfresco"
+            REPO_PORT: "8080"
+            JAVA_OPTS: >-
+                -XX:MinRAMPercentage=50 -XX:MaxRAMPercentage=80
+                -Dalfresco.host=localhost -Dalfresco.port=8080
+                -Dalfresco.context=alfresco -Dalfresco.protocol=http
+        networks:
+            - stack
+    postgres:
+        image: postgres:14.4
+        deploy:
+            resources:
+                limits:
+                    memory: 512m
+        environment:
+            POSTGRES_PASSWORD: alfresco
+            POSTGRES_USER: alfresco
+            POSTGRES_DB: alfresco
+        command: postgres -c max_connections=300 -c log_min_messages=LOG
+        ports:
+            - "5432:5432"
+        networks:
+            - stack
+    solr6:
+        image: alfresco/alfresco-search-services:2.0.5
+        deploy:
+            resources:
+                limits:
+                    memory: 2g
+        environment:
+            # Solr needs to know how to register itself with Alfresco
+            SOLR_ALFRESCO_HOST: "alfresco"
+            SOLR_ALFRESCO_PORT: "8080"
+            # Alfresco needs to know how to call solr
+            SOLR_SOLR_HOST: "solr6"
+            SOLR_SOLR_PORT: "8983"
+            # Create the default alfresco and archive cores
+            SOLR_CREATE_ALFRESCO_DEFAULTS: "alfresco,archive"
+            # HTTPS or SECRET
+            ALFRESCO_SECURE_COMMS: "secret"
+            # SHARED SECRET VALUE
+            JAVA_TOOL_OPTIONS: >-
+                -Dalfresco.secureComms.secret=secret
+        ports:
+            - "8083:8983" # Browser port
+        networks:
+            - stack
+    activemq:
+        image: alfresco/alfresco-activemq:5.17.1-jre11-rockylinux8
+        deploy:
+            resources:
+                limits:
+                    memory: 1g
+        ports:
+            - "8161:8161" # Web Console
+            - "5672:5672" # AMQP
+            - "61616:61616" # OpenWire
+            - "61613:61613" # STOMP
+        networks:
+            - stack
+    content-app:
+        image: alfresco/alfresco-content-app:3.1.0
+        deploy:
+            resources:
+                limits:
+                    memory: 128m
+        environment:
+            APP_BASE_SHARE_URL: "http://localhost:8080/aca/#/preview/s"
+        networks:
+            - stack
+    proxy:
+        image: alfresco/alfresco-acs-nginx:3.4.2
+        deploy:
+            resources:
+                limits:
+                    memory: 128m
+        environment:
+            DISABLE_PROMETHEUS: "true"
+            DISABLE_SYNCSERVICE: "true"
+            DISABLE_ADW: "true"
+            DISABLE_CONTROL_CENTER: "true"
+            ENABLE_CONTENT_APP: "true"
+        depends_on:
+            - alfresco
+            - content-app
+        ports:
+            - "8080:8080"
+        networks:
+            - stack
+    # Cypress container
+    cypress:
+      image: '${TESTS_IMAGE}'
+      # https://github.com/cypress-io/cypress/issues/350
+      ipc: host
+      container_name: cypress
+      deploy:
+        resources:
+          limits:
+            memory: 4gb
+      depends_on:
+        - jahia
+      environment:
+        # Uses variable substitution: https://docs.docker.com/compose/compose-file/compose-file-v3/#variable-substitution
+        MANIFEST: ${MANIFEST:-provisioning-manifest-build.yml}
+        JAHIA_USERNAME: ${JAHIA_USERNAME}
+        JAHIA_PASSWORD: ${JAHIA_PASSWORD}
+        JAHIA_URL: ${JAHIA_URL}
+        JAHIA_HOST: ${JAHIA_HOST}
+        JAHIA_PORT: ${JAHIA_PORT}
+        NEXUS_USERNAME: ${NEXUS_USERNAME}
+        NEXUS_PASSWORD: ${NEXUS_PASSWORD}
+        SUPER_USER_PASSWORD: ${SUPER_USER_PASSWORD}
+        JAHIA_CLUSTER_ENABLED: '${JAHIA_CLUSTER_ENABLED}'
+        TZ: ${TIMEZONE}
+      networks:
+        - stack
+networks:
+    stack:
