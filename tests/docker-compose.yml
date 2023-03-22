@@ -152,6 +152,7 @@ services:
 
     alfresco:
         image: docker.io/alfresco/alfresco-content-repository-community:7.4.0-M2
+        container_name: alfresco
         depends_on:
             - dockerldap
         deploy:
@@ -195,6 +196,7 @@ services:
             - stack
     transform-core-aio:
         image: alfresco/alfresco-transform-core-aio:3.0.0
+        container_name: transform-core-aio
         deploy:
             resources:
                 limits:
@@ -207,6 +209,7 @@ services:
             - stack
     share:
         image: docker.io/alfresco/alfresco-share:7.4.0-M2
+        container_name: share
         deploy:
             resources:
                 limits:
@@ -222,6 +225,7 @@ services:
             - stack
     postgres:
         image: postgres:14.4
+        container_name: postgres
         deploy:
             resources:
                 limits:
@@ -237,6 +241,7 @@ services:
             - stack
     solr6:
         image: alfresco/alfresco-search-services:2.0.5
+        container_name: solr6
         deploy:
             resources:
                 limits:
@@ -261,6 +266,7 @@ services:
             - stack
     activemq:
         image: alfresco/alfresco-activemq:5.17.1-jre11-rockylinux8
+        container_name: activemq
         deploy:
             resources:
                 limits:
@@ -274,6 +280,7 @@ services:
             - stack
     content-app:
         image: alfresco/alfresco-content-app:3.1.0
+        container_name: content-app
         deploy:
             resources:
                 limits:
@@ -284,6 +291,7 @@ services:
             - stack
     proxy:
         image: alfresco/alfresco-acs-nginx:3.4.2
+        container_name: proxy
         deploy:
             resources:
                 limits:
@@ -321,6 +329,7 @@ services:
         JAHIA_URL: ${JAHIA_URL}
         JAHIA_HOST: ${JAHIA_HOST}
         JAHIA_PORT: ${JAHIA_PORT}
+        ALFRESCO_URL: ${ALFRESCO_URL}
         NEXUS_USERNAME: ${NEXUS_USERNAME}
         NEXUS_PASSWORD: ${NEXUS_PASSWORD}
         SUPER_USER_PASSWORD: ${SUPER_USER_PASSWORD}

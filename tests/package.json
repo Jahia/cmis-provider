@@ -1,7 +1,7 @@
 {
   "name": "@jahia/cmis-provider-cypress",
   "private": false,
-  "version": "4.2.0-tests.9",
+  "version": "3.3.0-tests",
   "scripts": {
     "instrument": "nyc instrument --compact=false cypress instrumented",
     "e2e:ci": "cypress run --browser chrome",

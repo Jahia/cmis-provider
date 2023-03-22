@@ -21,6 +21,7 @@ echo " JAHIA_PASSWORD: ${JAHIA_PASSWORD}"
 echo " JAHIA_USERNAME_TOOLS: ${JAHIA_USERNAME_TOOLS}"
 echo " JAHIA_PASSWORD_TOOLS: ${JAHIA_PASSWORD_TOOLS}"
 echo " SUPER_USER_PASSWORD: ${SUPER_USER_PASSWORD}"
+echo " ALFRESCO_URL: ${ALFRESCO_URL}"
 echo " TIMEZONE: ${TIMEZONE}"
 echo " == Using Node version: $(node -v)"
 echo " == Using yarn version: $(yarn -v)"
@@ -95,15 +96,6 @@ if [[ -d artifacts/ && $MANIFEST == *"build"* ]]; then
   done
   cd ..
 fi
-
-cd ./assets || exit 1
-for file in $(ls -1 script-* | sort -n)
-do
-  echo "$(date +'%d %B %Y - %k:%M') [SCRIPT] == Submitting script: $file =="
-  curl -u root:${SUPER_USER_PASSWORD} -X POST ${JAHIA_URL}/modules/api/provisioning --form script='[{"executeScript":"'"$file"'"}]' --form file=@$file
-  echo "$(date +'%d %B %Y - %k:%M') [SCRIPT] == Script executed =="
-done
-cd ..
 
 echo "$(date +'%d %B %Y - %k:%M') == Fetching the list of installed modules =="
 ~/node_modules/@jahia/jahia-reporter/bin/run utils:modules \
