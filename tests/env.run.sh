@@ -29,7 +29,7 @@ echo " == Waiting for Jahia to startup"
 
 while [[ $(curl -s -o /dev/null -w ''%{http_code}'' ${JAHIA_URL}/cms/login) -ne 200 ]];
 do
-  echo "Jahia is not available will retry in 10 seconds"
+  echo "Jahia is not available at ${JAHIA_URL}/cms/login, will try in 10 seconds"
   sleep 10;
 done
 
@@ -40,7 +40,7 @@ echo " == Waiting for Alfresco to sync users and become available"
 START_TIME=$SECONDS
 while [[ $(curl -s -o /dev/null -w ''%{http_code}'' --connect-timeout 2 http://admin:admin@alfresco:8080/alfresco/api/-default-/public/cmis/versions/1.1/atom) -ne 200 ]];
 do
-  echo "Alfresco is not available will retry in 10 seconds"
+  echo "Alfresco atom endpoint is not available, will try again in 10 seconds"
   sleep 10;
 done
 

@@ -1,5 +1,5 @@
 {
-  "name": "@jahia/content-editor-cypress",
+  "name": "@jahia/cmis-provider-cypress",
   "private": false,
   "version": "4.2.0-tests.9",
   "scripts": {

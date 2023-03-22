@@ -27,8 +27,7 @@
   username: ${env:NEXUS_USERNAME}
   password: ${env:NEXUS_PASSWORD}
 - installBundle:
-  - 'mvn:org.jahia.modules/jcontent'
-  - 'mvn:org.jahia.modules/content-editor'
+  - 'mvn:org.jahia.modules/cmis-provider'
   autoStart: true
   uninstallPreviousVersion: true
 
