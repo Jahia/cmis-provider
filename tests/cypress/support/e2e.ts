@@ -22,7 +22,7 @@ require('cypress-terminal-report/src/installLogsCollector')({
 });
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require('@jahia/cypress/dist/support/registerSupport').registerSupport();
-Cypress.on('uncaught:exception', (err, runnable) => {
+Cypress.on('uncaught:exception', () => {
     // Returning false here prevents Cypress from
     // failing the test
     return false;

@@ -10,7 +10,7 @@ describe('Mount tests', () => {
     it('It creates mount point', () => {
         // Go to editframe to avoid iframe issues
         cy.visit(`${Cypress.env('JAHIA_URL')}/cms/adminframe/default/en/settings.manageMountPoints.html?redirect=false`);
-        cy.get('select[id="mountPointFactory"]').should('be.visible').select('CMIS mount point')
+        cy.get('select[id="mountPointFactory"]').should('be.visible').select('CMIS mount point');
         cy.get('button[data-sel-role="addMountPoint"]').should('be.visible').click();
 
         // Cannot create empty mountpoint
