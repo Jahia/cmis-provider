@@ -13,16 +13,16 @@ echo " JAHIA_IMAGE: ${JAHIA_IMAGE}"
 echo " JAHIA_CLUSTER_ENABLED: ${JAHIA_CLUSTER_ENABLED}"
 
 echo "$(date +'%d %B %Y - %k:%M') [LICENSE] == Check if license exists in env variable (JAHIA_LICENSE) =="
-#if [[ -z ${JAHIA_LICENSE} ]]; then
-#    echo "$(date +'%d %B %Y - %k:%M') [LICENSE] == Jahia license does not exist, checking if there is a license file in /tmp/license.xml =="
-#    if [[ -f /tmp/license.xml ]]; then
-#        echo "$(date +'%d %B %Y - %k:%M') [LICENSE] ==  License found in /tmp/license.xml, base64ing it"
-#        export JAHIA_LICENSE=$(base64 /tmp/license.xml)
-#    else
-#        echo "$(date +'%d %B %Y - %k:%M') [LICENSE]  == STARTUP FAILURE, unable to find license =="
-#        exit 1
-#    fi
-#fi
+if [[ -z ${JAHIA_LICENSE} ]]; then
+    echo "$(date +'%d %B %Y - %k:%M') [LICENSE] == Jahia license does not exist, checking if there is a license file in /tmp/license.xml =="
+    if [[ -f /tmp/license.xml ]]; then
+        echo "$(date +'%d %B %Y - %k:%M') [LICENSE] ==  License found in /tmp/license.xml, base64ing it"
+        export JAHIA_LICENSE=$(base64 /tmp/license.xml)
+    else
+        echo "$(date +'%d %B %Y - %k:%M') [LICENSE]  == STARTUP FAILURE, unable to find license =="
+        exit 1
+    fi
+fi
 
 echo "$(date +'%d %B %Y - %k:%M') [JAHIA_CLUSTER_ENABLED] == Value: ${JAHIA_CLUSTER_ENABLED} =="
 if [[ "${JAHIA_CLUSTER_ENABLED}" == "true" ]]; then

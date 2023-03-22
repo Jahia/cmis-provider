@@ -27,9 +27,10 @@ echo " == Using yarn version: $(yarn -v)"
 
 echo " == Waiting for Jahia to startup"
 
-while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' ${JAHIA_URL}/cms/login)" != "200" ]];
+while [[ $(curl -s -o /dev/null -w ''%{http_code}'' ${JAHIA_URL}/cms/login) -ne 200 ]];
+do
   echo "Jahia is not available will retry in 10 seconds"
-  do sleep 10;
+  sleep 10;
 done
 
 ELAPSED_TIME=$(($SECONDS - $START_TIME))
@@ -37,9 +38,10 @@ echo " == Jahia became alive in ${ELAPSED_TIME} seconds"
 
 echo " == Waiting for Alfresco to sync users and become available"
 START_TIME=$SECONDS
-while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' --connect-timeout 2 http://admin:admin@alfresco:8080/alfresco/api/-default-/public/cmis/versions/1.1/atom)" != "200" ]];
+while [[ $(curl -s -o /dev/null -w ''%{http_code}'' --connect-timeout 2 http://admin:admin@alfresco:8080/alfresco/api/-default-/public/cmis/versions/1.1/atom) -ne 200 ]];
+do
   echo "Alfresco is not available will retry in 10 seconds"
-  do sleep 10;
+  sleep 10;
 done
 
 ELAPSED_TIME=$(($SECONDS - $START_TIME))
