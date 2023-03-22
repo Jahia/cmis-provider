@@ -37,8 +37,7 @@ ELAPSED_TIME=$(($SECONDS - $START_TIME))
 echo " == Jahia became alive in ${ELAPSED_TIME} seconds"
 
 echo " == Waiting for Alfresco to sync users and become available"
-START_TIME=$SECONDS
-while [[ $(curl -s -o /dev/null -w ''%{http_code}'' --connect-timeout 2 http://admin:admin@alfresco:8080/alfresco/api/-default-/public/cmis/versions/1.1/atom) -ne 200 ]];
+while [[ $(curl -s -o /dev/null -w ''%{http_code}'' --connect-timeout 2 http://admin:admin@proxy:8000/alfresco/api/-default-/public/cmis/versions/1.1/atom) -ne 200 ]];
 do
   echo "Alfresco atom endpoint is not available, will try again in 10 seconds"
   sleep 10;
