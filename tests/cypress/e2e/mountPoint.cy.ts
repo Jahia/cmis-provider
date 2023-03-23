@@ -23,7 +23,7 @@ describe('Mount tests', () => {
         cy.get('input[name="name"]').should('be.visible').type('Alfresco');
         cy.get('input[name="user"]').should('be.visible').type('admin');
         cy.get('input[name="password"]').should('be.visible').type('admin');
-        cy.get('input[name="url"]').should('be.visible').type(`http://alfresco:8080/alfresco`);
+        cy.get('input[name="url"]').should('be.visible').type(`${Cypress.env('ALFRESCO_URL')}/alfresco`);
         cy.get('button[name="_eventId_save"]').should('be.visible').click();
         cy.get('div').contains('Please, provide value for Repository ID');
 

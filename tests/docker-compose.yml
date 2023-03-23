@@ -150,6 +150,7 @@ services:
         networks:
             - stack
 
+    # This is alfresco community docker adapted to be used with docker-compose 3.6, ldap and stack network
     alfresco:
         image: docker.io/alfresco/alfresco-content-repository-community:7.4.0-M2
         container_name: alfresco
