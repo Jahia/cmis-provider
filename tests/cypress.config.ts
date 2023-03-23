@@ -21,8 +21,8 @@ export default defineConfig({
         excludeSpecPattern: '*.ignore.ts',
         baseUrl: 'http://localhost:8080',
         specPattern: [
-            'mountPoint.cy.ts',
-            'contentCreation.cy.ts'
+            '**/e2e/mountPoint.cy.ts',
+            '**/e2e/contentCreation.cy.ts'
         ]
     }
 });
