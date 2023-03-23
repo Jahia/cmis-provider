@@ -12,7 +12,7 @@ describe('Content creation tests', () => {
     before(() => {
         cy.loginEditor();
         // Login
-        cy.visit(`${Cypress.env('ALFRESCO_URL')}/8080/share/page/console/admin-console/application`);
+        cy.visit(`${Cypress.env('ALFRESCO_URL')}/share/page/console/admin-console/application`);
         cy.get('input[name="username"]').should('be.visible').type('admin');
         cy.get('input[name="password"]').should('be.visible').type('admin');
         cy.get('button').contains('Sign In').click();
