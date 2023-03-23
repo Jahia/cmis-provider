@@ -19,7 +19,7 @@ describe('Content creation tests', () => {
 
         // Add users Bill
         cy.get('a[title="User Management"]').click();
-        cy.get('button').contains('New User');
+        cy.get('button').contains('New User').click();
         cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-firstname"]').type('Bill');
         cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-lastname"]').type('Galileo');
         cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-email"]').type('bill@jahia.com');
@@ -27,7 +27,7 @@ describe('Content creation tests', () => {
         cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-password"]').type('alfresco');
         cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-verifypassword"]').type('alfresco');
         cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-quota"]').type('5');
-        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-quotatype"]').select('MB');
+        cy.get('select[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-quotatype"]').select('MB');
         cy.get('button').contains('Create and Start Another');
 
         // Add user Anne
@@ -38,7 +38,7 @@ describe('Content creation tests', () => {
         cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-password"]').type('alfresco');
         cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-verifypassword"]').type('alfresco');
         cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-quota"]').type('5');
-        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-quotatype"]').select('MB');
+        cy.get('select[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-quotatype"]').select('MB');
         cy.get('button').contains('Create and Start Another');
 
         // Create Groups
