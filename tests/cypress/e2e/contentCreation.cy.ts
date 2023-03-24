@@ -28,18 +28,18 @@ describe('Content creation tests', () => {
         cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-verifypassword"]').type('alfresco');
         cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-quota"]').type('5');
         cy.get('select[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-quotatype"]').select('MB');
-        cy.get('button').contains('Create and Start Another');
+        cy.get('button').contains('Create and Start Another').click();
 
         // Add user Anne
-        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-firstname"]').clear().type('Anne');
-        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-lastname"]').clear().type('Lovelace');
-        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-email"]').clear().type('anne@jahia.com');
-        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-username"]').clear().type('anne');
-        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-password"]').clear().type('alfresco');
-        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-verifypassword"]').clear().type('alfresco');
-        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-quota"]').clear().type('5');
+        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-firstname"]').type('Anne');
+        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-lastname"]').type('Lovelace');
+        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-email"]').type('anne@jahia.com');
+        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-username"]').type('anne');
+        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-password"]').type('alfresco');
+        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-verifypassword"]').type('alfresco');
+        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-quota"]').type('5');
         cy.get('select[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-quotatype"]').select('MB');
-        cy.get('button').contains('Create and Start Another');
+        cy.get('button').contains('Create and Start Another').click();
 
         // Create Groups
         cy.get('a[title="Group Management"]').click();
