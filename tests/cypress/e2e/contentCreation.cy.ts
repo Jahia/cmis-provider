@@ -39,7 +39,9 @@ describe('Content creation tests', () => {
         cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-verifypassword"]').type('alfresco');
         cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-quota"]').type('5');
         cy.get('select[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-quotatype"]').select('MB');
-        cy.get('button').contains('Create and Start Another').click();
+        cy.get('button').contains('Create User').click();
+
+        cy.wait(500);
 
         // Create Groups
         cy.get('a[title="Group Management"]').click();
