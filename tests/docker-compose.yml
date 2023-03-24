@@ -193,6 +193,8 @@ services:
                 -Dldap.synchronization.groupSearchBase=ou\=Groups,dc\=jahia,dc\=com
                 -Dldap.synchronization.userSearchBase=dc\=jahia,dc\=com
                 -Dldap.synchronization.groupType=groupOfUniqueNames
+                -Dldap.synchronization.syncOnStartup=true
+                -Dldap.synchronization.import.cron=0 0 0 * * ?
         networks:
             - stack
     transform-core-aio:
