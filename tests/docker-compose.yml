@@ -183,7 +183,7 @@ services:
                 -Ddeployment.method=DOCKER_COMPOSE
                 -DlocalTransform.core-aio.url=http://transform-core-aio:8090/
                 -XX:MinRAMPercentage=50 -XX:MaxRAMPercentage=80
-                -Dauthentication.chain=alfinst:alfrescoNtlm,ldap-ad1:ldap-ad
+                -Dauthentication.chain=alfinst:alfrescoNtlm,ldap1:ldap
                 -Dldap.authentication.allowGuestLogin=false
                 -Dldap.authentication.java.naming.provider.url=ldap://dockerldap:389/
                 -Dldap.authentication.escapeCommasInBind=true
