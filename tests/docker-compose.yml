@@ -54,76 +54,76 @@ services:
             NEXUS_PASSWORD: ${NEXUS_PASSWORD}
             TZ: ${TIMEZONE}
             JPDA: 'true'
-#
-#    jahia-browsing-a:
-#        image: '${JAHIA_IMAGE}'
-#        container_name: jahia-browsing-a
-#        restart: 'no'
-#        deploy:
-#            resources:
-#                limits:
-#                    memory: 4gb
-#        depends_on:
-#            - mariadb
-#        networks:
-#            - stack
-#        ports:
-#            - '8881:8080'
-#            - '8102:8101'
-#        environment:
-#            jahia_cfg_karaf_remoteShellHost: 0.0.0.0
-#            DB_VENDOR: mariadb
-#            DB_HOST: mariadb
-#            DB_NAME: jahia
-#            DB_USER: jahia
-#            DB_PASS: jahia
-#            JAHIA_LICENSE: ${JAHIA_LICENSE}
-#            SUPER_USER_PASSWORD: ${JAHIA_PASSWORD}
-#            CLUSTER_ENABLED: '${JAHIA_CLUSTER_ENABLED}'
-#            PROCESSING_SERVER: 'false'
-#            PROCESSING_HOST: jahia
-#            MAX_RAM_PERCENTAGE: 95
-#            JAHIA_PROPERTIES: ${JAHIA_PROPERTIES}
-#            CATALINA_OPTS: ${CATALINA_OPTS}
-#            RESTORE_MODULE_STATES: 'false'
-#            NEXUS_USERNAME: ${NEXUS_USERNAME}
-#            NEXUS_PASSWORD: ${NEXUS_PASSWORD}
-#            TZ: ${TIMEZONE}
-#
-#    jahia-browsing-b:
-#        image: '${JAHIA_IMAGE}'
-#        container_name: jahia-browsing-b
-#        restart: 'no'
-#        deploy:
-#            resources:
-#                limits:
-#                    memory: 4gb
-#        depends_on:
-#            - mariadb
-#        networks:
-#            - stack
-#        ports:
-#            - '8882:8080'
-#            - '8103:8101'
-#        environment:
-#            jahia_cfg_karaf_remoteShellHost: 0.0.0.0
-#            DB_VENDOR: mariadb
-#            DB_HOST: mariadb
-#            DB_NAME: jahia
-#            DB_USER: jahia
-#            DB_PASS: jahia
-#            JAHIA_LICENSE: ${JAHIA_LICENSE}
-#            SUPER_USER_PASSWORD: ${JAHIA_PASSWORD}
-#            CLUSTER_ENABLED: '${JAHIA_CLUSTER_ENABLED}'
-#            PROCESSING_SERVER: 'false'
-#            PROCESSING_HOST: jahia
-#            MAX_RAM_PERCENTAGE: 95
-#            JAHIA_PROPERTIES: ${JAHIA_PROPERTIES}
-#            CATALINA_OPTS: ${CATALINA_OPTS}
-#            RESTORE_MODULE_STATES: 'false'
-#            TZ: ${TIMEZONE}
-#            NEXUS_USERNAME: ${NEXUS_USERNAME}
-#            NEXUS_PASSWORD: ${NEXUS_PASSWORD}
+
+    jahia-browsing-a:
+        image: '${JAHIA_IMAGE}'
+        container_name: jahia-browsing-a
+        restart: 'no'
+        deploy:
+            resources:
+                limits:
+                    memory: 4gb
+        depends_on:
+            - mariadb
+        networks:
+            - stack
+        ports:
+            - '8881:8080'
+            - '8102:8101'
+        environment:
+            jahia_cfg_karaf_remoteShellHost: 0.0.0.0
+            DB_VENDOR: mariadb
+            DB_HOST: mariadb
+            DB_NAME: jahia
+            DB_USER: jahia
+            DB_PASS: jahia
+            JAHIA_LICENSE: ${JAHIA_LICENSE}
+            SUPER_USER_PASSWORD: ${JAHIA_PASSWORD}
+            CLUSTER_ENABLED: '${JAHIA_CLUSTER_ENABLED}'
+            PROCESSING_SERVER: 'false'
+            PROCESSING_HOST: jahia
+            MAX_RAM_PERCENTAGE: 95
+            JAHIA_PROPERTIES: ${JAHIA_PROPERTIES}
+            CATALINA_OPTS: ${CATALINA_OPTS}
+            RESTORE_MODULE_STATES: 'false'
+            NEXUS_USERNAME: ${NEXUS_USERNAME}
+            NEXUS_PASSWORD: ${NEXUS_PASSWORD}
+            TZ: ${TIMEZONE}
+
+    jahia-browsing-b:
+        image: '${JAHIA_IMAGE}'
+        container_name: jahia-browsing-b
+        restart: 'no'
+        deploy:
+            resources:
+                limits:
+                    memory: 4gb
+        depends_on:
+            - mariadb
+        networks:
+            - stack
+        ports:
+            - '8882:8080'
+            - '8103:8101'
+        environment:
+            jahia_cfg_karaf_remoteShellHost: 0.0.0.0
+            DB_VENDOR: mariadb
+            DB_HOST: mariadb
+            DB_NAME: jahia
+            DB_USER: jahia
+            DB_PASS: jahia
+            JAHIA_LICENSE: ${JAHIA_LICENSE}
+            SUPER_USER_PASSWORD: ${JAHIA_PASSWORD}
+            CLUSTER_ENABLED: '${JAHIA_CLUSTER_ENABLED}'
+            PROCESSING_SERVER: 'false'
+            PROCESSING_HOST: jahia
+            MAX_RAM_PERCENTAGE: 95
+            JAHIA_PROPERTIES: ${JAHIA_PROPERTIES}
+            CATALINA_OPTS: ${CATALINA_OPTS}
+            RESTORE_MODULE_STATES: 'false'
+            TZ: ${TIMEZONE}
+            NEXUS_USERNAME: ${NEXUS_USERNAME}
+            NEXUS_PASSWORD: ${NEXUS_PASSWORD}
 
     dockerldap:
         image: "jahia/docker-openldap:${LDAP_TAG}"
