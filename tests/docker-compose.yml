@@ -193,6 +193,7 @@ services:
                 -Dldap.synchronization.userSearchBase=dc\=jahia,dc\=com
                 -Dldap.synchronization.groupType=groupOfUniqueNames
                 -Dldap.synchronization.syncOnStartup=true
+                -Dldap.synchronization.active=true
         networks:
             - stack
     transform-core-aio:
