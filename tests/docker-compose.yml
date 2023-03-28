@@ -154,7 +154,8 @@ services:
     alfresco:
         image: docker.io/alfresco/alfresco-content-repository-community:7.4.0-M2
         container_name: alfresco
-        depends_on: dockerldap
+        depends_on: 
+            - dockerldap
         deploy:
             resources:
                 limits:
