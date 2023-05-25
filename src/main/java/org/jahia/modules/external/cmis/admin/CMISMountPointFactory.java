@@ -30,6 +30,7 @@ import org.jahia.modules.external.admin.mount.validator.LocalJCRFolder;
 import org.jahia.modules.external.cmis.CmisProviderFactory;
 import org.jahia.services.content.JCRNodeWrapper;
 import org.jahia.services.content.decorator.JCRMountPointNode;
+import org.jahia.utils.xml.JahiaDocumentBuilderFactory;
 import org.w3c.dom.Document;
 
 import javax.jcr.PathNotFoundException;
@@ -38,9 +39,7 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
-import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.InputStream;
 
 /**
@@ -130,15 +129,9 @@ public class CMISMountPointFactory extends AbstractMountPointFactory {
             try {
                 WebTarget target = client.target(url).path(CMIS_SERVICE_ENDPOINT);
 
-                // get reposiroty id
-
-                DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
-                domFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-                DocumentBuilder domBuilder = domFactory.newDocumentBuilder();
-
-
+                // get repository id
+                DocumentBuilder domBuilder = JahiaDocumentBuilderFactory.newInstance().newDocumentBuilder();
                 Document domDoc = domBuilder.parse(target.request().accept(MediaType.TEXT_XML).get(InputStream.class));
-
                 alfrescoRepositoryId = domDoc.getElementsByTagName("cmis:repositoryId").item(0).getTextContent();
             } catch (Exception e) {
                 throw new RepositoryException(String.format("Unable to get repository id from %s due to the following error '%s'", url + CMIS_SERVICE_ENDPOINT, e.getMessage()), e);
