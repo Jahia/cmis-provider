@@ -83,6 +83,6 @@ describe('Content creation tests', () => {
     });
 
     it('It creates content', () => {
-        // will do
+        // WILL DO
     });
 });
