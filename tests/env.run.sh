@@ -2,7 +2,7 @@
 # This script can be used to warmup the environment and execute the tests
 # It is used by the docker image at startup
 
-sh ./env.provision.sh
+bash ./env.provision.sh
 
 source ./set-env.sh
 
