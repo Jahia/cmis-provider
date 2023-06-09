@@ -1,0 +1,7 @@
+mutation mount {
+  jcr {
+    mutateNode(pathOrId: "/mounts/Alfresco-mount") {
+        delete
+    }
+  }
+}

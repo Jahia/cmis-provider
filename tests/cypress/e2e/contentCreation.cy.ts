@@ -12,7 +12,7 @@ describe('Content creation tests', () => {
     before(() => {
         cy.loginEditor();
         // Login
-        cy.visit(`${Cypress.env('PROXY_URL')}/share/page/console/admin-console/application`);
+        cy.visit(`${Cypress.env('SHARE_URL')}/share/page/console/admin-console/application`);
         cy.get('input[name="username"]').should('be.visible').type('admin');
         cy.get('input[name="password"]').should('be.visible').type('admin');
         cy.get('button').contains('Sign In').click();
@@ -41,6 +41,7 @@ describe('Content creation tests', () => {
         cy.get('select[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-quotatype"]').select('MB');
         cy.get('button').contains('Create User').click();
 
+        // eslint-disable-next-line cypress/no-unnecessary-waiting
         cy.wait(500);
 
         // Create Groups
@@ -62,9 +63,9 @@ describe('Content creation tests', () => {
         cy.get('button[id="page_x002e_ctool_x002e_admin-console_x0023_default-search-peoplefinder-search-button-button"]').click();
         cy.get('span[id="page_x002e_ctool_x002e_admin-console_x0023_default-search-peoplefinder-action-bill"]').find('button').click();
         cy.get('span[title="Add User"]').click();
-        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-search-peoplefinder-search-text"]').type('user7');
+        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-search-peoplefinder-search-text"]').type('blachance7');
         cy.get('button[id="page_x002e_ctool_x002e_admin-console_x0023_default-search-peoplefinder-search-button-button"]').click();
-        cy.get('span[id="page_x002e_ctool_x002e_admin-console_x0023_default-search-peoplefinder-action-user7"]').find('button').click();
+        cy.get('span[id="page_x002e_ctool_x002e_admin-console_x0023_default-search-peoplefinder-action-blachance7"]').find('button').click();
 
         cy.get('span').contains('readers').click();
         cy.get('span[title="Add User"]').click();
@@ -72,11 +73,10 @@ describe('Content creation tests', () => {
         cy.get('button[id="page_x002e_ctool_x002e_admin-console_x0023_default-search-peoplefinder-search-button-button"]').click();
         cy.get('span[id="page_x002e_ctool_x002e_admin-console_x0023_default-search-peoplefinder-action-anne"]').find('button').click();
         cy.get('span[title="Add User"]').click();
-        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-search-peoplefinder-search-text"]').type('user4');
+        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-search-peoplefinder-search-text"]').type('blachance4');
         cy.get('button[id="page_x002e_ctool_x002e_admin-console_x0023_default-search-peoplefinder-search-button-button"]').click();
-        cy.get('span[id="page_x002e_ctool_x002e_admin-console_x0023_default-search-peoplefinder-action-user4"]').find('button').click();
-
-    })
+        cy.get('span[id="page_x002e_ctool_x002e_admin-console_x0023_default-search-peoplefinder-action-blachance4"]').find('button').click();
+    });
 
     beforeEach(() => {
         cy.loginEditor();

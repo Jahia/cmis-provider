@@ -1,7 +1,9 @@
 module.exports = (on, config) => {
-    config.baseUrl = process.env.JAHIA_URL;
-    config.env.AS_SITEKEY = 'digitall';
-    config.env.ALFRESCO_URL = process.env.ALFRESCO_URL;
-    config.env.PROXY_URL = process.env.PROXY_URL;
-    return config
-}
+    if (!process.env.SHARE_URL) {
+        config.env.SHARE_URL = 'http://localhost:9081';
+    } else {
+        config.env.SHARE_URL = process.env.SHARE_URL;
+    }
+
+    return config;
+};

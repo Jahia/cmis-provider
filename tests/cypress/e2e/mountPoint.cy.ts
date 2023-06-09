@@ -8,9 +8,8 @@ describe('Mount tests', () => {
     });
 
     it('It creates mount point', () => {
-        cy.log(`Alfresco url: ${Cypress.env('ALFRESCO_URL')}`);
         // Go to editframe to avoid iframe issues
-        cy.visit(`${Cypress.env('JAHIA_URL')}/cms/adminframe/default/en/settings.manageMountPoints.html?redirect=false`);
+        cy.visit('/cms/adminframe/default/en/settings.manageMountPoints.html?redirect=false');
         cy.get('select[id="mountPointFactory"]').should('be.visible').select('CMIS mount point');
         cy.get('button[data-sel-role="addMountPoint"]').should('be.visible').click();
 
@@ -23,7 +22,7 @@ describe('Mount tests', () => {
         cy.get('input[name="name"]').should('be.visible').type('Alfresco');
         cy.get('input[name="user"]').should('be.visible').type('admin');
         cy.get('input[name="password"]').should('be.visible').type('admin');
-        cy.get('input[name="url"]').should('be.visible').type(`${Cypress.env('ALFRESCO_URL')}/alfresco`);
+        cy.get('input[name="url"]').should('be.visible').type('http://alfresco:8080/alfresco');
         cy.get('button[name="_eventId_save"]').should('be.visible').click();
         cy.get('div').contains('Please, provide value for Repository ID');
 
@@ -43,5 +42,7 @@ describe('Mount tests', () => {
         cy.get('input[name="password"]').should('be.visible').clear().type('admin');
         cy.get('button[name="_eventId_save"]').should('be.visible').click();
         cy.get('span').contains('Mounted');
+
+        cy.apollo({mutationFile: 'unmount.graphql'});
     });
 });

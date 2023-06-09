@@ -1,0 +1,109 @@
+#!/bin/bash
+# This script can be used to warmup the environment and execute the tests
+# It is used by the docker image at startup
+
+source ./set-env.sh
+
+#!/usr/bin/env bash
+START_TIME=$SECONDS
+
+echo " env.run.sh == Printing the most important environment variables"
+echo " MANIFEST: ${MANIFEST}"
+echo " TESTS_IMAGE: ${TESTS_IMAGE}"
+echo " JAHIA_IMAGE: ${JAHIA_IMAGE}"
+echo " JAHIA_CLUSTER_ENABLED: ${JAHIA_CLUSTER_ENABLED}"
+echo " MODULE_ID: ${MODULE_ID}"
+echo " JAHIA_URL: ${JAHIA_URL}"
+echo " JAHIA_HOST: ${JAHIA_HOST}"
+echo " JAHIA_PORT: ${JAHIA_PORT}"
+echo " JAHIA_USERNAME: ${JAHIA_USERNAME}"
+echo " JAHIA_PASSWORD: ${JAHIA_PASSWORD}"
+echo " JAHIA_USERNAME_TOOLS: ${JAHIA_USERNAME_TOOLS}"
+echo " JAHIA_PASSWORD_TOOLS: ${JAHIA_PASSWORD_TOOLS}"
+echo " SUPER_USER_PASSWORD: ${SUPER_USER_PASSWORD}"
+echo " ALFRESCO_URL: ${ALFRESCO_URL}"
+echo " TIMEZONE: ${TIMEZONE}"
+echo " == Using Node version: $(node -v)"
+echo " == Using yarn version: $(yarn -v)"
+
+echo " == Waiting for Jahia to startup"
+
+while [[ $(curl -s -o /dev/null -w ''%{http_code}'' ${JAHIA_URL}/cms/login) -ne 200 ]];
+do
+  echo "Jahia is not available at ${JAHIA_URL}/cms/login, will try in 10 seconds"
+  ELAPSED_TIME=$(($SECONDS - $START_TIME))
+  if [[ ELAPSED_TIME -gt 300 ]]; then
+    echo "Exiting, Jahia failed to start after 300 seconds"
+    exit 1
+  fi
+  sleep 10;
+done
+
+ELAPSED_TIME=$(($SECONDS - $START_TIME))
+echo " == Jahia became alive in ${ELAPSED_TIME} seconds"
+
+echo " == Waiting for Alfresco to sync users and become available"
+while [[ $(curl -s -o /dev/null -w ''%{http_code}'' --connect-timeout 2 -u "admin:admin" ${ALFRESCO_URL}/alfresco/api/-default-/public/cmis/versions/1.1/atom) -ne 200 ]];
+do
+  echo "Alfresco atom endpoint is not available, will try again in 10 seconds"
+  ELAPSED_TIME=$(($SECONDS - $START_TIME))
+  if [[ ELAPSED_TIME -gt 1500 ]]; then
+    echo "Exiting, Alfresco failed to start after 1500 seconds"
+    exit 1
+  fi
+  sleep 10;
+done
+
+ELAPSED_TIME=$(($SECONDS - $START_TIME))
+echo " == Alfresco became available in ${ELAPSED_TIME} seconds"
+
+mkdir -p ./run-artifacts
+mkdir -p ./results
+
+# Add the credentials to a temporary manifest for downloading files
+# Execute jobs listed in the manifest
+# If the file doesn't exist, we assume it is a URL and we download it locally
+if [[ -e ${MANIFEST} ]]; then
+  cp ${MANIFEST} ./run-artifacts
+else
+  echo "Downloading: ${MANIFEST}"
+  curl ${MANIFEST} --output ./run-artifacts/curl-manifest
+  MANIFEST="curl-manifest"
+fi
+
+
+if [[ -d provisioning/ ]]; then
+  cd provisioning/ || exit 1
+  for f in *.yaml ; do
+    echo "$(date +'%d %B %Y - %k:%M') == Executing provisioning: ${f} =="
+    curl -u root:${SUPER_USER_PASSWORD} -X POST ${JAHIA_URL}/modules/api/provisioning --form script="@./${f};type=text/yaml"
+  done
+  cd ..
+fi
+
+echo "$(date +'%d %B %Y - %k:%M') == Executing manifest: ${MANIFEST} =="
+curl -u root:${SUPER_USER_PASSWORD} -X POST ${JAHIA_URL}/modules/api/provisioning --form script="@./run-artifacts/${MANIFEST};type=text/yaml"
+echo
+if [[ $? -eq 1 ]]; then
+  echo "PROVISIONING FAILURE - EXITING SCRIPT, NOT RUNNING THE TESTS"
+  echo "failure" > ./results/test_failure
+  exit 1
+fi
+
+if [[ -d artifacts/ && $MANIFEST == *"build"* ]]; then
+  # If we're building the module (and manifest name contains build), then we'll end up pushing that module individually
+  # The artifacts folder is created by the build stage, when running in snapshot the docker container is not going to contain that folder
+  cd artifacts/
+  echo "$(date +'%d %B %Y - %k:%M') == Content of the artifacts/ folder"
+  ls -lah
+  echo "$(date +'%d %B %Y - %k:%M') [MODULE_INSTALL] == Will start submitting files"
+  for file in $(ls -1 *-SNAPSHOT.jar | sort -n)
+  do
+    echo "$(date +'%d %B %Y - %k:%M') [MODULE_INSTALL] == Submitting module from: $file =="
+    curl -u root:${SUPER_USER_PASSWORD} -X POST ${JAHIA_URL}/modules/api/provisioning --form script='[{"installAndStartBundle":"'"$file"'", "forceUpdate":true}]' --form file=@$file
+    echo
+    echo "$(date +'%d %B %Y - %k:%M') [MODULE_INSTALL] == Module submitted =="
+  done
+  cd ..
+fi
+

@@ -30,7 +30,7 @@ services:
         networks:
             - stack
         ports:
-            - "8888:8080"
+            - "8080:8080"
             - "8101:8101"
             - "8000:8000"
         extra_hosts:
@@ -176,7 +176,7 @@ services:
                 -Dsolr.host=solr6 -Dsolr.port=8983 -Dsolr.http.connection.timeout=1000
                 -Dsolr.secureComms=secret -Dsolr.sharedSecret=secret
                 -Dsolr.base.url=/solr -Dindex.subsystem.name=solr6
-                -Dshare.host=127.0.0.1 -Dshare.port=8080 -Dalfresco.host=localhost
+                -Dshare.host=share -Dshare.port=8080 -Dalfresco.host=localhost
                 -Dalfresco.port=8080 -Dcsrf.filter.enabled=false
                 -Daos.baseUrlOverwrite=http://localhost:8080/alfresco/aos
                 -Dmessaging.broker.url="failover:(nio://activemq:61616)?timeout=3000&jms.useCompression=true"
@@ -191,10 +191,12 @@ services:
                 -Dldap.synchronization.java.naming.security.principal=cn\=admin,dc\=jahia,dc\=com
                 -Dldap.synchronization.java.naming.security.credentials=admin
                 -Dldap.synchronization.groupSearchBase=ou\=Groups,dc\=jahia,dc\=com
-                -Dldap.synchronization.userSearchBase=dc\=jahia,dc\=com
+                -Dldap.synchronization.userSearchBase=ou\=people,dc\=jahia,dc\=com
                 -Dldap.synchronization.groupType=groupOfUniqueNames
                 -Dldap.synchronization.syncOnStartup=true
                 -Dldap.synchronization.active=true
+        ports:
+            - "9080:8080"
         networks:
             - stack
     transform-core-aio:
@@ -224,6 +226,8 @@ services:
                 -XX:MinRAMPercentage=50 -XX:MaxRAMPercentage=80
                 -Dalfresco.host=localhost -Dalfresco.port=8080
                 -Dalfresco.context=alfresco -Dalfresco.protocol=http
+        ports:
+            - "9081:8080"
         networks:
             - stack
     postgres:
@@ -309,7 +313,7 @@ services:
             - alfresco
             - content-app
         ports:
-            - "8080:8080"
+            - "9082:8080"
         networks:
             - stack
     # Cypress container
@@ -329,10 +333,11 @@ services:
         MANIFEST: ${MANIFEST:-provisioning-manifest-build.yml}
         JAHIA_USERNAME: ${JAHIA_USERNAME}
         JAHIA_PASSWORD: ${JAHIA_PASSWORD}
-        JAHIA_URL: ${JAHIA_URL}
-        JAHIA_HOST: ${JAHIA_HOST}
-        JAHIA_PORT: ${JAHIA_PORT}
-        ALFRESCO_URL: ${ALFRESCO_URL}
+        JAHIA_URL: "http://jahia:8080"
+        JAHIA_HOST: "jahia"
+        JAHIA_PORT: "8080"
+        ALFRESCO_URL: "http://alfresco:8080"
+        SHARE_URL: "http://share:8080"
         NEXUS_USERNAME: ${NEXUS_USERNAME}
         NEXUS_PASSWORD: ${NEXUS_PASSWORD}
         SUPER_USER_PASSWORD: ${SUPER_USER_PASSWORD}

@@ -42,4 +42,10 @@
 - enable: "qa-module"
   site: "digitall"
 
-- installConfiguration: "file:/home/tomcat/org.jahia.services.usermanager.ldap-config-docker.cfg"
+- editConfiguration: "org.jahia.services.usermanager.ldap-config-rqa5"
+  properties: 
+    url: "ldap://dockerldap/"
+    group.search.name: "ou=Groups,dc=jahia,dc=com"
+    user.uid.search.name: "ou=people,dc=jahia,dc=com"
+    public.bind.dn: "cn=admin,dc=jahia,dc=com"
+    public.bind.password: "admin"

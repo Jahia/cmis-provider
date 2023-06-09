@@ -1,0 +1,26 @@
+mutation mount {
+  jcr {
+    mutateNode(pathOrId: "/mounts") {
+      addChild(
+        name: "Alfresco-mount"
+        primaryNodeType: "cmis:cmisMountPoint"
+        properties: [
+          { name: "maxChildNodes", value: "0" }
+          { name: "maxItemsPerBatch", value: "1000" }
+          { name: "password", value: "admin" }
+          { name: "protectedProperties", values: ["password"] }
+          { name: "publicUser", value: "wrong_admin" }
+          { name: "repositoryId", value: "-default-" }
+          { name: "slowConnection", value: "false" }
+          { name: "ttidleSeconds", value: "300" }
+          { name: "ttliveSeconds", value: "300" }
+          { name: "type", value: "alfresco" }
+          { name: "url", value: "http://alfresco:8080/alfresco" }
+          { name: "user", value: "admin" }
+        ]
+      ) {
+        uuid
+      }
+    }
+  }
+}

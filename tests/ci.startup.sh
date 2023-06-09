@@ -17,7 +17,7 @@ if [[ -z ${JAHIA_LICENSE} ]]; then
     echo "$(date +'%d %B %Y - %k:%M') [LICENSE] == Jahia license does not exist, checking if there is a license file in /tmp/license.xml =="
     if [[ -f /tmp/license.xml ]]; then
         echo "$(date +'%d %B %Y - %k:%M') [LICENSE] ==  License found in /tmp/license.xml, base64ing it"
-        export JAHIA_LICENSE=$(base64 /tmp/license.xml)
+        export JAHIA_LICENSE=$(base64 -i /tmp/license.xml)
     else
         echo "$(date +'%d %B %Y - %k:%M') [LICENSE]  == STARTUP FAILURE, unable to find license =="
         exit 1
@@ -30,18 +30,17 @@ if [[ "${JAHIA_CLUSTER_ENABLED}" == "true" ]]; then
     if [[ $1 == "notests" ]]; then
         docker-compose up -d --renew-anon-volumes mariadb jahia jahia-browsing-a jahia-browsing-b alfresco transform-core-aio share postgres solr6 activemq content-app proxy
     else
-        docker-compose up --abort-on-container-exit --renew-anon-volumes cypress mariadb jahia jahia-browsing-a jahia-browsing-b alfresco transform-core-aio share postgres solr6 activemq content-app proxy
+        docker-compose up --renew-anon-volumes -d mariadb jahia jahia-browsing-a jahia-browsing-b alfresco transform-core-aio share postgres solr6 activemq content-app proxy
+        docker ps -a
+        docker stats --no-stream
+        docker-compose up --abort-on-container-exit cypress
     fi
 else
     echo "$(date +'%d %B %Y - %k:%M') [JAHIA_CLUSTER_ENABLED] == Starting a single processing node (no cluster) =="
     if [[ $1 == "notests" ]]; then
         docker-compose up -d --renew-anon-volumes mariadb jahia alfresco transform-core-aio share postgres solr6 activemq content-app proxy
-        docker cp org.jahia.services.usermanager.ldap-config-docker.cfg jahia:/home/tomcat/
-        docker exec --user root jahia chown tomcat:tomcat /home/tomcat/org.jahia.services.usermanager.ldap-config-docker.cfg
     else
         docker-compose up --renew-anon-volumes -d mariadb jahia alfresco transform-core-aio share postgres solr6 activemq content-app proxy
-        docker cp org.jahia.services.usermanager.ldap-config-docker.cfg jahia:/home/tomcat/
-        docker exec --user root jahia chown tomcat:tomcat /home/tomcat/org.jahia.services.usermanager.ldap-config-docker.cfg
         docker ps -a
         docker stats --no-stream
         docker-compose up --abort-on-container-exit cypress
