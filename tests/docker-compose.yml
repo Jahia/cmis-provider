@@ -190,9 +190,16 @@ services:
                 -Dldap.authentication.escapeCommasInUid=true
                 -Dldap.synchronization.java.naming.security.principal=cn\=admin,dc\=jahia,dc\=com
                 -Dldap.synchronization.java.naming.security.credentials=admin
+                -Dldap.synchronization.groupQuery="(objectClass=groupOfUniqueNames)"
                 -Dldap.synchronization.groupSearchBase=ou\=Groups,dc\=jahia,dc\=com
-                -Dldap.synchronization.userSearchBase=ou\=people,dc\=jahia,dc\=com
+                -Dldap.synchronization.userSearchBase=ou\=People,dc\=jahia,dc\=com
+                -Dldap.synchronization.userIdAttributeName=cn
+                -Dldap.synchronization.userFirstNameAttributeName=sn
+                -Dldap.synchronization.userLastNameAttributeName=sn
+                -Dldap.synchronization.userEmailAttributeName=mail
+                -Dldap.synchronization.groupIdAttributeName=cn
                 -Dldap.synchronization.groupType=groupOfUniqueNames
+                -Dldap.synchronization.groupMemberAttributeName=uniqueMember
                 -Dldap.synchronization.syncOnStartup=true
                 -Dldap.synchronization.active=true
         ports:
