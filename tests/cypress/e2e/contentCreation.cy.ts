@@ -12,37 +12,10 @@ describe('Content creation tests', () => {
     before(() => {
         cy.loginEditor();
         // Login
-        cy.visit(`${Cypress.env('SHARE_URL')}/share/page/console/admin-console/application`);
+        cy.visit(`${Cypress.env('ALFRESCO_URL')}/share/page/console/admin-console/application`);
         cy.get('input[name="username"]').should('be.visible').type('admin');
         cy.get('input[name="password"]').should('be.visible').type('admin');
-        cy.get('button').contains('Sign In').click();
-
-        // Add users Bill
-        cy.get('a[title="User Management"]').click();
-        cy.get('button').contains('New User').click();
-        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-firstname"]').type('Bill');
-        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-lastname"]').type('Galileo');
-        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-email"]').type('bill@jahia.com');
-        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-username"]').type('bill');
-        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-password"]').type('alfresco');
-        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-verifypassword"]').type('alfresco');
-        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-quota"]').type('5');
-        cy.get('select[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-quotatype"]').select('MB');
-        cy.get('button').contains('Create and Start Another').click();
-
-        // Add user Anne
-        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-firstname"]').type('Anne');
-        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-lastname"]').type('Lovelace');
-        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-email"]').type('anne@jahia.com');
-        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-username"]').type('anne');
-        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-password"]').type('alfresco');
-        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-verifypassword"]').type('alfresco');
-        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-quota"]').type('5');
-        cy.get('select[id="page_x002e_ctool_x002e_admin-console_x0023_default-create-quotatype"]').select('MB');
-        cy.get('button').contains('Create User').click();
-
-        // eslint-disable-next-line cypress/no-unnecessary-waiting
-        cy.wait(500);
+        cy.get('button').contains('Login').click();
 
         // Create Groups
         cy.get('a[title="Group Management"]').click();
@@ -59,23 +32,32 @@ describe('Content creation tests', () => {
         // Add Users
         cy.get('span').contains('contributors').click();
         cy.get('span[title="Add User"]').click();
-        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-search-peoplefinder-search-text"]').type('bill galileo');
-        cy.get('button[id="page_x002e_ctool_x002e_admin-console_x0023_default-search-peoplefinder-search-button-button"]').click();
-        cy.get('span[id="page_x002e_ctool_x002e_admin-console_x0023_default-search-peoplefinder-action-bill"]').find('button').click();
-        cy.get('span[title="Add User"]').click();
         cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-search-peoplefinder-search-text"]').type('blachance7');
         cy.get('button[id="page_x002e_ctool_x002e_admin-console_x0023_default-search-peoplefinder-search-button-button"]').click();
         cy.get('span[id="page_x002e_ctool_x002e_admin-console_x0023_default-search-peoplefinder-action-blachance7"]').find('button').click();
 
         cy.get('span').contains('readers').click();
         cy.get('span[title="Add User"]').click();
-        cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-search-peoplefinder-search-text"]').type('anne lovelace');
-        cy.get('button[id="page_x002e_ctool_x002e_admin-console_x0023_default-search-peoplefinder-search-button-button"]').click();
-        cy.get('span[id="page_x002e_ctool_x002e_admin-console_x0023_default-search-peoplefinder-action-anne"]').find('button').click();
-        cy.get('span[title="Add User"]').click();
         cy.get('input[id="page_x002e_ctool_x002e_admin-console_x0023_default-search-peoplefinder-search-text"]').type('blachance4');
         cy.get('button[id="page_x002e_ctool_x002e_admin-console_x0023_default-search-peoplefinder-search-button-button"]').click();
         cy.get('span[id="page_x002e_ctool_x002e_admin-console_x0023_default-search-peoplefinder-action-blachance4"]').find('button').click();
+    });
+
+    after(() => {
+        cy.visit(`${Cypress.env('ALFRESCO_URL')}/share/page/console/admin-console/application`);
+        cy.get('input[name="username"]').should('be.visible').type('admin');
+        cy.get('input[name="password"]').should('be.visible').type('admin');
+        cy.get('button').contains('Login').click();
+
+        // eslint-disable-next-line cypress/no-unnecessary-waiting
+        cy.wait(500);
+
+        cy.get('a[title="Group Management"]').click();
+        cy.get('span[id="page_x002e_ctool_x002e_admin-console_x0023_default-browse-button"]').click();
+        cy.get('span').contains('contributors').click().parent().find('.groups-delete-button').click();
+        cy.get('button').contains('Delete').click();
+        cy.get('span').contains('readers').click().parent().find('.groups-delete-button').click();
+        cy.get('button').contains('Delete').click();
     });
 
     beforeEach(() => {
