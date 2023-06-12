@@ -17,6 +17,7 @@ mutation mount {
           { name: "type", value: "alfresco" }
           { name: "url", value: "http://alfresco:8080/alfresco" }
           { name: "user", value: "admin" }
+          { name: "mountPoint", value: "/sites/digitall/files", type: WEAKREFERENCE}
         ]
       ) {
         uuid

@@ -28,9 +28,9 @@ echo "$(date +'%d %B %Y - %k:%M') [JAHIA_CLUSTER_ENABLED] == Value: ${JAHIA_CLUS
 if [[ "${JAHIA_CLUSTER_ENABLED}" == "true" ]]; then
     echo "$(date +'%d %B %Y - %k:%M') [JAHIA_CLUSTER_ENABLED] == Starting a cluster of one processing and two browsing =="
     if [[ $1 == "notests" ]]; then
-        docker-compose up -d --renew-anon-volumes mariadb jahia jahia-browsing-a jahia-browsing-b alfresco transform-core-aio share postgres solr6 activemq content-app proxy
+        docker-compose up -d --renew-anon-volumes mariadb jahia jahia-browsing-a jahia-browsing-b alfresco dockerldap
     else
-        docker-compose up --renew-anon-volumes -d mariadb jahia jahia-browsing-a jahia-browsing-b alfresco transform-core-aio share postgres solr6 activemq content-app proxy
+        docker-compose up --renew-anon-volumes -d mariadb jahia jahia-browsing-a jahia-browsing-b alfresco dockerldap
         docker ps -a
         docker stats --no-stream
         docker-compose up --abort-on-container-exit cypress
@@ -38,9 +38,9 @@ if [[ "${JAHIA_CLUSTER_ENABLED}" == "true" ]]; then
 else
     echo "$(date +'%d %B %Y - %k:%M') [JAHIA_CLUSTER_ENABLED] == Starting a single processing node (no cluster) =="
     if [[ $1 == "notests" ]]; then
-        docker-compose up -d --renew-anon-volumes mariadb jahia alfresco transform-core-aio share postgres solr6 activemq content-app proxy
+        docker-compose up -d --renew-anon-volumes mariadb jahia alfresco dockerldap
     else
-        docker-compose up --renew-anon-volumes -d mariadb jahia alfresco transform-core-aio share postgres solr6 activemq content-app proxy
+        docker-compose up --renew-anon-volumes -d mariadb jahia alfresco dockerldap
         docker ps -a
         docker stats --no-stream
         docker-compose up --abort-on-container-exit cypress

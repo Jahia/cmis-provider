@@ -18,3 +18,5 @@ if [[ -e ../target ]]; then
 fi
 
 docker build -t ${TESTS_IMAGE} .
+
+docker build -t docker-alfresco docker-alfresco
