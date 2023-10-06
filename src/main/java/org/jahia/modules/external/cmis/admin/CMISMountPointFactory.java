@@ -24,7 +24,7 @@
 package org.jahia.modules.external.cmis.admin;
 
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
-import org.hibernate.validator.constraints.NotEmpty;
+import javax.validation.constraints.NotEmpty;
 import org.jahia.modules.external.admin.mount.AbstractMountPointFactory;
 import org.jahia.modules.external.admin.mount.validator.LocalJCRFolder;
 import org.jahia.modules.external.cmis.CmisProviderFactory;
