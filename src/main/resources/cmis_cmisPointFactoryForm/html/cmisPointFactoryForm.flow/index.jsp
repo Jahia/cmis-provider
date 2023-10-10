@@ -17,10 +17,10 @@
 <%--@elvariable id="mailSettings" type="org.jahia.services.mail.MailSettings"--%>
 <%--@elvariable id="flowRequestContext" type="org.springframework.webflow.execution.RequestContext"--%>
 <%--@elvariable id="cmisFactory" type="org.jahia.modules.external.cmis.admin.CMISMountPointFactory"--%>
-<script src="/modules/external-provider-ui/javascript/admin/angular.min.js"></script>
-<script src="/modules/external-provider-ui/javascript/admin/app/folderPicker.js"></script>
-<link rel="stylesheet" href="/modules/external-provider-ui/css/admin/app/folderPicker.css" media="screen" type="text/css"/>
-<script src="/modules/cmis-provider/javascript/cmis_mount/app.js"></script>
+<script src="${pageContext.request.contextPath}/modules/external-provider-ui/javascript/admin/angular.min.js"></script>
+<script src="${pageContext.request.contextPath}/modules/external-provider-ui/javascript/admin/app/folderPicker.js"></script>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/modules/external-provider-ui/css/admin/app/folderPicker.css" media="screen" type="text/css"/>
+<script src="${pageContext.request.contextPath}/modules/cmis-provider/javascript/cmis_mount/app.js"></script>
 
 <script type="text/javascript">
     $(document).ready(function(){
