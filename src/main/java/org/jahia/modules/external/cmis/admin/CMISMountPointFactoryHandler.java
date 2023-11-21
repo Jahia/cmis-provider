@@ -25,7 +25,6 @@ package org.jahia.modules.external.cmis.admin;
 
 import org.jahia.modules.external.admin.mount.AbstractMountPointFactoryHandler;
 import org.jahia.modules.external.cmis.CmisDataSource;
-import org.jahia.registries.ServicesRegistry;
 import org.jahia.services.SpringContextSingleton;
 import org.jahia.services.cache.ehcache.EhCacheProvider;
 import org.jahia.services.content.JCRCallback;

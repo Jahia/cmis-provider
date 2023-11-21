@@ -60,10 +60,10 @@ The remote path has to be filled normally for example "/default-domain/workspace
 For more information on the Nuxeo CMIS implementation please refer to the following documentation :
 https://doc.nuxeo.com/display/NXDOC/CMIS
 
-####Nuxeo mount point limitations
+#### Nuxeo mount point limitations
 In the case of Nuxeo mount points the move, copy and rename operations are not supported due to Nuxeo path management.
 
-####The images management
+#### The images management
 The images are mapped adding the image mixin and their exif properties are also mapped.
 If an image has at least one exif property set, then the exif mixin will also be added to it.
 
@@ -152,6 +152,130 @@ Inheritance may be configured in two ways:
 First way is more visual.
 Second way is more flexible. You can inherit mappings even from other modules. **Don't forget to include parent bean in typeMapping list, too.**
 
+---
+
+## GraphQL 
+
+GraphQL API endpoints are available for creating and modifying CMIS mount point nodes, in addition to mount point API operations already 
+provided by external-provider module:
+
+- addCmis
+
+```
+addCmis
+Create a standard CMIS connector mount point.
+Mount point node will be set to waiting status if CMIS connection cannot be established.
+
+Type
+String
+Arguments
+name: String!
+Name for the mount point
+
+mountPointRefPath: String
+Target local mount point
+
+rootPath: String
+CMIS remote root path
+
+cmisType: GqlCmisType!
+CMIS mount point type
+
+repositoryId: String
+Repository ID (only for CMIS and Nuxeo connectors)
+
+user: String
+CMIS repository user
+
+password: String
+CMIS repository password
+
+url: String!
+CMIS endpoint URL
+
+publicUser: String
+Alfresco user used to access public content (it must not be guest)
+
+ttLive: Int
+Amount of seconds documents are cached (default: 900)
+
+ttIdle: Int
+Amount of seconds documents will stay in cache if not accessed (default: 300)
+
+maxNumDocs: Int
+Max number of documents/folder to read from any given path (default: 0 means read everything)
+
+maxItemsPerBatch: Int
+Max number of items to bring from the backend server per request (default: 1000)
+
+useSlowConn: Boolean
+Use slow connection (default: false)
+```
+
+- modifyCmis
+
+```
+modifyCmis
+Modify an existing mount point node. Use empty string to remove property, unless otherwise specified
+
+Type
+Boolean
+Arguments
+pathOrId: String!
+Mount point path or ID to modify
+
+name: String
+Name for the mount point
+
+mountPointRefPath: String
+Target local mount point
+
+rootPath: String
+CMIS remote root path
+
+cmisType: GqlCmisType
+CMIS mount point type
+
+repositoryId: String
+Repository ID (for standard and Nuxeo CMIS connector)
+
+user: String
+Repository user; cannot be deleted, only changed
+
+password: String
+Repository password; cannot be deleted, only changed
+
+url: String
+CMIS endpoint URL
+
+publicUser: String
+Username used to access public content (it must not be guest)
+
+ttLive: Int
+Amount of seconds documents are cached (default: 900)
+
+ttIdle: Int
+Amount of seconds documents will stay in cache if not accessed (default: 300)
+
+maxNumDocs: Int
+Max number of documents/folder to read from any given path (default: 0 means read everything)
+
+maxItemsPerBatch: Int
+Max number of items to bring from the backend server per request (default: 1000)
+
+useSlowConn: Boolean
+Use slow connection (default: false)
+```
+
+- flushCache
+
+```
+flushCache
+Flush CMIS cache
+
+Type
+Boolean
+```
 ---
 
 ## Testing environment tips.
