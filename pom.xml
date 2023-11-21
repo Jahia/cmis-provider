@@ -48,13 +48,16 @@
 
     <properties>
         <jahia-depends>external-provider,external-provider-ui=optional</jahia-depends>
-
         <jahia-module-type>system</jahia-module-type>
         <export-package>org.jahia.modules.external.cmis</export-package>
         <require-capability>osgi.extender;filter:="(osgi.extender=org.jahia.bundles.blueprint.extender.config)"</require-capability>
         <jahia-module-signature>MCwCFH9rRIpKqvb0CPXxwDCPhZJmmiwoAhQNE4M2fk/zO28JrjY8p3+JnwfLVQ==</jahia-module-signature>
         <jahia.plugin.version>6.9</jahia.plugin.version>
         <sonar.sources>src/main/resources/javascript</sonar.sources>
+        <import-package>
+            org.jahia.modules.external.admin.mount;version="[4.7,5)";resolution:=optional,
+            org.jahia.modules.external.admin.mount.validator;version="[4.7,5)";resolution:=optional
+        </import-package>
     </properties>
 
     <distributionManagement>
