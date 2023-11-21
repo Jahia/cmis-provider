@@ -267,10 +267,10 @@ useSlowConn: Boolean
 Use slow connection (default: false)
 ```
 
-- flushCache
+- flushCmisCache
 
 ```
-flushCache
+flushCmisCache
 Flush CMIS cache
 
 Type

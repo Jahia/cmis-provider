@@ -173,7 +173,7 @@ public class GqlCmisMutation {
 
     @GraphQLField
     @GraphQLDescription("Flush CMIS cache")
-    public boolean flushCache() {
+    public boolean flushCmisCache() {
         EhCacheProvider ehCacheProvider = (EhCacheProvider) SpringContextSingleton.getBean("ehCacheProvider");
         ehCacheProvider.getCacheManager().getCache(CmisDataSource.CMIS_CACHE).removeAll();
         return true;
