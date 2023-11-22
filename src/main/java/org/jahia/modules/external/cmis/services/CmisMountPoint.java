@@ -75,8 +75,12 @@ public class CmisMountPoint extends MountPoint {
         setJcrProperty(mountNode, TYPE, cmisType);
         setJcrProperty(mountNode, URL, url);
         // user/pwd props needs to be created even if blank
-        mountNode.setProperty(USER, user != null ? user : "");
-        mountNode.setProperty(PASSWORD, password != null ? password : "");
+        if (user != null) {
+            mountNode.setProperty(USER, user);
+        }
+        if (password != null) {
+            mountNode.setProperty(PASSWORD, password);
+        }
 
         setJcrProperty(mountNode, SLOW_CONNECTION, slowConnection);
         setJcrProperty(mountNode, TTLIVE_SECONDS, ttliveSeconds);
@@ -147,10 +151,22 @@ public class CmisMountPoint extends MountPoint {
     }
 
     public void setUser(String user) {
+        if (user != null) {
+            this.user = user;
+        }
+    }
+
+    public void modifyUser(String user) {
         this.user = user;
     }
 
     public void setPassword(String password) {
+        if (password != null) {
+            this.password = password;
+        }
+    }
+
+    public void modifyPassword(String password) {
         this.password = password;
     }
 
