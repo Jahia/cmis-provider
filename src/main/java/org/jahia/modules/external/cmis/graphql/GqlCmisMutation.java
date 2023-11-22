@@ -104,7 +104,7 @@ public class GqlCmisMutation {
     }
 
     @GraphQLField
-    @GraphQLDescription("Modify an existing mount point node. Use empty string to remove property, unless otherwise specified")
+    @GraphQLDescription("Modify an existing CMIS mount point node. Use empty string to remove property, unless otherwise specified")
     public boolean modifyCmis(
             @GraphQLName("pathOrId") @GraphQLDescription("Mount point path or ID to modify") @GraphQLNonNull String pathOrId,
             @GraphQLName("name") @GraphQLDescription("Name for the mount point") String name,
@@ -173,7 +173,7 @@ public class GqlCmisMutation {
 
     @GraphQLField
     @GraphQLDescription("Flush CMIS cache")
-    public boolean flushCache() {
+    public boolean flushCmisCache() {
         EhCacheProvider ehCacheProvider = (EhCacheProvider) SpringContextSingleton.getBean("ehCacheProvider");
         ehCacheProvider.getCacheManager().getCache(CmisDataSource.CMIS_CACHE).removeAll();
         return true;
