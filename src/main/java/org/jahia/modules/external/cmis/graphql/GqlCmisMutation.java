@@ -142,10 +142,11 @@ public class GqlCmisMutation {
         mountPoint.setPathOrId(pathOrId);
         mountPoint.setCmisType(cmisType != null ? cmisType.getValue() : null);
         mountPoint.setRepositoryId(repositoryId);
-        mountPoint.setUser(user);
-        mountPoint.setPassword(password);
         mountPoint.setUrl(url);
         mountPoint.setPublicUser(publicUser);
+        // override default values if null
+        mountPoint.modifyUser(user);
+        mountPoint.modifyPassword(password);
         mountPoint.modifyTtlive(ttLive);
         mountPoint.modifyTtidle(ttIdle);
         mountPoint.modifyMaxChildNodes(maxNumDocs);
