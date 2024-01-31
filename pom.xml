@@ -56,7 +56,8 @@
         <sonar.sources>src/main/resources/javascript</sonar.sources>
         <import-package>
             org.jahia.modules.external.admin.mount;version="[4.7,5)";resolution:=optional,
-            org.jahia.modules.external.admin.mount.validator;version="[4.7,5)";resolution:=optional
+            org.jahia.modules.external.admin.mount.validator;version="[4.7,5)";resolution:=optional,
+            org.jahia.modules.graphql.provider.dxm;version="[2.7,4)"
         </import-package>
     </properties>
 
