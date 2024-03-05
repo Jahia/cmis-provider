@@ -54,11 +54,6 @@
         <jahia-module-signature>MCwCFBzueMo+WB7fjBPZKb2W/NjA6OSDAhRiCa0Hf+sMMtK/sDrH54MCUVakEA==</jahia-module-signature>
         <jahia.plugin.version>6.9</jahia.plugin.version>
         <sonar.sources>src/main/resources/javascript</sonar.sources>
-        <import-package>
-            org.jahia.modules.external.admin.mount;version="[4.7,5)";resolution:=optional,
-            org.jahia.modules.external.admin.mount.validator;version="[4.7,5)";resolution:=optional,
-            org.jahia.modules.graphql.provider.dxm;version="[2.7,4)"
-        </import-package>
     </properties>
 
     <distributionManagement>
@@ -136,7 +131,6 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>30.1.1-jre</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -179,6 +173,12 @@
                 <configuration>
                     <instructions>
                         <_dsannotations>*</_dsannotations>
+                        <Import-Package>
+                            org.jahia.modules.external.admin.mount;version="[4.7,5)";resolution:=optional,
+                            org.jahia.modules.external.admin.mount.validator;version="[4.7,5)";resolution:=optional,
+                            org.jahia.modules.graphql.provider.dxm;version="[2.7,4)",
+                            *
+                        </Import-Package>
                     </instructions>
                 </configuration>
             </plugin>
