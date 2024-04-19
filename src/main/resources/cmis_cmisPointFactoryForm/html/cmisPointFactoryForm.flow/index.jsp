@@ -65,7 +65,7 @@
                     </div>
                     <div class="row-fluid">
                         <form:label path="password"><fmt:message key="cmisFactory.password"/></form:label>
-                        <form:password path="password" showPassword="true"/>
+                        <form:password path="password" showPassword="true" autocomplete="true"/>
                     </div>
                     <div class="row-fluid">
                         <form:label ng-show="cmisType == 'cmis'" path="url"><fmt:message key="cmisFactory.url"/> <span style="color: red">*</span></form:label>
