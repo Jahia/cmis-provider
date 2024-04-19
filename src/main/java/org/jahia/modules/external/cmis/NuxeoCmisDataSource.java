@@ -27,7 +27,7 @@ import org.apache.chemistry.opencmis.client.api.*;
 import org.apache.chemistry.opencmis.commons.enums.BaseTypeId;
 import org.apache.chemistry.opencmis.commons.enums.IncludeRelationships;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisObjectNotFoundException;
-import org.codehaus.plexus.util.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jahia.api.Constants;
 import org.jahia.modules.external.ExternalData;
 import org.jahia.modules.external.ExternalDataSource;
@@ -223,7 +223,7 @@ public class NuxeoCmisDataSource extends CmisDataSource implements ExternalDataS
                     }
                     OperationContext operationContext = session.createOperationContext();
                     operationContext.setIncludePathSegments(true);
-                    //In nuxeo the search query MUST be done with searchAllVersions attribute to true               
+                    //In nuxeo the search query MUST be done with searchAllVersions attribute to true
                     ItemIterable<QueryResult> results = session.query(sql, true, operationContext);
                     if (query.getLimit() > 0 && query.getLimit() < Integer.MAX_VALUE) {
                         results = results.getPage((int) query.getLimit());
