@@ -91,7 +91,13 @@
         <dependency>
             <groupId>org.jahia.modules</groupId>
             <artifactId>external-provider</artifactId>
-            <version>4.0.0</version>
+            <version>4.7.0-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jahia.modules</groupId>
+            <artifactId>external-provider-ui</artifactId>
+            <version>4.7.0-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -114,6 +120,10 @@
                 <exclusion>
                     <groupId>javax.xml.stream</groupId>
                     <artifactId>stax-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.codehaus.woodstox</groupId>
+                    <artifactId>woodstox-core-asl</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -154,16 +164,9 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.jahia.modules</groupId>
-            <artifactId>external-provider</artifactId>
-            <version>4.7.0-SNAPSHOT</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jahia.modules</groupId>
-            <artifactId>external-provider-ui</artifactId>
-            <version>4.7.0-SNAPSHOT</version>
-            <scope>provided</scope>
+            <groupId>com.fasterxml.woodstox</groupId>
+            <artifactId>woodstox-core</artifactId>
+            <version>6.5.1</version>
         </dependency>
     </dependencies>
     <build>
