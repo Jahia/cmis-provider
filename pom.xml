@@ -49,7 +49,7 @@
         <jahia-module-type>system</jahia-module-type>
         <export-package>org.jahia.modules.external.cmis</export-package>
         <require-capability>osgi.extender;filter:="(osgi.extender=org.jahia.bundles.blueprint.extender.config)"</require-capability>
-        <jahia-module-signature>MCwCFBzueMo+WB7fjBPZKb2W/NjA6OSDAhRiCa0Hf+sMMtK/sDrH54MCUVakEA==</jahia-module-signature>
+        <jahia-module-signature>MC0CFDjaBFyIeZ3YwoVtBThipyCOXCFkAhUAlYs313lZvOt5AeCrFTC5yqjq9l4=</jahia-module-signature>
         <sonar.sources>src/main/resources/javascript</sonar.sources>
         <import-package>
             com.google.common.cache;version="[33,34)",
