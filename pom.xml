@@ -45,6 +45,7 @@
     </scm>
 
     <properties>
+        <cxf.version>3.5.11</cxf.version>    
         <jahia-depends>external-provider,external-provider-ui=optional</jahia-depends>
         <jahia-module-type>system</jahia-module-type>
         <export-package>org.jahia.modules.external.cmis</export-package>
@@ -171,6 +172,21 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-rt-frontend-jaxws</artifactId>
+            <version>${cxf.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-rt-transports-http</artifactId>
+            <version>${cxf.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-rt-ws-policy</artifactId>
+            <version>${cxf.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-client</artifactId>
             <version>2.6</version>
@@ -206,11 +222,11 @@
             <version>${graphql-java-servlet.version}</version>
             <scope>provided</scope>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>com.fasterxml.woodstox</groupId>-->
-<!--            <artifactId>woodstox-core</artifactId>-->
-<!--            <version>6.6.2</version>-->
-<!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>com.fasterxml.woodstox</groupId>-->
+        <!--            <artifactId>woodstox-core</artifactId>-->
+        <!--            <version>6.6.2</version>-->
+        <!--        </dependency>-->
     </dependencies>
     <build>
         <plugins>
