@@ -25,7 +25,7 @@ The goals of this project are as follows:
  - Implement full CRUD support.
  - Implement Search as full as possible.
 
-### Supported features
+### Features
 
 1. 2 base CMIS types (document and folder) and custom types inherited from them are supported.
 2. Full support CRUD, rename, move for supported types. It is possible to modify content and properties values.
@@ -313,5 +313,6 @@ There will be CMIS repository mounted in /mounts
  - Renditions;
  - Use of standard Alfresco Tokenization service (instead of custom Impersonnalisation AMP to deploy)
  
+## Open-Source
 
-
+This is an Open-Source module, you can find more details about Open-Source @ Jahia [in this repository](https://github.com/Jahia/open-source).
