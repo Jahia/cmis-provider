@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>org.jahia.modules</groupId>
+        <groupId>org.jahia.community</groupId>
         <artifactId>jahia-modules</artifactId>
         <version>8.2.0.0</version>
     </parent>
@@ -23,8 +23,6 @@
         <jahia-depends>external-provider,external-provider-ui=optional</jahia-depends>
         <jahia-module-type>system</jahia-module-type>
         <export-package>org.jahia.modules.external.cmis</export-package>
-        <require-capability>osgi.extender;filter:="(osgi.extender=org.jahia.bundles.blueprint.extender.config)"</require-capability>
-        <jahia-module-signature>MC0CFDjaBFyIeZ3YwoVtBThipyCOXCFkAhUAlYs313lZvOt5AeCrFTC5yqjq9l4=</jahia-module-signature>
         <sonar.sources>src/main/resources/javascript</sonar.sources>
         <import-package>
             com.google.common.cache;version="[33,34)",
@@ -78,17 +76,6 @@
             org.w3c.dom
         </import-package>
     </properties>
-
-    <distributionManagement>
-        <repository>
-            <id>jahia-enterprise-releases</id>
-            <url>https://devtools.jahia.com/nexus/content/repositories/jahia-enterprise-releases</url>
-        </repository>
-        <snapshotRepository>
-            <id>jahia-enterprise-snapshots</id>
-            <url>https://devtools.jahia.com/nexus/content/repositories/jahia-enterprise-snapshots</url>
-        </snapshotRepository>
-    </distributionManagement>
 
     <repositories>
         <repository>
