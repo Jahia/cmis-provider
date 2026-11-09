@@ -24,7 +24,6 @@
         <jahia-depends>external-provider,external-provider-ui=optional</jahia-depends>
         <jahia-module-type>system</jahia-module-type>
         <export-package>org.jahia.modules.external.cmis</export-package>
-        <sonar.sources>src/main/resources/javascript</sonar.sources>
         <import-package>
             com.google.common.cache;version="[33,34)",
             com.google.common.util.concurrent;version="[33.0,34)",
